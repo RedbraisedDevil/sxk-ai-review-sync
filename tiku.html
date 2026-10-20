@@ -256,7 +256,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>按「学派—别名—原理—代表成果」四列表格回忆三家，逐项对照。</li><li>A 项查两个细节：别名是否为逻辑主义、代表程序是否为逻辑理论家且证明 38 条定理——均与教材一致。</li><li>B 项查年份与人物：1943、麦卡洛克、皮茨、MP 模型，四项全对则可留。</li><li>C 项查「智能是什么」与「典型方法」：交互行为＋反馈控制＋广义遗传算法，全对。</li><li>D 项做「程度词审查」：把「主流」与「一枝独秀」区分开，再看转折句是否有支持，发现与原文相反，判错。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>只看到 D 前半句正确就整项选上，忽略后半句的偷换。</li><li>把「连接主义」与「行为主义」的代表成果记混：遗传算法属行为主义，神经网络与深度学习属连接主义。</li><li>误以为符号主义已被淘汰。教材明确其在其他学派出现后仍是主流派别，只是遇到常识问题障碍。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>三流派一律用四列表格记：学派／别名／核心主张／代表成果。</li><li>多选题逐项独立判断，任一半句错即整项错。</li><li>遇到「长期一枝独秀」「仍然主导」这类程度表述，回原文找转折句。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">符号主义：「又称为逻辑主义、心理学派或计算机学派，其原理主要为物理符号系统（即符号操作系统）假设和有限合理性原理」；「其代表性成果为启发式程序：逻辑理论家（Logic Theorist，LT），它证明了 38 条数学定理」。连接主义：「主要原理为神经网络及神经网络间的连接机制与学习算法」；「理论基础源于 1943 年由生理学家麦卡洛克和数理逻辑学家皮茨创立的脑模型，即 MP 模型」。行为主义：「认为智能是系统与环境的交互行为，是对外界复杂环境的一种适应。反馈控制模式和广义遗传算法等解题方法是行为主义学派的典型代表成果」。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §1.1.3 人工智能的学派（书内 p.7–p.9）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「符号主义（Symbolicism），又称为逻辑主义（Logicism）、心理学派（Psychologism）或计算机学派（Computerism），其原理主要为物理符号系统（即符号操作系统）假设和有限合理性原理。」「其代表性成果为启发式程序：逻辑理论家（LogicTheorist，LT），它证明了38条数学定理」「连接主义（Connectionism），又称为联结主义、仿生学派（Bionicsism）或生理学派（Physiologism），其主要原理为神经网络及神经网络间的连接机制与学习算法。」「其理论基础源于1943年由生理学家麦卡洛克（McCulloch）和数理逻辑学家皮茨（Pitts）创立的脑模型，即MP模型」「行为主义（Actionism），又称为进化主义（Evolutionism）或控制论学派（Cyberneticsism），其原理为控制论及感知一动作型控制系统。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §1.1.3 人工智能的学派（书内 p.7–p.9）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §1.1.4 节末简答题第 3 题「三大人工智能学派的认知观分别是什么？他们各自的代表性研究成果是什么？」。教材未给参考答案，答案依据 §1.1.3 正文推导。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -652,7 +652,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>定位到（4）自动训练一节的图 2-2-48。</li><li>读图中「训练验证比例」两行数值：训练集 0.8、验证集 0.2。</li><li>排除其余三个常见比例。</li><li>注意教材提示「配置参数选择默认设置即可」，说明这是默认值而非需要自己调。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把训练集与验证集比例写反（0.2/0.8）。训练集一定占大头。</li><li>混入测试集概念。此处的 0.2 是验证集，用于训练中评估与早停监控，不是最终测试集。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>样本划分的常见默认值记 8:2（训练:验证），与第 5 章「80%/20% 切分训练集与测试集」互相印证。</li><li>看到「默认比例」优先想 8:2。</li><li>比例题注意问的是「训练:验证」还是「训练:测试」，两者在教材中都是 8:2，但用途不同。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">图 2-2-48「文本分类训练设置」原文标注：「数据版本名称 V001；训练验证比例——训练集比例：0.8；验证集比例：0.2；最大训练时长（小时）1.0」。正文：「训练设置中，配置参数选择默认设置即可。参数设置完成后，点击『下一步』进行模型的自动训练。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.2.4 使用自动学习实现文本分类 · （4）自动训练（书内 p.65）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">图 2-2-48「文本分类训练设置」原文标注：「教据集版本名称 V001」「训练集比例：0.8」「验证集比例：0.2」「最大训练时长（小时）1.0」。正文：「训练设置中，配置参数选择默认设置即可。参数设置完成后，点击“下一步”进行模型的自动训练。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.2.4 使用自动学习实现文本分类 · （4）自动训练（书内 p.65）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §2.2.5 节末简答题第 1 题（同一操作流程的细节）。教材未给参考答案，答案取自图 2-2-48 界面标注。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -799,7 +799,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>把教材对两者的定位抄成两列：pip＝Python 默认包管理器；conda＝跨语言包管理器＋环境管理器。</li><li>A、B、C 逐项对表，均与原文一致。</li><li>D 项查优先级顺序：教材是「conda 优先、pip 兜底」，选项写成「pip 优先、conda 兜底」，正好反了。</li><li>确认 ABC。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把 conda 与 pip 的优先级记反。这是最常考的一处。</li><li>以为 conda 只能装 Python 包。它是语言无关的。</li><li>以为 pip 能管理虚拟环境。pip 只管包，环境管理是 conda 的能力。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>一句话记：pip 专管 Python 包，conda 管包也管环境、还能跨语言。</li><li>优先级记「conda 先行，pip 补漏」。</li><li>对比题抓「谁能做对方做不到的事」：conda 能做环境，pip 不能。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「Anaconda 中提供了 pip 和 conda 两种方式管理工具包。pip 和 conda 都是开源的包管理系统……pip 是 Python 默认的包管理器，一般来说新发布的工具包优先支持使用 pip 安装。而 conda 还是一个与语言无关的跨平台环境管理器，可以安装任何语言的包，在安装时会检查当前环境下所有包之间的依赖关系，也可以进行虚拟环境的创建和删除等操作。一般来说，在 Anaconda 中，优先使用 conda 的方式管理包，如果 conda 中不存在该工具包，才使用 pip 方式进行管理。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4.2 第三方库的安装（书内 p.77）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「Anaconda中提供了pip和conda两种方式管理工具包。pip和conda都是开源的包管理系统，可以安装Python包的多个版本和依赖，支持Linux、OSX和Windows系统。pip是Python默认的包管理器，一般来说新发布的工具包优先支持使用pip安装。而conda还是一个与语言无关的跨平台环境管理器，可以安装任何语言的包，在安装时会检查当前环境下所有包之间的依赖关系，也可以进行虚拟环境的创建和删除等操作。一般来说，在Anaconda中，优先使用conda的方式管理包，如果conda中不存在该工具包，才使用pip方式进行管理。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4.2 第三方库的安装（书内 p.77）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §2.4.6 节末简答题第 2 题「conda 和 pip 在使用上有什么区别？分别有哪些常用的命令？」。教材未给参考答案，答案取自 §2.4.2 正文。考纲 93 条未单列该知识点。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -828,7 +828,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>先确认问的是 conda 命令，排掉 pip 选项 C。</li><li>按动作分类 conda 命令：install 装、update 升、uninstall 卸、list 查。</li><li>「升级」对应 update，选 A。</li><li>顺带记 pip 的对应写法：pip install 包名 --upgrade。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把 pip 的升级写法（--upgrade）套到 conda 上写成 conda install --upgrade。</li><li>把 conda list 当成查询某个包详情（那是 pip show）。</li><li>混淆 update 与 upgrade 两个词在不同工具中的用法。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>conda 四命令：install / update / uninstall / list。</li><li>pip 对应：install / install --upgrade / uninstall / list。</li><li>看到「升级」先分工具：conda update，pip install --upgrade。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「2.conda 中的常用命令 ·安装包：conda install 包名 ·更新包：conda update 包名 ·卸载包：conda uninstall 包名 ·查询已安装的包：conda list ·查看 conda 的版本：conda -V ·更新 conda 版本：conda update conda」；pip 部分「更新包：pip install 包名 --upgrade」。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4.2 第三方库的安装 · 2.conda 中的常用命令（书内 p.78）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「2.conda中的常用命令 ·安装包：condainstall包名 ·更新包：condaupdate包名 ·卸载包：condauninstall包名 ·查询已安装的包：condalist ·查看conda的版本：conda-V ·更新conda版本：condaupdateconda」pip 段：「·安装包：pipinstall包名」「更新包：pipinstall包……」（OCR 在此截断，后半句无法从扫描件确认）（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4.2 第三方库的安装 · 2.conda 中的常用命令（书内 p.78）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §2.4.6 节末简答题第 2 题（命令部分）。教材未给参考答案，答案取自 §2.4.2 命令清单。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1067,7 +1067,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>回忆安装页顺序：欢迎页 → 许可协议（I Agree）→ 安装用户 → 安装路径 → Install。</li><li>安装用户：Just Me 为推荐项（教材图注标 recommended）。</li><li>安装路径：默认可，也可 Browse 自选。</li><li>之后各步默认即可。锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把「All Users（需要管理员权限）」误当成推荐项。</li><li>认为必须装到非系统盘，多此一举还可能带来权限问题。</li><li>把安装阶段的「可选项」当成「必做项」（如改路径、全选组件）。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>安装四步记：I Agree → Just Me → 路径（默认）→ Install。</li><li>装完在开始菜单找「Anaconda3 (64-bit)」文件夹，里面有 Navigator、Prompt、Jupyter Notebook、Spyder。</li><li>验证安装成功最直接的方式：打开 Anaconda Prompt，输入 python 看是否进入交互环境。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「这里用户可以使用默认安装路径进行安装，也可以根据自已的需求改变安装路径，单击『Next』进入安装页面。单击『Install』程序进入安装过程，之后各步选择系统默认选项即可完成安装。」图 2-4-2（c）安装用户选择页含「Just Me (recommended)」与「All Users (requires admin privileges)」两项。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4 Anaconda 的安装（书内 p.76）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「据需求选择安装选项。单击“Next”进人安装路径选择页，如图2-4-2（d）所示，这里用户可以使用默认安装路径进行安装，也可以根据自已的需求改变安装路径，单击“Next”进人安装页面。单击“Install”程序进入安装过程，之后各步选择系统默认选项即可完成安装。」安装界面原文：「Install for: JustMe(recommended)」「AlUsersrequires admnriveges）」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（第二行为「All Users (requires admin privileges)」的 OCR 原样）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.4 Anaconda 的安装（书内 p.76）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §2.4.6 节末**实践题**第 1 题「请从 Anaconda 官网下载并安装 Anaconda 环境」。原题是上机题，本题把安装向导中的关键选项做成单选。说明：本题题干只考安装向导的选项，属 Python 开发环境操作，考纲 93 条中无对应知识点（syllabus 置空），但考试中环境类题目出现过，故保留。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1155,7 +1155,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>看结构：predicted_label 是最终判定，scores 是候选类别＋分数。</li><li>看数值：0.968 远大于 0.012、0.010，取最大 → 判为「时政」。</li><li>看性质：三分数近似和为 1 → 多分类概率归一化（Softmax）。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把置信度当成「字数比例」或「准确率」。</li><li>以为多分类可以同时命中多个标签（那是多标签分类，不是这里的情形）。</li><li>看到 scores 就想到训练日志里的 loss。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>读预测结果三步：找 predicted_label（结论）→ 找最高分（依据）→ 看分数和是否为 1（判断是否 Softmax）。</li><li>多分类 vs 多标签：分数和为 1 且只取一个 → 多分类；各类独立 0/1 → 多标签。</li><li>置信度高不等于一定对，0.968 仍可能是错判，工程上通常设阈值并人工复核低置信样本。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文（图 2-2-52 文本分类服务测试结果）：「『predicted_label』：『时政』」「『scores』：『时政』0.968、『社会』0.012、『教育』0.010」；正文：「部署完成后，在『服务测试』文本框中输入想要测试的语句……单击『预测』按钮，得到如图 2-2-52 所示的预测结果。根据输入内容的不同，结果有所不同。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.2 服务测试（图 2-2-52）（书内 p.67）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">（7）服务测试：「部署完成后，在“服务测试”文本框中输人想要测试的语句，或者打开测试文件“配套资……」；图 2-2-52 预测结果的 OCR 原文按行读出如下：「"predicted_label"："时政"」「'scores":[」「“时政”，」「"0.968"」「“社会”，」「"0.012"」「“教育”，」「"0.010"」（中间的 2/4/6/8/10/11/12/13/14/15 是截图里的行号，被 OCR 一并读出，不是 JSON 内容；「输人」为「输入」的 OCR 误识）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §2.2 服务测试（图 2-2-52）（书内 p.67）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>教材此处只有图与操作说明，没有对应的节末题。本题由我按图 2-2-52 的实际返回结构补出，考「predicted_label 与 scores 怎么读」。图中三个分数之和为 0.990（教材示例保留三位小数所致），已在解析中注明，未改动教材数字。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-supp">教材补充</span>
@@ -1505,7 +1505,7 @@ footer{border-top:1px solid var(--border);margin-top:40px;padding-top:20px;
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>把三种导入方式与其调用形式配对：import math → math.sqrt()；from math import sqrt → sqrt()；from math import * → sqrt()。</li><li>A 项配对正确。</li><li>B、C 两项混淆两种方式的调用形式，D 项否认其他导入方式存在。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>from math import sqrt 之后还写 math.sqrt()，此时 math 这个名字并未绑定，会报错。</li><li>用 from math import * 后又定义同名函数，造成覆盖冲突（教材提示过这一点）。</li><li>以为 import 之后可以直接写 sqrt()。必须带模块前缀。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>两种基本式：import X → X.f()；from X import f → f()。</li><li>别名写法：import numpy as np，之后用 np 前缀。</li><li>工程上优先 import 模块或用别名，避免 from…import * 污染命名空间。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「还可以通过 import 命令明确引入模块的函数名……from&lt;模块名&gt; import&lt;函数名1&gt;，&lt;函数名2&gt;……使用这种方法导入指定的函数，调用时函数名前不需要加模块前缀」「或者通过星号（*）导入模块中的所有函数或其他对象……调用时同样在函数名前不需要加模块前缀，但要注意所导入模块中的函数名等与现有系统中的函数不能产生冲突」；例 3-4-3：&gt;&gt;&gt;from math import sqrt　&gt;&gt;&gt;sqrt(16)　4.0。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.4 模块与函数 · 3.4.1 标准库与模块的导入（书内 p.140–p.141）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「还可以通过import命令明确引l人模块的函数名，有多个函数导人时函数名之间用逗号分隔」「使用这种方法导人指定的函数，调用时函数名前不需要加模块前缀」「或者通过星号（￥）导人模块中的所有函数或其他对象」「调用时同样在函数名前不需要加模块前缀，但要注意所导人模块中的函数名等与现有系统中的函数不能产生冲突」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.4 模块与函数 · 3.4.1 标准库与模块的导入（书内 p.140–p.141）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §3.4.4 节末简答题第 1 题「请简述使用标准库函数有哪些方法」。教材未给参考答案，答案取自 §3.4.1 正文与例 3-4-3。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1637,7 +1637,7 @@ print(s3, len(s3))</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>看优先级：* 高于 +，先算 s2*3。</li><li>s2*3 = "Python"×3 = "PythonPythonPython"（6×3=18 字符）。</li><li>再拼接："Hello" + 上面 = 5+18 = 23 字符。</li><li>内容为 HelloPythonPythonPython，长度 23，锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>误以为 + 先算（数学里加法优先级低，但字符串与数字的 * 结合仍是 * 先）。</li><li>把 len 算成字符种类数而非字符个数。</li><li>把 s2*3 结果写成 Python3 之类的字符串拼接错误。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>字符串三运算：+ 拼接、* 复制（只能乘整数）、in 成员测试。</li><li>优先级口诀：先乘除后加减，字符串的 * 与数字一致。</li><li>验算技巧：先写出 s2*3 的完整结果，再在纸上数总字符数。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「输入 s1=『Hello』，输入 s2=『Python』再输入 s=s1+s2，显示 s 的值。输入 s1 in s，测试成员。输入 s3=s1+s2*3，显示 s3 的值。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 字符串 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（1）输人sl="Hello"，输人s2="Python"再输人s=s1十s2，显示s的值。输人slins，测试成员。输人s3=sl十s2×3，显示s3的值。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（「十」为「+」的 OCR 误识）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 字符串 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §3.2.4 节末**实践题**第 1 题。原题是上机逐条观察，本题取其中 s3=s1+s2*3 这一句做成求值单选，字符串取值照抄教材（s1="Hello"、s2="Python"）。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1649,33 +1649,33 @@ print(s3, len(s3))</code></pre>
 <div class="q" data-chap="CH3" data-kind="教材改编" data-type="单选题">
 <div class="qgrid"><div class="qmain">
 <div class="qhead"><span class="qno">Q50</span><span class="tag">单选题</span><span class="tag">依据推导</span><span class="tag">2 分</span><span class="tag k-adapt">教材改编</span></div>
-<p class="stem">教材 §3.2.4 实践题第 2 题给定 str = "Hello, Python World!"，依次求 str[0]、str[5]、str[6:-7]、str[::-1]。下列四组结果都正确的是________。</p>
-<pre class="code"><code>str = &quot;Hello, Python World!&quot;
+<p class="stem">教材 §3.2.4 实践题第 2 题给定 str = "Hello，PythonWorld！"（原文用的是全角逗号与全角叹号，且 Python 与 World 之间**没有空格**），依次求 str[0]、str[5]、str[6:-7]、str[::-1]。下列四组结果都正确的是________。</p>
+<pre class="code"><code>str = &quot;Hello，PythonWorld！&quot;
 print(str[0], str[5], str[6:-7], str[::-1])</code></pre>
 <ol class="opts">
-<li><span class="lab">A</span>H　,　' Python'　!dlroW nohtyP ,olleH</li>
-<li><span class="lab">B</span>H　（空格）　'Python'　!dlroW nohtyP ,olleH</li>
-<li><span class="lab">C</span>H　,　' Python '　Hello, Python World!</li>
-<li><span class="lab">D</span>H　,　' Python'　Hello, Python World!</li>
+<li><span class="lab">A</span>H ／ ， ／ 'Pytho' ／ '！dlroWnohtyP，olleH'</li>
+<li><span class="lab">B</span>H ／ （空格） ／ 'Python' ／ '！dlroWnohtyP，olleH'</li>
+<li><span class="lab">C</span>H ／ ， ／ 'Python' ／ '！dlroWnohtyP，olleH'</li>
+<li><span class="lab">D</span>H ／ ， ／ 'Pytho' ／ 'Hello，PythonWorld！'</li>
 </ol>
 <details><summary>看答案与解析</summary><div class="ans">
 <span class="key">答案：A</span>
-<div class="whyitem"><b>A．</b>正确项。该串共 20 个字符，逐字符标下标：H0 e1 l2 l3 o4 ,5 空格6 P7 y8 t9 h10 o11 n12 空格13 W14 o15 r16 l17 d18 !19。故 str[0]='H'；str[5]=','（第 6 个字符是英文逗号，不是空格）；str[6:-7] 即 str[6:13]，取索引 6～12 共 7 个字符，得到前导空格加 Python，即 ' Python'；str[::-1] 步长 -1 整串反转，得 '!dlroW nohtyP ,olleH'。</div>
-<div class="whyitem"><b>B．</b>错误项。str[5] 取到的是逗号 ','——索引 4 是字母 o，索引 5 才是逗号；另外 str[6:-7] 的结果里第一个字符是空格（索引 6 本来就是空格），所以不能写成 'Python'。</div>
-<div class="whyitem"><b>C．</b>错误项。str[6:-7] 的右端 -7 换算成 20-7=13，切片含头不含尾，只取到索引 12，不会把索引 13 的空格也取进来；而且 str[::-1] 必须反转，不能原样输出。</div>
-<div class="whyitem"><b>D．</b>错误项。前三个值都对，但 str[::-1] 的步长为 -1，表示从尾到头逐个取，结果必须反过来，不可能与原串相同——那是有意漏掉了 step 参数。</div>
-<dl><dt>解题步骤</dt><dd><ul class="tight"><li>先数长度：'Hello, Python World!' 共 20 个字符（5 个字母 + 逗号 + 空格 + 6 个字母 + 空格 + 5 个字母 + 感叹号）。</li><li>标下标：H0 e1 l2 l3 o4 ,5 空格6 P7 y8 t9 h10 o11 n12 空格13 W14 o15 r16 l17 d18 !19。</li><li>str[0] → 'H'；str[5] → ','。</li><li>str[6:-7]：-7 换算为 13，切片 [6:13] 取索引 6～12 → ' Python'（注意首字符是空格）。</li><li>str[::-1] 整串反转 → '!dlroW nohtyP ,olleH'。锁定 A。</li></ul></dd></dl>
-<dl><dt>易错点</dt><dd><ul class="tight"><li>把 str[5] 数成空格：逗号占了索引 5，空格在索引 6。</li><li>负数下标换算错：-7 不是倒数第 7 个字符的位置，而是 20-7=13 这个「切到哪里」的边界。</li><li>忘了 str[6:-7] 的结果带前导空格，误写成 'Python'。</li><li>把 str[::-1] 当成 [::-1] 只反转一部分——它对整串生效。</li></ul></dd></dl>
-<dl><dt>作答程序</dt><dd><ul class="tight"><li>切片 str[start:stop:step]：含 start 不含 stop；stop 为负数时先换算成 len+stop。</li><li>字符数不确定时先 len() 数一遍，再标下标，比心算可靠。</li><li>看到 [::-1] 直接反应「整串反转」，看到 [::-2] 才是隔一个取一个。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题第（2）题：「输入 str="Hello，PythonWorld！"，输入 str[o]，输入 str[5]，输入 str[5]，输入 str[6：-7]，输入 str[：：-1]。」（OCR 原样：中文逗号与感叹号、str[0] 识别成 str[o]、str[5] 重复出现两次、冒号为全角。）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 字符串索引与切片 / §3.2.4 习题与实践（书内 p.127）</span></div></dd></dl>
-<dl><dt>命题说明</dt><dd>改编自 §3.2.4 节末实践题第（2）题，样本串已恢复为教材原串 "Hello, Python World!"（此前我一版误换成 "Python"，现已改回）。**仍属我处理过的地方**：① OCR 把该串识别成「Hello，PythonWorld！」，中文逗号、无空格、全角感叹号，我按英文原文还原为半角逗号与空格；② 教材原题里 str[5] 出现两次（OCR 重复），本题只保留一次；③ 输出值教材未给，由我实机跑出。</dd></dl>
+<div class="whyitem"><b>A．</b>正确项。该串共 18 个字符，逐字符标下标：H0 e1 l2 l3 o4 ，5 P6 y7 t8 h9 o10 n11 W12 o13 r14 l15 d16 ！17。故 str[0]='H'；str[5] 是全角逗号『，』；str[6:-7] 右端换算为 18-7=11，即 str[6:11]，取索引 6～10 共 5 个字符，得 'Pytho'；str[::-1] 步长 -1 整串反转，得 '！dlroWnohtyP，olleH'。四个结果与本机实测完全一致。</div>
+<div class="whyitem"><b>B．</b>错误项。str[5] 取到的是全角逗号『，』，不是空格；而且这个串里根本没有任何空格（Python 与 World 直接相连），所以 str[6:-7] 也不可能以空格开头。</div>
+<div class="whyitem"><b>C．</b>错误项。str[6:-7] 的右端 -7 换算为 18-7=11，切片到索引 10 为止，只取 5 个字符 'Pytho'；要得到完整的 'Python' 必须写到 str[6:12]。</div>
+<div class="whyitem"><b>D．</b>错误项。步长 -1 的切片必定把整串倒过来，结果不可能还是原串；前三项虽对，第四项错。</div>
+<dl><dt>解题步骤</dt><dd><ul class="tight"><li>先数长度：5 个字母 Hello + 1 个全角逗号 + 11 个字母 PythonWorld + 1 个全角叹号 = 18。</li><li>标下标：H0 e1 l2 l3 o4 ，5 P6 y7 t8 h9 o10 n11 W12 o13 r14 l15 d16 ！17。</li><li>str[0] → 'H'；str[5] → '，'（全角逗号）。</li><li>str[6:-7] → 右端 18-7=11 → str[6:11] → 'Pytho'。</li><li>str[::-1] → 从尾到头逐字符取出 → '！dlroWnohtyP，olleH'。</li><li>四项逐一比对，只有 A 全对。</li></ul></dd></dl>
+<dl><dt>易错点</dt><dd><ul class="tight"><li>凭印象以为样本串是 "Hello, Python World!"（带空格）——教材原文没有空格，多一个空格长度就变 20，str[5] 与 str[6:-7] 的答案全变。</li><li>把 str[6:-7] 的 -7 当成「从右边数第 7 个字符开始」，实际它是「到倒数第 7 个之前为止」。</li><li>忘记全角逗号、全角叹号在 Python 里也是 1 个字符（UTF-8 占 3 字节，但 len 计 1）。</li><li>把 str[::-1] 与 str[-1] 混淆：前者反转整串，后者只取最后一个字符。</li></ul></dd></dl>
+<dl><dt>作答程序</dt><dd><ul class="tight"><li>切片口诀：[start:stop:step]，stop 不含；负下标先换算成 len+负值。</li><li>str[::-1] 是 Python 反转字符串的标准写法，等价于 ''.join(reversed(str))。</li><li>遇到字符串下标题，第一步永远是「把每个字符连同下标横着写一遍」，别心算。</li></ul></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（2）输人str="Hello，PythonWorld！"，输人str[o]，输人str[5]，输人str[5]，输人str[6：-7]，输人str[：：-1]。」（引号内为 OCR 原文照录；「输人」为「输入」、「str[o]」为「str[0]」、「[6：-7]」为「[6:-7]」的 OCR 误识）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2.4 习题与实践 · 2.实践题（2）（书内 p.127）</span></div></dd></dl>
+<dl><dt>命题说明</dt><dd>改编自 §3.2.4 节末**实践题**第 2 题。**这一处我改过又改回来了**：我上一版把样本串写成 "Hello, Python World!"（半角逗号 + 空格），那是我按常见示例凭记忆补的，教材扫描件里并没有空格。回查 OCR 原文（书内 p.127）确认是 "Hello，PythonWorld！"，全角逗号、全角叹号、Python 与 World 相连。样本串变短后答案随之变化：长度由 20 变 18，str[6:-7] 由 ' Python' 变为 'Pytho'。若你手上的纸书此处印有空格，请以纸书为准，并把这一题当作「有空格版」重算（str[5]=','、str[6:-7]=' Python'）。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
 <p class="otitle">§3.2.4 节末 第 2 题（实践题）</p>
 <p class="otext">输人str=&quot;Hello，PythonWorld！&quot;，输人str[o]，输人str[5]，输人str[5]，输人str [6：-7]，输人str[：：-1]。</p>
 <p class="opage">教材书内 p.127（PDF p.140）</p>
 <p class="oconv">原题是实践题 → 本题改成单选题</p>
-<div class="modbox"><b>⚠ 这一处我改过</b>样本串恢复教材原文 "Hello, Python World!"，但 OCR 识别成「Hello，PythonWorld！」（中文逗号、缺空格），我按英文标点还原。教材原题中 str[5] 出现两次（疑似 OCR 重复），本题只取一次。输出值教材未给，为我实机实测。</div>
+<div class="modbox"><b>⚠ 这一处我改过</b>**样本串我上一版写错过，现已按原文改回**：教材是 "Hello，PythonWorld！"（无空格），我先前写成 "Hello, Python World!"（有空格），导致 str[5] 与 str[6:-7] 两问答案不同。现按原文出题，四个输出值均实测核对。</div>
 </aside></div></div>
 <div class="q" data-chap="CH3" data-kind="教材改编" data-type="单选题">
 <div class="qgrid"><div class="qmain">
@@ -1770,7 +1770,7 @@ print(len(t1))</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>看括号定类型：圆括号→tuple。</li><li>数元素：'001001'、'LiSi'、'men'、18 共 4 个 → len=4。</li><li>print(t1) 原样打印元组（含圆括号与四项）。</li><li>t1[0]、t1[1] 为前两个元素。锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把 len 当成字符长度（'001001' 单独就有 6 个字符，但 len(t1) 数的是元素）。</li><li>单元素元组忘加逗号：(18) 是 int，(18,) 才是 tuple。</li><li>以为 print 元组会去掉括号——元组打印保留圆括号。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>四类容器打印形态：tuple 用 ()、list 用 []、set 用 {}、dict 用 {k:v}。</li><li>len 永远数「元素个数」（顶层），要数字符得对字符串元素单独 len。</li><li>元组不可变：t1[0]='x' 会抛 TypeError，要改只能重建。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「输入：t1='001001','LiSi','men',18，再输入：t1，显示该变量值，输入：t1[0] 和 t1[1]，显示部分数据，最后输入：type(t1)，显示变量类型，输入：len(t1)，显示长度。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 元组 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（5）输人：tl='001001'，'LiSi'，men'，18，再输人：tl，显示该变量值，输入：tl[o］和t1[1]，显示部分数据，最后输人：type（tl），显示变量类型，输人：len（tl），显示长度。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 元组 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §3.2.4 节末**实践题**第 5 题（元组操作）。原题是上机逐条观察，本题把四条输出合成一个判定；元组的四个元素照抄教材。说明：教材原文写的是 `t1='001001','LiSi','men',18`（无外层括号），Python 中这种写法本身就会自动成元组，本题在代码里补了圆括号以便阅读，语义未变。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1800,7 +1800,7 @@ print(len(t1))</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>回忆核心区别：列表可变、元组不可变。</li><li>可变性带来的专属能力：下标赋值、append/insert/remove/sort。</li><li>B、C、D 都是两种容器共有的通用操作。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把「能不能取值」当成区别（取值两者都能）。</li><li>以为元组完全没有方法：元组有 count、index，只是没有修改类方法。</li><li>对元组做 t1.append() 报 AttributeError，误判成语法错误。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>可变性对照：list 可增删改排序；tuple 只能读，方法仅 count/index。</li><li>选型建议：数据固定用元组（更省内存、可作字典键），需要频繁改动用列表。</li><li>元组内含可变对象（如 tuple 里放 list）时，那个 list 仍可改——这是「浅不可变」。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「输入：t2=['001001','LiSi','men',18]，再输入：t2，显示该变量值，输入：t2[0] 和 t2[1]，显示部分数据，最后输入：type(t2)，显示变量类型，输入：'men' in t2，测试成员。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 列表 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（6）输人：t2=['001001'，LiSi'，men*'，18]，再输人：t2，显示该变量值，输入：t2[o]和t2[1]，显示部分数据，最后输入：type（t2），显示变量类型，输人：men‘int2，测试成员。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §3.2 列表 / §3.2.4 习题与实践（实践题）（书内 p.127）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §3.2.4 节末**实践题**第 6 题（列表操作）。原题是上机观察，本题改为「列表 vs 元组」的能力对比，考可变性这一核心区别；t2 的四个元素照抄教材。说明：教材原题的最后一个操作是成员测试 'men' in t2，本题把它换成了可变性对比——这是我改过的地方。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -1993,36 +1993,36 @@ True</code></pre>
 <div class="q" data-chap="CH3" data-kind="教材例题" data-type="单选题">
 <div class="qgrid"><div class="qmain">
 <div class="qhead"><span class="qno">Q60</span><span class="tag">单选题</span><span class="tag">综合运用</span><span class="tag">2 分</span><span class="tag k-ex">教材例题</span></div>
-<p class="stem">教材例 3-1-13 用一条逻辑表达式判断闰年，并演示了 y=2010、y=2012 两个年份。按教材给出的结果，下列判断正确的是________。</p>
+<p class="stem">教材例 3-1-13 用一条逻辑表达式判断闰年，依次演示了 y=2010、y=2012、y=2000 三个年份。按教材给出的运行结果，下列判断正确的是________。</p>
 <pre class="code"><code>&gt;&gt;&gt; (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
-# 教材演示：
+# 教材依次演示：
 # y=2010 → ?
-# y=2012 → ?</code></pre>
+# y=2012 → ?
+# y=2000 → ?</code></pre>
 <ol class="opts">
-<li><span class="lab">A</span>y=2010 得 False；y=2012 得 True</li>
-<li><span class="lab">B</span>y=2010 得 True；y=2012 得 False</li>
-<li><span class="lab">C</span>两个年份都得 True</li>
-<li><span class="lab">D</span>两个年份都得 False</li>
+<li><span class="lab">A</span>y=2010 得 False；y=2012 得 True；y=2000 得 True</li>
+<li><span class="lab">B</span>y=2010 得 False；y=2012 得 True；y=2000 得 False</li>
+<li><span class="lab">C</span>三个年份都得 True</li>
+<li><span class="lab">D</span>三个年份都得 False</li>
 </ol>
 <details><summary>看答案与解析</summary><div class="ans">
 <span class="key">答案：A</span>
-<div class="whyitem"><b>A．</b>正确项。y=2010：2010%4==2，第一个括号里 y%4==0 为 False，整个 and 为 False；2010%400==2，第二个括号也为 False，故整体 False。y=2012：2012%4==0 为 True，2012%100!=0（余 12）为 True，and 得 True，整体 True。与教材演示一致。</div>
-<div class="whyitem"><b>B．</b>错误项。把两个年份的结果对调了。2010 不能被 4 整除（余 2），不可能是闰年；2012 能被 4 整除且不是整百年，是闰年。</div>
-<div class="whyitem"><b>C．</b>错误项。2010 除以 4 余 2，连第一个条件都过不了；只有 2012 满足。</div>
-<div class="whyitem"><b>D．</b>错误项。2012 满足 y%4==0 且 y%100!=0，表达式为 True，不会两个都是 False。</div>
-<dl><dt>解题步骤</dt><dd><ul class="tight"><li>表达式结构：(能被 4 整除 且 不能被 100 整除) 或 (能被 400 整除)。</li><li>y=2010：2010÷4=502 余 2 → 前项 False；2010÷400 余 10 → 后项 False；False or False = False。</li><li>y=2012：2012÷4=503 余 0 → True；2012÷100 余 12，!=0 为 True → 前项 True；True or ... = True。</li><li>教材演示的两个结果正是 False 与 True，锁定 A。</li></ul></dd></dl>
-<dl><dt>易错点</dt><dd><ul class="tight"><li>把 or 当成 and，或漏看第二个括号（y%400==0）。</li><li>以为能被 4 整除就是闰年——整百年还要再判 400（教材此表达式已含该规则）。</li><li>2010 心算成能被 4 整除：2010 是偶数但不能被 4 整除，2012 才是。</li></ul></dd></dl>
-<dl><dt>作答程序</dt><dd><ul class="tight"><li>判断闰年记口诀：四年一闰、百年不闰、四百年再闰。</li><li>逻辑表达式优先级：先算括号，再算 and，最后算 or。</li><li>年份题一律先除 4 看余数，再看是不是整百年。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文例 3-1-13：「判断闰年。…… (y%4==0 and y%100!=0) or (y%400==0) …… 当 y=2010 时结果为 False；当 y=2012 时结果为 True。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · 例 3-1-13 判断某一年是否是闰年（书内 p.101）</span></div></dd></dl>
-<dl><dt>命题说明</dt><dd>依据教材例 3-1-13 原文改造。**我已撤回自己加的内容**：此前版本我额外加了 y=2000、y=1900 两个年份（教材只演示 2010 与 2012），现按你的要求改回只考教材演示的两个年份，表达式与结果均照教材。</dd></dl>
+<div class="whyitem"><b>A．</b>正确项。y=2010：2010%4=2，前括号 False；2010%400=10，后括号 False，故整体 False。y=2012：2012%4=0 且 2012%100=12≠0，前括号 True，整体 True。y=2000：2000%100=0 使 y%100!=0 为 False，前括号为 False；但 2000%400=0 使后括号 True，or 之后整体 True。三个结果与教材演示一一对应。</div>
+<div class="whyitem"><b>B．</b>错误项。2000 能被 400 整除，后一个括号 (y%400==0) 就是为整百年准备的，所以 2000 判为闰年，不可能得 False。</div>
+<div class="whyitem"><b>C．</b>错误项。2010 不能被 4 整除（余 2），两个括号都为 False，整体只能是 False。</div>
+<div class="whyitem"><b>D．</b>错误项。2012 满足 y%4==0 且 y%100!=0，2000 满足 y%400==0，这两个都是真闰年，结果应为 True。</div>
+<dl><dt>解题步骤</dt><dd><ul class="tight"><li>表达式结构：(能被 4 整除 且 不能被 100 整除) 或 (能被 400 整除)。</li><li>y=2010：2010÷4 余 2 → 前括号 False；2010÷400 余 10 → 后括号 False；False or False = False。</li><li>y=2012：2012÷4 余 0 → True；2012÷100 余 12，!=0 成立 → 前括号 True；True or … = True。</li><li>y=2000：2000÷100 余 0，!=0 不成立 → 前括号 False；2000÷400 余 0 → 后括号 True；False or True = True。</li><li>三个结果 False / True / True，锁定 A。</li></ul></dd></dl>
+<dl><dt>易错点</dt><dd><ul class="tight"><li>只记住「能被 4 整除就是闰年」，忘了整百年要再判 400——2000 正是这种情况。</li><li>把 2000 当成「整百年所以不是闰年」，实际能被 400 整除仍是闰年。</li><li>把 or 当成 and：y=2000 时两个括号一假一真，and 会得 False，与教材结果矛盾。</li><li>2010 心算成能被 4 整除：2010 是偶数但不能被 4 整除，2012 才行。</li></ul></dd></dl>
+<dl><dt>作答程序</dt><dd><ul class="tight"><li>闰年口诀：四年一闰、百年不闰、四百年再闰。</li><li>优先级：先算括号，再算 and，最后算 or。</li><li>遇到整百年（1900、2000）先看能不能被 400 整除，这一步决定成败。</li></ul></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「例3-1-13 判断某一年是否是闰年。符合下面两个条件之一就属于闫年：·该年能被4整除但不能被100整除；·该年能被400整除。」「&gt;&gt;&gt;y=2010 ……（y%4==0 andy%100!=0)or(y%400==0) False」「&gt;&gt;&gt;y=2012 ……（y%4==0andy%100!=0)or(y%400==0) True」「&gt;&gt;&gt;y=2000 #y符合第二个条件 &gt;&gt;&gt;（y%4==0andy%100!=0)or(y%400==0) True」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · 例 3-1-13 判断某一年是否是闰年（书内 p.101）</span></div></dd></dl>
+<dl><dt>命题说明</dt><dd>依据教材例 3-1-13 原文改造。**说明我改过的地方**：上一版我误以为教材只演示 2010、2012 两个年份，把 y=2000 从题里删掉了；回查扫描件（书内 p.101）后确认教材实际演示了 2010(False)、2012(True)、2000(True) 三个年份，现已恢复三个年份并重算。教材没有演示 y=1900，我此前加过，已彻底删除。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-ex">教材例题</span>
 <p class="otitle">教材例 3-1-13（代码演示）</p>
-<p class="otext">例3-1-13 判断某一年是否是闰年。符合下面两个条件之一就属于闰年：·该年能被4整除但不能被100整除；·该年能被400整除。&gt;&gt;&gt;y=2010 &gt;&gt;&gt;(y%4==0 and y%100!=0) or (y%400==0) False &gt;&gt;&gt;y=2012 …… True</p>
-<button class="omore" type="button">展开全文</button>
+<p class="otext">例3-1-13 判断某一年是否是闰年。符合下面两个条件之一就属于闰年：·该年能被4整除但不能被100整除；·该年能被400整除。&gt;&gt;&gt;y=2010 …False &gt;&gt;&gt;y=2012 …True &gt;&gt;&gt;y=2000 …True</p>
 <p class="opage">教材书内 p.101（PDF p.114）</p>
 <p class="oconv">原题是代码演示 → 本题改成单选题</p>
-<div class="modbox"><b>⚠ 这一处我改过</b>先前我一版另加了 y=2000、y=1900 两个年份（教材只演示 2010、2012），现按要求撤回，只保留教材原有年份。</div>
+<div class="modbox"><b>⚠ 这一处我改过</b>上一版我删掉了 y=2000（误判为「我加的」），实际教材确实演示了 2000；另我先前自加的 y=1900 教材没有，已删除。现为教材原有三例：2010、2012、2000。</div>
 </aside></div></div>
 <div class="q" data-chap="CH3" data-kind="教材例题" data-type="单选题">
 <div class="qgrid"><div class="qmain">
@@ -2476,7 +2476,7 @@ while n &lt; 10:
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>先算 IQR：上四分位数 − 下四分位数 = 50 − 30 = 20。</li><li>再算上边缘：上四分位数 + IQR × 1.5 = 50 + 30 = 80。</li><li>对照选项，只有 A 两项都正确。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把系数 1.5 记成 1 或 2。教材是 1.5 倍 IQR。</li><li>把 IQR 算成上下四分位数之和。</li><li>把「上边缘」与「最大值」等同。上边缘是正常范围上限，之外的才是异常值。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>箱型图计算三步：IQR＝Q3−Q1；上边缘＝Q3+1.5×IQR；下边缘＝Q1−1.5×IQR。</li><li>五个位置量顺序：下边缘＜Q1＜中位数＜Q3＜上边缘。</li><li>超出边缘的数据点即为异常值，教材示例中会单独标出。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「箱型图是一种用作显示一组数据分散情况资料的统计图……·中位数，表示一组数据按顺序排列从小至大第 50% 位置的数值；·上四分位数，表示一组数据按顺序排列从小至大第 75% 位置的数值；·下四分位数，表示一组数据按顺序排列从小至大第 25% 位置的数值；·上边缘，等于上四分位数＋IQR×1.5，表示非异常范围内的最大值，其中 IQR＝上四分位数－下四分位数。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §4.4.2 常见图表类型 · 5.箱型图（书内 p.217）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「箱型图是一种用作显示一组数据分散情况资料的统计图，因形状如箱子而得名」「·中位数，表示一组数据按顺序排列从小至大第50%位置的数值；」「·上四分位数，表示一组数据按顺序排列从小至大第75%位置的数值；」「·下四分位数，表示一组数据按顺序排列从小至大第25%位置的数值；」「·上边缘，等于上四分位数十IQRX1.5，表示非异常范围内的最大值，其中IQR=上四分位数一下四分位数；」「·下边缘，等于下四分位数一IQRX1.5，表示非异常范围内的最小值。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（「十」为「+」、「一」为「－」的 OCR 误识）（句中夹有图注「异常值」「上边缘」「中位数」「下四分位数」「下边缘」等标签，OCR 按行读出，非句子内容）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §4.4.2 常见图表类型 · 5.箱型图（书内 p.217）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>**这是教材补充题，不是节末原题**。§4.4.3 节末简答题第（2）题原文是「日常数据可视化中，你更喜欢使用哪种图形展示数据特性？」，属个人偏好，无标准答案。本题改取同节箱型图的 IQR 与上边缘公式命题，数值（下四分位数 30、上四分位数 50）为本文自设。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-supp">教材补充</span>
@@ -2575,7 +2575,7 @@ arr = np.arange(1, 17).reshape(4, 4)
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>区分可变性：str/tuple 不可变；list/dict/ndarray/Series/DataFrame 可变。</li><li>Series 改值：s[标签] = 新值。</li><li>DataFrame 改值：单格 df.loc[r, c] = v；整列 df['c'] = v。</li><li>落盘与修改是两件事（to_csv 才写文件）。锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把 Series 当成不可变对象，每次都新建。</li><li>忘记 loc 与 iloc 的区别：loc 用标签、iloc 用位置。</li><li>以为改内存等于改文件，忘记 to_csv 导出。</li><li>链式赋值 df['a'][0] = 1 触发 SettingWithCopyWarning，应改用 df.loc[0,'a'] = 1。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>改值三句式：Series 用 s[k]=v；DataFrame 单格用 df.loc[r,c]=v；整列用 df['c']=v。</li><li>看到 SettingWithCopyWarning 就改成单次 loc 赋值，别用链式索引。</li><li>落盘另算：df.to_csv(路径, index=False)。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「Series 对象的修改。打开『配套资源\第4章\sy4-2-1.py』，补全程序，完成以下功能：创建一个存储了 21~……（题干后段 OCR 截断）」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §4.2 Pandas / §4.2.3 习题与实践（实践题）（书内 p.193）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「2.实践题 （1）Series对象的修改 打开“配套资源\第4章\sy4-2-1.py”，补全程序，完成以下功能：创建一个存储了21~193……」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（题干在此处跨页，OCR 后半段未能取到，不作补写）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §4.2 Pandas / §4.2.3 习题与实践（实践题）（书内 p.193）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §4.2.3 节末**实践题**第 1 题（Series 对象的修改）。说明：该题题干在 OCR 中后段被截断（只到「创建一个存储了 21~」），我拿不到完整要求，因此本题只考「Series/DataFrame 能不能原地改、怎么改」这一确定的公共结论，不涉及原题的具体数值。这是我改过的地方：题目落点从「按原题补全」改为「考修改机制」。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3241,7 +3241,7 @@ Expenses = [30000, 12000, 8000, 24000, 3500, 8000]
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>确认操作目标：Min-Max 归一化 → 减最小、除极差。</li><li>取全表极值：df.min().min()、df.max().max()（两次聚合才得标量）。</li><li>整表运算：(df - 全表min) / (全表max - 全表min)。</li><li>排除标准化（B）、手工循环（C）、只除最大值（D）。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>df.min() 只给每列最小值（Series），不是全表最小值，直接参与运算虽可广播但与直觉不符。</li><li>把归一化与标准化混用，导致特征尺度不统一、距离类算法（KNN、KMeans）效果变差。</li><li>对含缺失值的表直接归一化，NaN 会传染整个结果，需先 fillna 或 dropna。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>DataFrame 全表统计算法：df.min().min()、df.max().max()、df.values.mean()。</li><li>归一化一行：dfn = (df - df.min().min()) / (df.max().max() - df.min().min())。</li><li>距离敏感算法（KNN、KMeans、SVM）前必须做归一化或标准化，树模型（决策树、随机森林）则不需要。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「打开『配套资源\第5章\sy5-1-1.py』，补全程序，完成以下功能：创建表示 5×5 的随机矩阵的 DataFrame 对象，行索引和列索引都为 1～5，元素取值在 1～50，对数据进行归……（题干后段 OCR 截断）」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §5.1 数据预处理 / §5.1.5 习题与实践（实践题）（书内 p.250）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（1）打开“配套资源\第5章\sy5-1-1.py”，补全程序，完成以下功能：创建表示5×5的随机矩阵的DataFrame对象，行索引l和列索引都为1～5，元素取值在1～50，对数据进行归……」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（题干在此处跨页，OCR 后半段未能取到，不作补写）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §5.1 数据预处理 / §5.1.5 习题与实践（实践题）（书内 p.250）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §5.1.5 节末**实践题**第 1 题。说明：该题题干在 OCR 中后段截断（停在「对数据进行归」），完整要求据上下文应为「归一化处理」，本题按此推定命题，并在题干中写明「做归一化处理」。数据规格（5×5、索引 1～5、取值 1～50）照抄教材。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3477,7 +3477,7 @@ labels = est.labels_</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>记形状约定：(n_samples, n_features) → (200, 3)。</li><li>区分两个「3」：特征维数 3 vs 簇数 k（需自定）。</li><li>KMeans 默认 8 类，不指定会与预期不符。</li><li>make_blobs 的 y 只用于评估聚类质量，不能替代聚类。锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把「特征数」与「簇数」当成同一个数。</li><li>以为 make_blobs 只返回 X，实际返回 (X, y) 两个值。</li><li>用 y 当聚类结果，误以为聚类已完成。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>make_blobs 返回 (X, y)：X 是特征矩阵，y 是生成时的真实簇标签，只用于验证。</li><li>聚类评估可用调整兰德指数（ARI）、轮廓系数等把预测标签与真实 y 对比。</li><li>高维数据聚类前常先降维（PCA）再可视化，否则 3 维以上画不出来。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文实践题：「打开『配套资源\第5章\sy5-4-2.py』，补全程序，完成以下功能：利用 sklearn 中的 make_blobs() 函数随机生成 200 个样本数据，样本数据特征数为 3 个，然后利用 sklearn……（题干后段 OCR 截断）」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §5.4 聚类 / §5.4.4 习题与实践（实践题）（书内 p.286）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「（1）打开“配套资源\第5章\sy5-4-2.py”，补全程序，完成以下功能：利用 sklearn 中的 make_blobs() 函数随机生成……」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（题干在此处跨页，OCR 后半段未能取到，不作补写）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §5.4 聚类 / §5.4.4 习题与实践（实践题）（书内 p.286）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §5.4.4 节末**实践题**第 2 题。说明：该题题干在 OCR 中后段截断（停在「然后利用 sklearn」），后半段应为「进行聚类分析」之类；本题只取「200 样本、3 特征」这一确定部分，考形状与簇数的区别，不臆测原题后半段的具体要求。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3856,7 +3856,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>激活函数的共同特征：作用在神经元加权和之后，做非线性变换，函数形式简单。</li><li>教材三个名字：Sigmoid、tanh、ReLU。</li><li>其余选项里的 K-Means、PCA、SVM 都是「算法/方法」，层级就不同，直接排除。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把 Softmax 当激活函数背（教材中它是输出层多分类的转换，性质接近但本节三件套不含它）。</li><li>把算法名（K-Means、PCA、SVM）与激活函数名混记，属层级混淆。</li><li>只记住 Sigmoid 与 ReLU，漏掉 tanh（教材明确说隐藏层 tanh 优于 Sigmoid）。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>按「函数 vs 算法」分层记：激活函数是逐神经元的非线性小函数；K-Means/PCA/SVM 是整套学习算法。</li><li>三件套按值域记：Sigmoid(0,1)、tanh(-1,1)、ReLU[0,+∞)。</li><li>看到选项混合了算法名，先按层级筛掉，再比细节。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文（6.2.1 激活函数小节）：依次介绍 Sigmoid 函数「将输出映射到 0～1 之间」、tanh 函数「值域为 (-1,1)，以原点为中心」与 ReLU 函数「f(x)=max(0,x)」三种常用激活函数。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数（书内 p.317）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「Sigmoid函数将输人的x值映射到0～1之间：」「●当x=0时，f（x）=0.5；」「但该函数并非以坐标原点为中心，当远离坐标原点时，f（r）的梯度会非常小，接近于零，从而出现梯度弥散现象，不利于神经网络模型中权重的更新。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数（书内 p.317）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.2.3 节末简答题第 1 题「神经网络中常用的激活函数有哪些？」。原题简答，本题改为单选并混入算法名做层级干扰；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3886,7 +3886,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>回忆 Sigmoid 三特征：值域 (0,1)、x=0 时 0.5、两端饱和导致梯度弥散。</li><li>B 把 tanh 的值域与优势安到 Sigmoid 头上；C 说的是 ReLU；D 混淆了阶跃函数。</li><li>逐项对照原文，只有 A 三项全对。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>Sigmoid 与 tanh 的值域记混：Sigmoid 是 (0,1)，tanh 是 (-1,1)。</li><li>把 ReLU「x&gt;0 梯度恒为 1」误记为 Sigmoid 的性质。</li><li>把 Sigmoid 输出当成离散 0/1——它在两端只是「趋近」，中间是连续值。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>三函数对照表记牢：Sigmoid 值域(0,1)、零点 0.5、两端弥散；tanh 值域(-1,1)、零点 0、两端弥散；ReLU 值域[0,+∞)、负半轴输出 0、正半轴梯度 1。</li><li>「梯度弥散」只在饱和区发生，所以 Sigmoid/tanh 有、ReLU 正半轴没有。</li><li>凡选项把两个函数的特点拼接，先拆开逐一比对。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文（Sigmoid 段）：「Sigmoid 函数将输出映射到 0～1 之间，当 x=0 时函数值为 0.5；在远离原点的位置，函数值趋于饱和，梯度接近于 0，出现梯度弥散现象。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · Sigmoid（书内 p.317）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「Sigmoid函数将输人的x值映射到0～1之间：」「·当x&gt;0时，f（x）&gt;0.5，f（x）伴随着x值的增大而增大，并最终接近于1；」「·当x&lt;0时，f（x）&lt;0.5，f（x）伴随着x值的减小而减小，并最终接近于0。」「但该函数并非以坐标原点为中心，当远离坐标原点时，f（r）的梯度会非常小，接近于零，从而出现梯度弥散现象」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · Sigmoid（书内 p.317）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.2.3 节末简答题第 2 题「Sigmoid 函数和 tanh 函数作为激活函数的优缺点有哪些？」。原题要比较两者，本题聚焦 Sigmoid 单点并配三个跨函数错位干扰；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3916,7 +3916,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>先列 Sigmoid：值域(0,1)、全正、非零中心、两端弥散；再列 tanh：值域(-1,1)、零中心、两端弥散。</li><li>A、B、C 全部与对照表吻合。</li><li>D 是 Sigmoid 的典型用途，教材在输出层部分有明确表述。</li><li>四项皆对，答案 ABCD。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>误以为 tanh 没有梯度弥散（它与 Sigmoid 同属饱和函数，只是中心不同）。</li><li>把「隐藏层用 tanh 更好」记成「输出层也用 tanh 更好」——二分类输出层教材明确用 Sigmoid。</li><li>认为 tanh 值域是 0～1（与 Sigmoid 记混）。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>一句话区分：tanh 就是 Sigmoid 的「零中心版」，值域翻倍到 (-1,1)，弥散照旧。</li><li>选型口诀：隐藏层 tanh（或 ReLU）、二分类输出 Sigmoid、多分类输出 Softmax。</li><li>多选全对型题目别怕选满，只要逐项能落到原文就大胆选。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「tanh 函数的值域为 (-1,1)，以原点为中心，在隐藏层中使用 tanh 函数的效果优于 Sigmoid 函数」；讲 ReLU 时又指出它「克服了 tanh 函数和 Sigmoid 函数在远离原点位置的梯度弥散问题」；二分类输出层「用 Sigmoid 函数，可以理解为属于某一类的概率」。<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · tanh 与 Sigmoid 对比（书内 p.317）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「tanh函数是双曲正切函数，与Sigmoid函数的图形类似，不同之处是tanh函数的值域为（一1，1），函数是以坐标原点为中心。tanh函数作为隐藏层的激活函数要比Sigmoid函数效果好一些，而对于二分类问题，输出层一般选择Sigmoid函数，因为Sigmoid函数的取值范围为（0，1），可以理解为计算分类的概率。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · tanh 与 Sigmoid 对比（书内 p.317）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.2.3 节末简答题第 2 题。原题简答「优缺点有哪些」，本题改为四项对照判断；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3946,7 +3946,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>写出 ReLU：f(x)=max(0,x)，负半轴输出 0，正半轴等于 x，梯度为 1。</li><li>优势两条：省掉指数运算→快；正半轴不饱和→不弥散。</li><li>B、C、D 全在描述 Sigmoid 或 tanh，且 D 把「不用指数」说成「用指数」，方向相反。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>把「值域 (-1,1)」错安给 ReLU——这是 tanh 的值域。</li><li>把 ReLU 当处处可导：x=0 处不可导，工程上约定次梯度为 0。</li><li>忽视「计算快」的根因是不用指数运算，只记「ReLU 快」而说不出为什么。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>ReLU 记住三句：取最大值、负半轴清零、正半轴梯度 1。</li><li>「为什么快」的答案永远是「没有指数/除法运算，只有比较」。</li><li>副作用也要知道：负半轴梯度为 0，学习率过大会出现神经元「死亡」。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「ReLU 函数的形式为 f(x)=max(0,x)，当 x&gt;0 时梯度恒为 1，它增强了神经网络的梯度下降法的运算速度，还克服了 tanh 函数和 Sigmoid 函数在远离原点位置的梯度弥散问题。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · ReLU（书内 p.317）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「ReLU函数的计算公式和函数图形如下：」「f（x)=max（0,x）.」「ReLU函数是一种分段函数：」「当x&gt;0时，f（x）=x；」「当x≤0时，f（x）=0。」「当x&gt;0时，f（x）的梯度恒为1，不仅增强了神经网络的梯度下降法的运算速度，还克服了tanh函数和Sigmoid函数在远离原点位置的梯度弥散问题，这也是ReLU函数的一大特点。」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 激活函数 · ReLU（书内 p.317）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.2.3 节末简答题第 3 题「ReLU 函数作为激活函数比 Sigmoid 函数的优势有哪些？」。原题简答，本题改为单选，三个干扰项分别错置 Sigmoid/tanh 的性质；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -3976,7 +3976,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>先定标准：监督学习＝有标签样本＋用误差指导参数更新。</li><li>再看 BP 两步：正向传播算输出与损失；反向传播把误差按梯度回传、更新权重。</li><li>完全命中标准，所以是监督学习。</li><li>B/C/D 分别是「无数据」「无监督聚类」「强化学习」的特征，逐个排除。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>以为「反向传播」本身代表某种学习范式，其实它只是求梯度的算法，范式由「是否用标签」决定。</li><li>把 BP 与强化学习混为一谈（二者都用「反馈」，但一个是误差、一个是奖励）。</li><li>忘记 BP 训练必须有标签，误认为可以无监督运行。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>判断学习范式的三问：有标签吗（监督）？要分组/降维吗（无监督）？靠奖励试错吗（强化）？</li><li>BP 的定位一句话：用链式法则把损失对每个权重的梯度算出来，再交给梯度下降去更新。</li><li>教材原句直接背下来，考试出现「为什么说 BP 是监督学习」可以原样作答。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「BP 神经网络是一种多层前馈神经网络，其主要特点是信号正向传播、误差反向传播……通过梯度下降法不断调整网络的权值和阈值，使损失函数最小。BP 算法是一种监督学习的算法。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.2 BP 神经网络（书内 p.318）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「BP（BackPropagation）神经网络指的是多层前馈神经网络」「BP神经网络总共有k层，则第一层为输人层（InputLayer），第k层为输出层（OutputLayer），其他中间各层统称为隐藏层（HiddenLayer）」「误差反向传播（ErrorBackPropagation）算法」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.2 BP 神经网络（书内 p.318）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.2.3 节末简答题第 4 题「为什么说 BP 算法是一种监督学习的算法？」。原题简答，本题改为单选，干扰项分别指向无监督与强化学习；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -4007,7 +4007,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>写出神经元公式：y = f(Σwᵢxᵢ + b)，本题 b=0。</li><li>第一组：2×0.5 = 1.0；1×0.4 = 0.4；合计 1.4。</li><li>第二组：2×(-0.6) = -1.2；1×0.3 = 0.3；合计 -1.2+0.3 = -0.9。</li><li>对照选项，1.4 与 -0.9 对应 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>漏乘某个输入的权重（只算一项就下结论）。</li><li>负权重的符号处理错误，把 -0.9 写成 0.9。</li><li>把加权和与激活后的输出混为一谈——本题未给 f 的具体形式，只问到激活前。</li><li>把偏置 b 无端加上一个数（题干已明确 b=0）。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>加权和按「乘—加—带符号」三步走，先把每项乘积写在草稿上再相加，避免心算跳步。</li><li>负权重的处理：先把绝对值乘出来，最后统一加负号，比边算边带符号更不容易错。</li><li>同类考题若给了 f 为阶跃函数，还要再判一次正负：加权和 &gt;0 输出 1，&lt;0 输出 0。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「……y=f(2×0.5+1×0.4)=f(1.4)；y₂=f(2×(-0.6)+1×0.3)=f(-0.9)。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 神经元与感知器（正文数值算例）（书内 p.317–p.318）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「y=f(2X0.5+1×0.4)=f（1.4），」「y2=f(2X（-0.6)+1×0.3)=f（-0.9).」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.2.1 神经元与感知器（正文数值算例）（书内 p.317–p.318）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>依据教材 §6.2.1 正文数值算例改造。**原节末实践题（图 6-28）的权重印在图上，OCR 只读到 -0.1、0.6、0.4、-0.2 四个数字，无法确定箭头对应关系，故改用正文算例的数据。** 1.4 与 -0.9 是教材原话。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-ex">教材例题</span>
@@ -4154,7 +4154,7 @@ print(est.cluster_centers_)</code></pre>
 <dl><dt>解题步骤</dt><dd><ul class="tight"><li>找出教材对传统网络的两条批评：丢空间特性、输入神经元随尺寸暴增。</li><li>对应 CNN 的两条改进：输入保留二维/三维形状；用卷积＋池化提特征、降维。</li><li>B（取消激活）、D（改正向传播）都是对训练机制的误解；C 与事实相反。</li><li>锁定 A。</li></ul></dd></dl>
 <dl><dt>易错点</dt><dd><ul class="tight"><li>以为 CNN 不用激活函数（实际上卷积层、全连接层都用）。</li><li>把「卷积核滑动提取局部特征」与「全连接层分类」的作用搞混。</li><li>认为 CNN 改变了学习算法（其实仍是 BP＋梯度下降）。</li></ul></dd></dl>
 <dl><dt>作答程序</dt><dd><ul class="tight"><li>对比记忆三句：传统网络把图拍平成一维、丢空间信息、参数爆炸；CNN 保留形状、局部感受野、权值共享。</li><li>教材原句可直接背：「将 28×28 的图像数据转换成 784 的一维向量……也就丢掉了图像的空间特性」。</li><li>看到「CNN 不用激活/不用反向传播」这类说法，一律判错。</li></ul></dd></dl>
-<dl><dt>教材依据</dt><dd><div class="quote">原文：「但我们在模型训练时，是将 28×28 的图像数据转换成 784 的一维向量作为模型的输入层，这样也就丢掉了图像的空间特性，而该特性是多个像素构成图像的关键因素；输入层的神经元个数会随着输入图像的尺寸的增加而显著增多，为克服传统神经网络模型的这些不足，一种包含卷积运算的新神经网络模型——卷积神经网络诞生。」<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.4 卷积神经网络（引言）（书内 p.341）</span></div></dd></dl>
+<dl><dt>教材依据</dt><dd><div class="quote">「但我们在模型训练时，是将28?28的图像数据转换成784的一维向量作为模型的输人层，这样也就丢掉了图像的空间特性，而该特性是多个像素构成图像的关键因素；输人层的神经元个数会随着输人图像的尺寸的增加而显著增多」「为克服传统神经网络模型的这些不足，一种包含卷积运算的新神经网络模型一卷积神经网络诞生」（引号内为 OCR 原文照录；「输人」「教据集」「闫年」「引l人」等系 OCR 误识，未作改动）（「28?28」为「28×28」的 OCR 误识）<span class="src">— 大学信息技术4—人工智能基础与实践（第四版） · §6.4 卷积神经网络（引言）（书内 p.341）</span></div></dd></dl>
 <dl><dt>命题说明</dt><dd>改编自 §6.4.4 节末简答题第 1 题「简述传统神经网络模型和卷积神经网络模型的区别」。原题简答，本题改为单选，干扰项分别错置激活函数、输入形状与学习机制；选项为自拟。</dd></dl>
 </div></details></div>
 <aside class="qside"><span class="skind k-adapt">教材改编</span>
@@ -4350,7 +4350,7 @@ print(&#x27;keras version:&#x27;, tf.keras.__version__)
 <div class="q" data-chap="CH6" data-kind="教材改编" data-type="单选题">
 <div class="qgrid"><div class="qmain">
 <div class="qhead"><span class="qno">Q136</span><span class="tag">单选题</span><span class="tag">综合运用</span><span class="tag">2 分</span><span class="tag k-adapt">教材改编</span></div>
-<p class="stem">教材例 6-3-2 的简单版模型（隐藏层 50 个神经元）训练集准确率为 0.8977。若要求训练集准确率**超过 0.92**，按教材例 6-3-3 只把隐藏层神经元加到 500 个（实测 0.9159）能否达标？应采取什么措施？</p>
+<p class="stem">教材例 6-3-2 的简单版模型（隐藏层 50 个神经元）训练集准确率为 0.8977。若要求训练集准确率**超过 0.92**，按教材例 6-3-3 只把隐藏层神经元加到 500 个（教材实测值 0.9159）能否达标？应采取什么措施？</p>
 
 <ol class="opts">
 <li><span class="lab">A</span>不能达标（0.9159 &lt; 0.92），需继续增加神经元数或增加层数/训练轮数</li>
