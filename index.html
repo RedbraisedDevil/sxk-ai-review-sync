@@ -1106,6 +1106,7 @@ var CloudSync=(function(){
   var K_ENDPOINT="sync.endpoint.v1";
   var K_CODE="sync.code.v1";
   var K_LAST="sync.last.v1";
+  var DEFAULT_ENDPOINT="https://sxk-sync-api.pages.dev";
   var MAX_BYTES=256*1024;
   var MIN_GAP=60000;                 /* 自动同步最小间隔，避免切换标签就发请求 */
   var timer=null, syncing=false, pending=false, lastAuto=0;
@@ -1115,7 +1116,7 @@ var CloudSync=(function(){
 
   function cfg(){
     return {
-      endpoint: String(Store.get(K_ENDPOINT)||""),
+      endpoint: String(Store.get(K_ENDPOINT)||DEFAULT_ENDPOINT),
       code: String(Store.get(K_CODE)||""),
       last: Store.get(K_LAST)||null
     };
@@ -1371,7 +1372,7 @@ var CloudSync=(function(){
       '</div></div>'+
       '<div id="cloud-config" '+(connected?"hidden":"")+'>'+
         '<div class="cloud-form">'+
-          '<div class="cloud-field"><label for="cloud-endpoint">服务器地址</label><input class="cloud-input" id="cloud-endpoint" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://sxk-sync.你的子域.workers.dev" value="'+esc(c.endpoint)+'"></div>'+
+          '<div class="cloud-field"><label for="cloud-endpoint">服务器地址</label><input class="cloud-input" id="cloud-endpoint" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://sxk-sync-api.pages.dev" value="'+esc(c.endpoint)+'"></div>'+
           '<div class="cloud-field"><label for="cloud-code">同步码（32 位十六进制）</label><input class="cloud-input" id="cloud-code" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" value="'+esc(groupCode(c.code))+'"></div>'+
           '<div class="cloud-actions"><button class="btn sm primary" type="button" id="cloud-save">保存并连接</button><button class="btn sm" type="button" id="cloud-gen">生成新同步码</button>'+(connected?'<button class="btn sm" type="button" id="cloud-disconnect">断开</button>':'')+'</div>'+
         '</div>'+
