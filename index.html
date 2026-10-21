@@ -322,7 +322,9 @@ figure.book figcaption{font-size:12.5px; color:var(--ink-2); margin-top:8px}
 .ev figure{margin:0}
 .ev .bd img{width:100%; display:block; border:1px solid var(--line); border-radius:var(--r-s); cursor:zoom-in; background:#fff}
 .ev .shotbox{position:relative; display:block; line-height:0}
-.ev .markspot{position:absolute; border:2px solid var(--err); border-radius:2px; box-shadow:0 0 0 9999px rgba(11,36,34,.34); pointer-events:none}
+/* 红框外的压暗用 clip-path 挖洞；大 spread 的 box-shadow 会溢出到整块，连原文一起压暗 */
+.ev .dim{position:absolute; inset:0; background:rgba(11,36,34,.34); pointer-events:none; display:block}
+.ev .markspot{position:absolute; border:2px solid var(--err); border-radius:2px; pointer-events:none; display:block}
 .ev figcaption{font-size:12px; color:var(--ink-2); margin-top:7px; line-height:1.55}
 .ev .quote{font-size:12.5px; color:var(--ink-2); margin-top:9px; padding-left:9px; border-left:2px solid var(--line); line-height:1.65}
 .note{border-left:2px solid var(--accent); background:#FFFBF7; padding:10px 12px; border-radius:0 var(--r-s) var(--r-s) 0; font-size:13.5px; margin-bottom:12px}
@@ -2526,7 +2528,11 @@ function evShot(u, cap, bbox, zoomHint){
   var inner='<img src="'+esc(u)+'" alt="'+esc(cap)+'" data-cap="'+esc(cap)+'" referrerpolicy="no-referrer" loading="lazy">';
   if(bbox && bbox.length===4){
     var l=bbox[0]*100, t=bbox[1]*100, w=(bbox[2]-bbox[0])*100, h=(bbox[3]-bbox[1])*100;
-    inner='<span class="shotbox">'+inner+'<span class="markspot" style="left:'+l.toFixed(2)+'%;top:'+t.toFixed(2)+'%;width:'+w.toFixed(2)+'%;height:'+h.toFixed(2)+'%"></span></span>';
+    var r=(l+w).toFixed(2), b=(t+h).toFixed(2), L=l.toFixed(2), T=t.toFixed(2);
+    var poly='evenodd,0 0,100% 0,100% 100%,0 100%,0 0,'+L+'% '+T+'%,'+r+'% '+T+'%,'+r+'% '+b+'%,'+L+'% '+b+'%,'+L+'% '+T+'%';
+    inner='<span class="shotbox">'+inner
+      +'<span class="dim" style="clip-path:polygon('+poly+')"></span>'
+      +'<span class="markspot" style="left:'+L+'%;top:'+T+'%;width:'+w.toFixed(2)+'%;height:'+h.toFixed(2)+'%"></span></span>';
   }
   return '<figure>'+inner+'<figcaption>'+cap+(zoomHint?'　'+zoomHint:'')+'</figcaption></figure>';
 }
