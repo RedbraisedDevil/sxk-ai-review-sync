@@ -158,6 +158,28 @@ a{color:var(--brand-text)}
 .tl .c .left.soon{color:var(--need)}
 .tl .c .left.now{color:var(--accent)}
 .tl .c .left.past{color:var(--ink-3); opacity:.8}
+/* 学习计划清单：整行是 label，点击区够大；勾选状态存本机，刷新不丢 */
+.planph{margin-bottom:var(--sp-5)}
+.planph-h{display:flex; align-items:baseline; gap:var(--sp-2); flex-wrap:wrap; margin-bottom:2px}
+.planph-h h2{margin:0}
+.planph-h .when{font-family:var(--font-num); font-size:12.5px; color:var(--ink-2)}
+.planph .why{font-size:12.5px; color:var(--ink-2); margin:0 0 var(--sp-3); line-height:1.65}
+.planph .why b{color:var(--ink)}
+.chk{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+.chk > li{display:grid; grid-template-columns:1fr auto; align-items:center; gap:var(--sp-2);
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-s); padding:0 var(--sp-3) 0 0}
+.chk > li.done{background:var(--ok-soft); border-color:#B7E4D3}
+.chk label{display:grid; grid-template-columns:24px 1fr; gap:10px; align-items:start;
+  padding:11px var(--sp-2) 11px var(--sp-3); min-height:44px; cursor:pointer}
+.chk input[type=checkbox]{width:18px; height:18px; margin:2px 0 0; accent-color:var(--brand); cursor:pointer}
+.chk .t{font-size:14px; font-weight:600; display:block}
+.chk > li.done .t{text-decoration:line-through; color:var(--ink-2)}
+.chk .s{font-size:12.5px; color:var(--ink-2); display:block; margin-top:1px; line-height:1.6}
+.chk .n{font-family:var(--font-num); font-size:11.5px; color:var(--ink-3); white-space:nowrap; margin-left:6px; font-weight:400}
+.pbar{height:6px; border-radius:3px; background:var(--brand-soft); overflow:hidden; margin:var(--sp-2) 0 4px}
+.pbar i{display:block; height:100%; background:var(--brand); width:0; transition:width .25s ease}
+.plan-sum{display:flex; align-items:baseline; gap:var(--sp-2); flex-wrap:wrap; font-size:13px; color:var(--ink-2)}
+.plan-sum b{font-family:var(--font-num); font-size:20px; color:var(--ink)}
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 16px;
   border-radius:var(--r-s); border:1px solid var(--line); background:var(--surface);
@@ -474,8 +496,8 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
     <nav class="nav" aria-label="主导航">
       <button data-go="#/dashboard" aria-current="page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span>工作台</span></button>
-      <button data-go="#/bank"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/></svg><span>题库</span></button>
-      <button data-go="#/chapters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M11 4h7.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H11"/></svg><span>章节练习</span></button>
+      <button data-go="#/plan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5.5h10M10 12h10M10 18.5h10"/><path d="M4 5.5 5.4 7 7.4 4.6M4 12l1.4 1.5L7.4 11M4 18.5l1.4 1.5 2-2.4"/></svg><span>学习计划</span></button>
+      <button data-go="#/bank"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/></svg><span>题库</span></button>      <button data-go="#/chapters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M11 4h7.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H11"/></svg><span>章节练习</span></button>
       <button data-go="#/practice"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M16.5 3.8 20.2 7.5 8.7 19H5v-3.7z"/><path d="M4 21h16"/></svg><span>做题</span></button>
       <button data-go="#/exam"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2M9 2.5h6"/></svg><span>模拟考场</span></button>
       <button data-go="#/map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6.5 9.5 4 15 6.5 21 4v13.5L15 20l-5.5-2.5L3 20z"/><path d="M9.5 4v13.5M15 6.5V20"/></svg><span>考点地图</span></button>
@@ -552,6 +574,31 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ===== 视图：学习计划 ===== -->
+    <section class="view" id="v-plan" aria-labelledby="h-plan">
+      <div class="vhead">
+        <div>
+          <h1 id="h-plan">学习计划</h1>
+          <p>按「<b>先写程序、最后看概念</b>」排的顺序：P1 十五天只动手写代码，P2 攻算法与计算，P3 扫理解级，P4 最后七天只看概念、不再开新代码。每项按<b>做对多少题</b>验收，不按「学完哪一章」——「学完」谁都能自称，题对错不会配合你演戏。</p>
+        </div>
+        <span class="demo">勾选存本机，刷新与关机都不丢</span>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--sp-4)">
+        <h2>总进度</h2>
+        <p class="sub">按勾选项计；「去做」跳到对应入口，带题型筛选的直接落到那批题上</p>
+        <div class="plan-sum"><b id="plan-done">0</b><span>/ <span id="plan-total">0</span> 项</span><span class="muted" id="plan-note"></span></div>
+        <div class="pbar" id="plan-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="学习计划完成进度"><i></i></div>
+        <div class="row" style="margin-top:var(--sp-3)">
+          <button class="btn sm ghost" id="plan-reset" type="button">重置全部勾选</button>
+        </div>
+      </div>
+
+      <div id="plan-body"></div>
+
+      <p class="tiny muted" style="margin-top:var(--sp-3)">为什么先写程序：38A 的程序填空与编程题合计 38 道，是主观题的全部；题库里涉代码的题共 107 道，其中 47 道落在「Python 编程基础」。这类只能靠手写练出来，塞不进最后几天的记忆窗口。反之，知道级的 36 条只要「定义 + 一个例子」，放到最后一周反而记得更牢——所以顺序是反着来的，不是随便排的。</p>
     </section>
 
     <!-- ===== 视图：题库 ===== -->
@@ -1129,7 +1176,7 @@ var Store=(function(){
     }
   };
 })();
-var KEY_REC="rec.v1", KEY_MIS="mis.v1", KEY_PREF="pref.v1", KEY_EXAM="exam.v1", KEY_MIS_DEL="mis.del.v1";   /* 逻辑键名（Store 自动加命名空间前缀） */
+var KEY_REC="rec.v1", KEY_MIS="mis.v1", KEY_PREF="pref.v1", KEY_EXAM="exam.v1", KEY_MIS_DEL="mis.del.v1", KEY_PLAN="plan.v1";   /* 逻辑键名（Store 自动加命名空间前缀） */
 
 /* ---------- 全局状态 ---------- */
 var S={
@@ -1140,7 +1187,8 @@ var S={
   answered: false, multiSel: [], redo: {},
   parseAlways: (Store.get(KEY_PREF)||{}).parseAlways!==false,
   bank: {cat:"all", pack:"all", type:"all", req:"all", kw:"", syl:null},
-  mapFilter: "all"
+  mapFilter: "all",
+  plan: Store.get(KEY_PLAN)||{}             /* 学习计划勾选：{itemTs}，刷新与关机都不丢 */
 };
 
 /* =========================================================================
@@ -1841,13 +1889,14 @@ function qbForNode(node){
 }
 
 /* ---------- 路由（哈希路由多视图） ---------- */
-var VIEWS=["dashboard","bank","chapters","practice","exam","map","mistakes","sources"];
+var VIEWS=["dashboard","plan","bank","chapters","practice","exam","map","mistakes","sources"];
 function route(){
   var h=String(location.hash||"").replace(/^#\//,"");
   if(VIEWS.indexOf(h)<0) h="dashboard";
   VIEWS.forEach(function(v){ var el=$("#v-"+v); if(el) el.classList.toggle("on", v===h); });
   $$(".nav button").forEach(function(b){ b.setAttribute("aria-current", b.getAttribute("data-go")==="#/"+h ? "page" : "false"); });
   if(h==="dashboard") renderDash();
+  else if(h==="plan") renderPlan();
   else if(h==="bank") renderBank();
   else if(h==="chapters") renderChapters();
   else if(h==="practice") renderPractice();
@@ -1878,7 +1927,7 @@ var TL_NODES=[
   {d:"11/02", k:"self", t:"基础模块一轮过完", s:"正确率 ≥60%；低于 50% 就停下来回炉定义类条目，别赶进度", from:new Date(2026,10,2), to:new Date(2026,10,2)},
   {d:"11/09", k:"self", t:"基础模块错题归档完成", s:"落后就砍「知道级」条目的题，保「掌握级」", from:new Date(2026,10,9), to:new Date(2026,10,9)},
   {d:"11/14 11/15", k:"official", t:"一级与四级考试日", s:"非本人科目（一级可选 2022 年版考纲）", from:new Date(2026,10,14), to:new Date(2026,10,15)},
-  {d:"11/20", k:"self", t:"综合模块一轮完 + 全库错题本成型", s:"落后就只做掌握级 27 条 + 多选题，其余放弃", from:new Date(2026,10,20), to:new Date(2026,10,20)},
+  {d:"11/20", k:"self", t:"综合模块一轮完 + 全库错题本成型", s:"落后就只做掌握级 38 条 + 多选题，其余放弃", from:new Date(2026,10,20), to:new Date(2026,10,20)},
   {d:"11/26", k:"self", t:"38A 二刷正确率 ≥75%", s:"低于 65% 就放弃编程题专项，全力保单多选", from:new Date(2026,10,26), to:new Date(2026,10,26)},
   {d:"11/28", k:"official", t:"本人考试：B 场 11:30—14:00", s:"二三级人工智能技术及应用 · 无纸化上机考试（自适应）· 等第制", from:new Date(2026,10,28), to:new Date(2026,10,28)}
 ];
@@ -1914,6 +1963,136 @@ function renderTimeline(){
   }).join("");
 }
 
+/* ---------- 学习计划（勾选存本机） ----------
+   顺序原则：P1 先把「要写程序」的部分啃下来，P4 最后几天只看概念、不再开新代码。
+   依据是题库实测：涉代码的题 107 道（Python 编程基础 47、数据处理 19、机器学习 22、
+   深度学习 9、搜索 3、其它 7），其中程序填空 7 + 编程题 28 = 38 道是要动手写的硬题，
+   塞不进最后几天的记忆窗口；反过来知道级 36 条只要「定义 + 一个例子」，最后一周背更牢。
+   每项带 n（验收口径）与可选 go（入口）/bank（题型筛选），勾选写入 Store，刷新不丢。 */
+var PLAN=[
+  {ph:"P1", name:"先写程序", when:"10/22 – 11/05（15 天）",
+   why:"涉代码的题共 <b>107 道</b>，其中 47 道在「Python 编程基础」下；38A 的程序填空与编程题合计 <b>38 道</b>，是主观题的全部。这块只能手写练出来，越早越好——最后几天是背概念的，补不进代码。",
+   items:[
+     {id:"p1-1", t:"Python 变量、类型与运算符", n:"Python 编程基础 47 题",
+      s:"验收：不看书写出类型转换、字符串拼接、数字与字符串互转各 3 行。", go:"#/chapters"},
+     {id:"p1-2", t:"分支与循环（break、continue）", n:"手写 5 个小题",
+      s:"验收：自己写出 while 求和、for 找最大值、嵌套循环打印图形。"},
+     {id:"p1-3", t:"函数与 lambda", n:"手写 5 个小题",
+      s:"验收：定义函数、默认参数、返回值、lambda 各写出 1 个能跑的例子。"},
+     {id:"p1-4", t:"列表 / 元组 / 字典 / 集合", n:"手写 5 个小题",
+      s:"验收：增删查改 + 推导式各写 1 段；列表与元组的区别能说出 3 点。"},
+     {id:"p1-5", t:"文件读写与异常处理", n:"手写 3 个小题",
+      s:"验收：读 txt、写 txt、try/except 各 1 个例子，能解释异常被捕获后的流程。"},
+     {id:"p1-6", t:"程序填空 7 道全对（38A 原题）", n:"7 题",
+      s:"验收：逐字对照官方答案，写出每空为什么填这个；填错的题当天重写一遍。", go:"#/bank", bank:{type:"程序填空题"}},
+     {id:"p1-7", t:"编程题 28 道", n:"28 题",
+      s:"验收：先写思路再手写代码，单题 30 分钟内完成；只用默认库。", go:"#/bank", bank:{type:"编程题"}},
+     {id:"p1-8", t:"数据处理三件套（NumPy / Pandas / Matplotlib）", n:"数据处理 19 题",
+      s:"验收：三个库各跑通 1 个示例，能说出输入什么、输出什么。"},
+     {id:"p1-9", t:"38A 全卷摸底一遍", n:"对齐 10/24 节点",
+      s:"目标是知道哪个领域最差，不是做对；摸底没做完，当天教材精读就取消，先摸完。", go:"#/exam"}
+   ]},
+  {ph:"P2", name:"攻算法与计算", when:"11/06 – 11/15（10 天）",
+   why:"38A 里最费分的不是背诵，是「给你一个算法场景，问你下一步会怎样」。这一档靠想清楚，不靠记住。<b>掌握级 38 条</b>是默认优先范围（考纲树 106 条：掌握 38 / 理解 32 / 知道 36）。",
+   items:[
+     {id:"p2-1", t:"搜索与博弈：BFS / DFS / A* / minimax / α-β 剪枝", n:"扩展条目 6 条",
+      s:"验收：能画出一棵 3 层的搜索树，标出剪枝位置；说得出 BFS 与 DFS 的搜索顺序差在哪。"},
+     {id:"p2-2", t:"sklearn：fit / predict / score 跑通", n:"机器学习 22 题",
+      s:"验收：在 toy 数据上训练一个模型并评分，能说清 fit 与 predict 各自做什么。"},
+     {id:"p2-3", t:"损失函数与梯度下降", n:"手算一轮",
+      s:"验收：给定 w、lr 与样本，手算一轮参数更新，写出结果。"},
+     {id:"p2-4", t:"反向传播", n:"讲清 3 分钟",
+      s:"验收：能说清链式求导在算什么、为什么叫「反向」。讲不出来就说明没懂。"},
+     {id:"p2-5", t:"计算与复杂度", n:"手算 5 题",
+      s:"验收：时间/空间复杂度各写 3 个例子；矩阵运算规模手算 1 题。"}
+   ]},
+  {ph:"P3", name:"扫理解级", when:"11/16 – 11/21（6 天）",
+   why:"理解级只要求「概念 + 与相邻概念的区别」，不要求推导。这一档靠对比记，单条背是浪费时间。",
+   items:[
+     {id:"p3-1", t:"理解级 32 条：一句话定义 + 与相邻概念的区别", n:"32 条",
+      s:"验收：每条写 1 句定义 + 1 对区别（例如监督 vs 无监督、精确率 vs 召回率）。", go:"#/chapters"},
+     {id:"p3-2", t:"多选题专项", n:"多选题",
+      s:"题库里多选占 15.6%，而 38A 卷面占 30.5%——这块明显是短板，补一轮。", go:"#/bank", bank:{type:"多选题"}},
+     {id:"p3-3", t:"错题本第一轮归档", n:"按三类分",
+      s:"验收：每道错题标「盲区 / 偏差 / 粗心」之一；盲区型回头补原理，不是再做一遍就完。", go:"#/mistakes"}
+   ]},
+  {ph:"P4", name:"只看概念", when:"11/22 – 11/28（7 天）",
+   why:"最后七天<b>不再开新代码</b>。知道级只要「定义 + 一个例子 + 使用场景」，这是典型的短期记忆窗口任务，放这里记得最牢。把时间花在默写上，比从头写代码划算。",
+   items:[
+     {id:"p4-1", t:"知道级 36 条：定义 + 一个例子 + 场景", n:"36 条",
+      s:"验收：遮住笔记能说出台定义与例子；说不出的就是没记住，当天补。"},
+     {id:"p4-2", t:"易混概念对照 20 组", n:"20 组",
+      s:"验收：过拟合/欠拟合、精确率/召回率、监督/无监督、批/流…每组写出一句区分。"},
+     {id:"p4-3", t:"38A 二刷 ≥75%", n:"对齐 11/26 节点",
+      s:"低于 65% 就放弃编程题专项，全力保单多选——这是临考 2 天能救回来的部分。", go:"#/exam"},
+     {id:"p4-4", t:"考前最后一天：只看错题本与概念卡", n:"不写新代码",
+      s:"验收：晚上不碰新题，只翻错题本与 20 组对照表；把作息对齐 11/28 11:30 开考。", go:"#/mistakes"}
+   ]}
+];
+function planCounts(){
+  var total=0, done=0;
+  PLAN.forEach(function(p){ p.items.forEach(function(it){ total++; if(S.plan[it.id]) done++; }); });
+  return {total:total, done:done};
+}
+function updatePlanBar(){
+  var c=planCounts();
+  var d=$("#plan-done"), t=$("#plan-total"), bar=$("#plan-bar"), note=$("#plan-note");
+  if(d) d.textContent=c.done;
+  if(t) t.textContent=c.total;
+  if(bar){
+    var pct=c.total ? Math.round(c.done*100/c.total) : 0;
+    bar.setAttribute("aria-valuenow", String(pct));
+    var i=bar.querySelector("i"); if(i) i.style.width=pct+"%";
+    bar.setAttribute("title", "已完成 "+c.done+" / "+c.total+" 项");
+  }
+  if(note) note.textContent = c.done ? ("已完成 "+c.done+" 项") : "勾选后会自动存本机";
+  return c;
+}
+function savePlan(){ Store.set(KEY_PLAN, S.plan); }
+function renderPlan(){
+  var body=$("#plan-body"); if(!body) return;
+  body.innerHTML=PLAN.map(function(ph){
+    var rows=ph.items.map(function(it){
+      var on=!!S.plan[it.id];
+      return '<li class="'+(on?"done":"")+'">'+
+        '<label><input type="checkbox" data-pid="'+it.id+'"'+(on?" checked":"")+'>'+
+        '<span class="c"><span class="t">'+esc(it.t)+(it.n?'<span class="n">'+esc(it.n)+'</span>':'')+'</span>'+
+        '<span class="s">'+it.s+'</span></span></label>'+
+        (it.go?'<button class="btn sm ghost" type="button" data-pgo="'+it.id+'">去做</button>':'')+
+      '</li>';
+    }).join("");
+    return '<div class="planph"><div class="planph-h"><h2>'+esc(ph.ph)+' '+esc(ph.name)+'</h2>'+
+      '<span class="when">'+esc(ph.when)+'</span></div>'+
+      '<p class="why">'+ph.why+'</p><ul class="chk">'+rows+'</ul></div>';
+  }).join("");
+  updatePlanBar();
+}
+/* 勾选与「去做」都走事件委托：视图重渲染后不重复绑定 */
+document.addEventListener("change", function(e){
+  var cb=e.target;
+  if(!cb || !cb.matches || !cb.matches(".chk input[type=checkbox]")) return;
+  var id=cb.getAttribute("data-pid");
+  if(cb.checked) S.plan[id]=Date.now(); else delete S.plan[id];
+  savePlan();
+  var li=cb.closest("li"); if(li) li.classList.toggle("done", cb.checked);
+  updatePlanBar();
+});
+document.addEventListener("click", function(e){
+  var reset=e.target.closest ? e.target.closest("#plan-reset") : null;
+  if(reset){
+    if(Object.keys(S.plan).length && !window.confirm("确定清空全部勾选记录？本机保存的计划进度会一并清掉。")) return;
+    S.plan={}; savePlan(); renderPlan(); return;
+  }
+  var btn=e.target.closest ? e.target.closest("[data-pgo]") : null;
+  if(!btn) return;
+  var id=btn.getAttribute("data-pgo"), it=null;
+  PLAN.forEach(function(p){ p.items.forEach(function(x){ if(x.id===id) it=x; }); });
+  if(!it) return;
+  if(it.bank && it.bank.type){ S.bank={cat:"all", pack:"all", type:it.bank.type, req:"all", kw:"", syl:null}; }
+  var hash=it.go || "#/bank";
+  if(location.hash===hash){ route(); } else { location.hash=hash; }
+});
+
 /* ---------- 工作台 ---------- */
 function renderDash(){
   var d=daysLeft();
@@ -1925,11 +2104,15 @@ function renderDash(){
   QB.forEach(function(b){ byCat[b.cat]++; });
   var kpi=$("#dash-kpi");
   if(kpi){
+    /* 摸底节点 10/24 距今多少天：让 KPI 直接指向下一个动作，而不是只报一个与行动无关的数 */
+    var mockDay=new Date(2026,9,24), nd=new Date();
+    var toMock=Math.round((mockDay.getTime()-new Date(nd.getFullYear(),nd.getMonth(),nd.getDate()).getTime())/86400000);
+    var pc=planCounts();
     kpi.innerHTML=
       kpiCard("距考试", d, "天", "考试日 2026-11-28（周六）B 场 11:30", false)+
       kpiCard("题库题量", QB.length, "题", "官方模拟卷 "+byCat["38a"]+" · 考纲样题 "+byCat["guide"]+" · 教材 "+(byCat["textbook-ex"]+byCat["textbook-hw"]+(byCat["textbook-sec"]||0))+" · 知识点补题 "+byCat["textbook-note"]+" · AI 深挖 "+byCat["textbook-dig"], false)+
-      kpiCard("本机已练", st.n, "题", Store.ok ? "存于本机浏览器（localStorage）" : "本机存储不可用，仅本次会话有效", false)+
-      kpiCard("本机正确率", pctOf(st.ok,st.graded), "%", st.graded ? ("可判分 "+st.graded+" 题，答对 "+st.ok+" 题"+(st.open?("；另有 "+st.open+" 题为主观／填空，不自动判分"):"")) : "还没有可判分的作答", false);
+      kpiCard("摸底进度", st.n+"/"+QB.length, "题", (toMock>0?("10/24 摸底节点还剩 "+toMock+" 天；"):("摸底节点已到；"))+"本机已练 "+st.n+" 题，还有 "+Math.max(0,QB.length-st.n)+" 题未碰", false)+
+      kpiCard("计划勾选", pc.done+"/"+pc.total, "项", st.graded ? ("可判分 "+st.graded+" 题，答对 "+st.ok+" 题"+(st.open?("；另有 "+st.open+" 题为主观／填空，不自动判分"):"")) : "还没有可判分的作答", false);
   }
   renderTimeline();
   renderLocalPanel();
