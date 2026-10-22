@@ -1176,7 +1176,7 @@ var Store=(function(){
     }
   };
 })();
-var KEY_REC="rec.v1", KEY_MIS="mis.v1", KEY_PREF="pref.v1", KEY_EXAM="exam.v1", KEY_MIS_DEL="mis.del.v1", KEY_PLAN="plan.v1";   /* 逻辑键名（Store 自动加命名空间前缀） */
+var KEY_REC="rec.v1", KEY_MIS="mis.v1", KEY_PREF="pref.v1", KEY_EXAM="exam.v1", KEY_MIS_DEL="mis.del.v1", KEY_PLAN="plan.v1", KEY_PLAN_DEL="plan.del.v1";   /* 逻辑键名（Store 自动加命名空间前缀） */
 
 /* ---------- 全局状态 ---------- */
 var S={
@@ -1188,7 +1188,8 @@ var S={
   parseAlways: (Store.get(KEY_PREF)||{}).parseAlways!==false,
   bank: {cat:"all", pack:"all", type:"all", req:"all", kw:"", syl:null},
   mapFilter: "all",
-  plan: Store.get(KEY_PLAN)||{}             /* 学习计划勾选：{itemTs}，刷新与关机都不丢 */
+  plan: Store.get(KEY_PLAN)||{},            /* 学习计划勾选：{itemId:ts}，刷新与关机都不丢 */
+  planDel: Store.get(KEY_PLAN_DEL)||{}      /* 计划取消勾选墓碑：{itemId:ts}。没有它，取消会在下次云同步时被远端旧勾选复活 */
 };
 
 /* =========================================================================
@@ -1421,18 +1422,24 @@ var CloudSync=(function(){
     return {value:out, changed:changed};
   }
   /* 计划勾选按项合并（plan.v1 是 {itemId:ts}）：与 rec.v1 同理——
-     不能按整键取较新，否则两台设备各自勾的项会整包互相覆盖，独有勾选直接丢。 */
-  function mergePlanMaps(local, remote){
-    var out={}, k, added=0;
+     不能按整键取较新，否则两台设备各自勾的项会整包互相覆盖，独有勾选直接丢。
+     取消勾选不能只删键：纯并集会把远端旧勾选拉回来（勾选「复活」），
+     所以配 plan.del.v1 墓碑——勾选 ts ≤ 墓碑 ts 的条目不进结果，与错题本同构。 */
+  function mergePlanMaps(local, remote, tomb){
+    var out={}, k, changed=0;
     local=(local && typeof local==="object" && !Array.isArray(local)) ? local : {};
     remote=(remote && typeof remote==="object" && !Array.isArray(remote)) ? remote : {};
     for(k in local) if(has(local,k) && !badKey(k)) out[k]=Number(local[k])||0;
     for(k in remote){
       if(!has(remote,k) || badKey(k)) continue;
       var b=Number(remote[k])||0;
-      if(!has(out,k) || b>(Number(out[k])||0)){ out[k]=b; added++; }
+      if(!has(out,k) || b>(Number(out[k])||0)){ out[k]=b; changed++; }
     }
-    return {value:out, changed:added};
+    for(k in out){
+      var t=Number(tomb && has(tomb,k) ? tomb[k] : 0)||0;
+      if(t && out[k]<=t){ delete out[k]; changed++; }   /* 被墓碑压掉：远端旧勾选不再复活 */
+    }
+    return {value:out, changed:changed};
   }
   function mergeRemote(payload){
     var localRec=Store.get(KEY_REC)||{};
@@ -1447,21 +1454,28 @@ var CloudSync=(function(){
     var dels=mergeDelMaps(localDel, remoteDel||{});
     var rec=mergeRecMaps(localRec, remoteRec||{});
     var mis=mergeMisList(localMis, remoteMis||[], dels.value);
-    /* 计划勾选也逐项合并：否则整键取较新会把另一台设备独有的勾选整包冲掉 */
-    var plan=mergePlanMaps(Store.get(KEY_PLAN)||{}, recValue(payload, KEY_PLAN)||{});
+    /* 计划勾选也逐项合并：否则整键取较新会把另一台设备独有的勾选整包冲掉。
+       取消勾选靠墓碑压制——云端旧勾选在墓碑之前，不再复活。 */
+    var localPlanDel=Store.get(KEY_PLAN_DEL)||{};
+    var remotePlanDel=recValue(payload, KEY_PLAN_DEL);
+    if(remotePlanDel && (typeof remotePlanDel!=="object" || Array.isArray(remotePlanDel))) throw new Error("云端计划删除记录格式不对");
+    var planDels=mergeDelMaps(localPlanDel, remotePlanDel||{});
+    var plan=mergePlanMaps(Store.get(KEY_PLAN)||{}, recValue(payload, KEY_PLAN)||{}, planDels.value);
     if(dels.changed) Store.set(KEY_MIS_DEL, dels.value);
+    if(planDels.changed) Store.set(KEY_PLAN_DEL, planDels.value);
     if(rec.changed) Store.set(KEY_REC, rec.value);
     if(mis.changed) Store.set(KEY_MIS, mis.value);
     if(plan.changed) Store.set(KEY_PLAN, plan.value);
     S.rec=rec.value;
     S.mis=mis.value;
     S.misDel=dels.value;
-    S.plan=plan.value;   /* 合并后必须重载 S.plan：KPI 的「计划勾选」读的是它，漏了这行 KPI 就不动 */
+    S.plan=plan.value;     /* 合并后必须重载 S.plan：KPI 的「计划勾选」读的是它，漏了这行 KPI 就不动 */
+    S.planDel=planDels.value;
     /* 其余键（偏好等）仍按封套 updatedAt 合并；exam.v1 不跨设备 */
     var rest={}, records=payload.records||{};
     for(var k in records){
       if(!has(records,k)) continue;
-      if(k==="rec.v1"||k==="mis.v1"||k===KEY_MIS_DEL||k===KEY_PLAN||k==="exam.v1") continue;
+      if(k==="rec.v1"||k==="mis.v1"||k===KEY_MIS_DEL||k===KEY_PLAN||k===KEY_PLAN_DEL||k==="exam.v1") continue;
       rest[k]=records[k];
     }
     if(Object.keys(rest).length){
@@ -2067,7 +2081,18 @@ function updatePlanBar(){
   if(note) note.textContent = c.done ? ("已完成 "+c.done+" 项") : "勾选后会自动存本机";
   return c;
 }
-function savePlan(){ Store.set(KEY_PLAN, S.plan); }
+function savePlan(){
+  /* 与磁盘合并后再落盘（与 saveRec/saveMis 同构），防止跨标签页改动被整包覆盖；
+     勾选与取消都必须触发推送——取消不推送，云端旧勾选会在下次同步时复活。 */
+  var diskPlan=Store.get(KEY_PLAN)||{}, diskDel=Store.get(KEY_PLAN_DEL)||{};
+  var dels=CloudSync.mergeDelMaps(diskDel, S.planDel);
+  var plan=CloudSync.mergePlanMaps(diskPlan, S.plan, dels.value);
+  S.planDel=dels.value;
+  S.plan=plan.value;
+  Store.set(KEY_PLAN_DEL, S.planDel);
+  Store.set(KEY_PLAN, S.plan);
+  CloudSync.schedulePush();
+}
 function renderPlan(){
   var body=$("#plan-body"); if(!body) return;
   body.innerHTML=PLAN.map(function(ph){
@@ -2091,7 +2116,14 @@ document.addEventListener("change", function(e){
   var cb=e.target;
   if(!cb || !cb.matches || !cb.matches(".chk input[type=checkbox]")) return;
   var id=cb.getAttribute("data-pid");
-  if(cb.checked) S.plan[id]=Date.now(); else delete S.plan[id];
+  if(cb.checked){
+    /* 重新勾选：ts 必须晚于该条墓碑，否则合并时勾选会被自己的墓碑压掉（与 addMis 同构）。
+       墓碑本身保留不动——它还要继续压制远端更老的勾选记录。 */
+    S.plan[id]=Math.max(Date.now(), (Number(S.planDel[id])||0)+1);
+  }else{
+    delete S.plan[id];
+    S.planDel[id]=Date.now();   /* 取消勾选必须留墓碑，否则下次云同步旧勾选复活 */
+  }
   savePlan();
   var li=cb.closest("li"); if(li) li.classList.toggle("done", cb.checked);
   updatePlanBar();
@@ -2100,6 +2132,9 @@ document.addEventListener("click", function(e){
   var reset=e.target.closest ? e.target.closest("#plan-reset") : null;
   if(reset){
     if(Object.keys(S.plan).length && !window.confirm("确定清空全部勾选记录？本机保存的计划进度会一并清掉。")) return;
+    /* 清空也要给每一项写墓碑：否则下次云同步，远端旧勾选整批复活 */
+    var nowR=Date.now();
+    Object.keys(S.plan).forEach(function(k){ S.planDel[k]=Math.max(nowR, Number(S.planDel[k])||0); });
     S.plan={}; savePlan(); renderPlan(); return;
   }
   var btn=e.target.closest ? e.target.closest("[data-pgo]") : null;
@@ -2512,11 +2547,17 @@ window.addEventListener("storage", function(e){
   else if(e.key===ns+KEY_MIS || e.key===ns+KEY_MIS_DEL){
     S.mis=Store.get(KEY_MIS)||[];
     S.misDel=Store.get(KEY_MIS_DEL)||{};
-  } else if(e.key===ns+KEY_PREF){ S.parseAlways=(Store.get(KEY_PREF)||{}).parseAlways!==false; }
+  }
+  else if(e.key===ns+KEY_PLAN || e.key===ns+KEY_PLAN_DEL){
+    S.plan=Store.get(KEY_PLAN)||{};
+    S.planDel=Store.get(KEY_PLAN_DEL)||{};
+  }
+  else if(e.key===ns+KEY_PREF){ S.parseAlways=(Store.get(KEY_PREF)||{}).parseAlways!==false; }
   else return;
   if(typeof document!=="undefined" && document.visibilityState==="visible"){
     var h=String(location.hash||"").replace(/^#\//,"");
     if(h==="dashboard" && typeof renderDash==="function") renderDash();
+    else if(h==="plan" && typeof renderPlan==="function") renderPlan();
     else if(h==="mistakes" && typeof renderMistakes==="function") renderMistakes();
   }
 });
