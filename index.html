@@ -1420,6 +1420,20 @@ var CloudSync=(function(){
     }
     return {value:out, changed:changed};
   }
+  /* 计划勾选按项合并（plan.v1 是 {itemId:ts}）：与 rec.v1 同理——
+     不能按整键取较新，否则两台设备各自勾的项会整包互相覆盖，独有勾选直接丢。 */
+  function mergePlanMaps(local, remote){
+    var out={}, k, added=0;
+    local=(local && typeof local==="object" && !Array.isArray(local)) ? local : {};
+    remote=(remote && typeof remote==="object" && !Array.isArray(remote)) ? remote : {};
+    for(k in local) if(has(local,k) && !badKey(k)) out[k]=Number(local[k])||0;
+    for(k in remote){
+      if(!has(remote,k) || badKey(k)) continue;
+      var b=Number(remote[k])||0;
+      if(!has(out,k) || b>(Number(out[k])||0)){ out[k]=b; added++; }
+    }
+    return {value:out, changed:added};
+  }
   function mergeRemote(payload){
     var localRec=Store.get(KEY_REC)||{};
     var localMis=Store.get(KEY_MIS)||[];
@@ -1433,17 +1447,21 @@ var CloudSync=(function(){
     var dels=mergeDelMaps(localDel, remoteDel||{});
     var rec=mergeRecMaps(localRec, remoteRec||{});
     var mis=mergeMisList(localMis, remoteMis||[], dels.value);
+    /* 计划勾选也逐项合并：否则整键取较新会把另一台设备独有的勾选整包冲掉 */
+    var plan=mergePlanMaps(Store.get(KEY_PLAN)||{}, recValue(payload, KEY_PLAN)||{});
     if(dels.changed) Store.set(KEY_MIS_DEL, dels.value);
     if(rec.changed) Store.set(KEY_REC, rec.value);
     if(mis.changed) Store.set(KEY_MIS, mis.value);
+    if(plan.changed) Store.set(KEY_PLAN, plan.value);
     S.rec=rec.value;
     S.mis=mis.value;
     S.misDel=dels.value;
+    S.plan=plan.value;   /* 合并后必须重载 S.plan：KPI 的「计划勾选」读的是它，漏了这行 KPI 就不动 */
     /* 其余键（偏好等）仍按封套 updatedAt 合并；exam.v1 不跨设备 */
     var rest={}, records=payload.records||{};
     for(var k in records){
       if(!has(records,k)) continue;
-      if(k==="rec.v1"||k==="mis.v1"||k===KEY_MIS_DEL||k==="exam.v1") continue;
+      if(k==="rec.v1"||k==="mis.v1"||k===KEY_MIS_DEL||k===KEY_PLAN||k==="exam.v1") continue;
       rest[k]=records[k];
     }
     if(Object.keys(rest).length){
@@ -1460,6 +1478,7 @@ var CloudSync=(function(){
     /* 练习页只在当前题已作答时重绘：未提交的填空/多选输入不能被后台同步清掉 */
     if(h==="practice"){ if(S.answered && typeof renderPractice==="function") renderPractice(); return; }
     if(h==="dashboard" && typeof renderDash==="function") renderDash();
+    else if(h==="plan" && typeof renderPlan==="function") renderPlan();
     else if(h==="bank" && typeof renderBank==="function") renderBank();
     else if(h==="exam" && typeof renderExam==="function") renderExam();
     else if(h==="mistakes" && typeof renderMistakes==="function") renderMistakes();
@@ -1678,7 +1697,7 @@ var CloudSync=(function(){
     }
   });
   return {init:init, schedulePush:schedulePush, syncNow:syncNow, saveConfig:saveConfig, clearConfig:clearConfig, panelHtml:panelHtml, renderPanel:renderPanel, normCode:normCode, normEndpoint:normEndpoint, isConfigured:isConfigured,
-          mergePayload:mergeRemote, mergeRecMaps:mergeRecMaps, mergeMisList:mergeMisList, mergeDelMaps:mergeDelMaps};
+          mergePayload:mergeRemote, mergeRecMaps:mergeRecMaps, mergeMisList:mergeMisList, mergeDelMaps:mergeDelMaps, mergePlanMaps:mergePlanMaps};
 })();
 
 /* ---------- 来源分区（定义与判定规则都在构建脚本里，页面只消费注入结果） ----------
