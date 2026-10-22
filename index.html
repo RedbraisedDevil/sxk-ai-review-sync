@@ -145,9 +145,19 @@ a{color:var(--brand-text)}
 .tl.now .axis i{border-color:var(--accent); background:var(--accent)}
 .tl:first-child .axis::before{top:6px}
 .tl:last-child .axis::before{bottom:calc(100% - 12px)}
+/* 自定节点用虚线圆点：官方节点是报考公告定的，自定节点是自己排的，视觉上必须能分清 */
+.tl.self .axis i{border-style:dashed; border-color:var(--need)}
 .tl .c{padding:0 0 var(--sp-4) var(--sp-3); min-width:0}
-.tl .c b{font-size:14px; font-weight:600; display:block}
-.tl .c span{font-size:12.5px; color:var(--ink-2)}
+.tl .c b{font-size:14px; font-weight:600; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap}
+/* 只作用于说明文字那一行；标题行内的标签与剩余天数各有自己的样式 */
+.tl .c > span{font-size:12.5px; color:var(--ink-2)}
+.tltag{display:inline-block; font-size:11px; line-height:1.55; padding:0 5px; border-radius:3px; font-weight:500; white-space:nowrap; vertical-align:1px}
+.tltag.off{background:var(--brand-soft); border:1px solid #C7E0DC; color:var(--brand-text)}
+.tltag.self{background:var(--need-soft); border:1px solid var(--need-line); color:var(--need)}
+.tl .c .left{margin-left:auto; font-family:var(--font-num); font-size:11.5px; font-weight:400; color:var(--ink-3); white-space:nowrap}
+.tl .c .left.soon{color:var(--need)}
+.tl .c .left.now{color:var(--accent)}
+.tl .c .left.past{color:var(--ink-3); opacity:.8}
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 16px;
   border-radius:var(--r-s); border:1px solid var(--line); background:var(--surface);
@@ -519,8 +529,8 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
       <div class="grid" style="margin-bottom:var(--sp-3)">
         <div class="card">
-          <h2>备考时间线（全部为已核实的官方节点）</h2>
-          <p class="sub">来源：2026 年上信考报名公告全文、官方附件 1《考试科目场次及时间安排》</p>
+          <h2>备考时间线</h2>
+          <p class="sub"><span class="tltag off">官方</span> 4 条出自 2026 年上信考报名公告全文与官方附件 1《考试科目场次及时间安排》；<span class="tltag self">自定</span> 5 条是按本机备考计划排的检查点，<b>不是官方安排</b>。落下了按各条说明里的应对改做事方式，别改日期——改日期只是把问题往后推。</p>
           <ol class="timeline" id="dash-timeline"></ol>
         </div>
         <div class="stack">
@@ -1860,28 +1870,47 @@ function daysLeft(){
   var a=new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();
   return Math.round((EXAM_DAY.getTime()-a)/86400000);
 }
+/* 官方节点来自报名公告与官方附件 1；自定节点来自本机备考计划的检查点，不是官方安排，故单独标记。
+   标题里不写死「T-35 天」——那第二天就过期，剩余天数一律按当前日期现算（tlLeft）。 */
 var TL_NODES=[
-  {d:"9/17—9/24", t:"报名窗口", s:"公告原文：9 月 17 日 10:00 起至 9 月 24 日 16:00", from:new Date(2026,8,17), to:new Date(2026,8,24)},
-  {d:"10/24", t:"T-35 天", s:"建议完成考纲「掌握」级条目第一轮通读", from:new Date(2026,9,24), to:new Date(2026,9,24)},
-  {d:"11/14 11/15", t:"一级与四级考试日", s:"非本人科目（一级可选 2022 年版考纲）", from:new Date(2026,10,14), to:new Date(2026,10,15)},
-  {d:"11/28", t:"本人考试：B 场 11:30—14:00", s:"二三级人工智能技术及应用 · 无纸化上机考试（自适应）", from:new Date(2026,10,28), to:new Date(2026,10,28)}
+  {d:"9/17—9/24", k:"official", t:"报名窗口", s:"公告原文：9 月 17 日 10:00 起至 9 月 24 日 16:00", from:new Date(2026,8,17), to:new Date(2026,8,24)},
+  {d:"10/24", k:"self", t:"38A 全卷摸底一遍", s:"目标是知道哪个领域最差，不是做对；原「掌握级第一轮通读」并入此节点——同一天塞两件事，结果通常是两件都没做", from:new Date(2026,9,24), to:new Date(2026,9,24)},
+  {d:"11/02", k:"self", t:"基础模块一轮过完", s:"正确率 ≥60%；低于 50% 就停下来回炉定义类条目，别赶进度", from:new Date(2026,10,2), to:new Date(2026,10,2)},
+  {d:"11/09", k:"self", t:"基础模块错题归档完成", s:"落后就砍「知道级」条目的题，保「掌握级」", from:new Date(2026,10,9), to:new Date(2026,10,9)},
+  {d:"11/14 11/15", k:"official", t:"一级与四级考试日", s:"非本人科目（一级可选 2022 年版考纲）", from:new Date(2026,10,14), to:new Date(2026,10,15)},
+  {d:"11/20", k:"self", t:"综合模块一轮完 + 全库错题本成型", s:"落后就只做掌握级 27 条 + 多选题，其余放弃", from:new Date(2026,10,20), to:new Date(2026,10,20)},
+  {d:"11/26", k:"self", t:"38A 二刷正确率 ≥75%", s:"低于 65% 就放弃编程题专项，全力保单多选", from:new Date(2026,10,26), to:new Date(2026,10,26)},
+  {d:"11/28", k:"official", t:"本人考试：B 场 11:30—14:00", s:"二三级人工智能技术及应用 · 无纸化上机考试（自适应）· 等第制", from:new Date(2026,10,28), to:new Date(2026,10,28)}
 ];
+/* 剩余天数现算：已过 / 进行中 / 距 N 天；三天内标橙提醒 */
+function tlLeft(n, t0){
+  var f=n.from.getTime(), e=n.to.getTime();
+  if(t0>e) return {txt:"已过 "+Math.round((t0-e)/86400000)+" 天", cls:"past"};
+  if(t0>=f) return {txt:(t0===f && e===f) ? "今天" : "进行中", cls:"now"};
+  var d=Math.round((f-t0)/86400000);
+  return {txt:d===0?"今天":"距 "+d+" 天", cls:d<=3?"soon":""};
+}
 function renderTimeline(){
   var host=$("#dash-timeline"); if(!host) return;
   var now=new Date(); var t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
   var rows=[], inserted=false;
   TL_NODES.forEach(function(n){
     if(!inserted && n.from.getTime()>t0){
-      rows.push({cls:"now", d:"今天", t:"今天 · T-"+daysLeft()+" 天", s:"按本机日期（"+ymd(now)+"）实算"});
+      rows.push({cls:"now", d:"今天", k:"", t:"今天", left:{txt:"T-"+daysLeft()+" 天", cls:"now"},
+                 s:"按本机日期（"+ymd(now)+"）实算 · 距 11-28 考试还剩 "+daysLeft()+" 天"});
       inserted=true;
     }
-    var cls = n.to.getTime()<t0 ? "past" : (n.from.getTime()<=t0 && t0<=n.to.getTime() ? "now" : "");
-    rows.push({cls:cls, d:n.d, t:n.t, s:n.s});
+    var lf=tlLeft(n,t0);
+    var cls = lf.cls==="past" ? "past" : (lf.cls==="now" ? "now" : (n.k==="self" ? "self" : ""));
+    rows.push({cls:cls, d:n.d, k:n.k, t:n.t, left:lf, s:n.s});
   });
-  if(!inserted) rows.push({cls:"now", d:"今天", t:"今天 · T-"+daysLeft()+" 天", s:"按本机日期（"+ymd(now)+"）实算"});
+  if(!inserted) rows.push({cls:"now", d:"今天", k:"", t:"今天", left:{txt:"T-"+daysLeft()+" 天", cls:"now"},
+                           s:"按本机日期（"+ymd(now)+"）实算"});
   host.innerHTML=rows.map(function(r){
+    var tag = r.k ? '<span class="tltag '+(r.k==="official"?"off":"self")+'">'+(r.k==="official"?"官方":"自定")+'</span>' : '';
     return '<li class="tl '+r.cls+'"><span class="d num">'+esc(r.d)+'</span><span class="axis"><i></i></span>'+
-      '<span class="c"><b>'+esc(r.t)+'</b><span>'+esc(r.s)+'</span></span></li>';
+      '<span class="c"><b>'+esc(r.t)+tag+'<span class="left '+r.left.cls+'">'+esc(r.left.txt)+'</span></b>'+
+      '<span>'+esc(r.s)+'</span></span></li>';
   }).join("");
 }
 
