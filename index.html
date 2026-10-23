@@ -1647,10 +1647,20 @@ var CloudSync=(function(){
         var nextE=normEndpoint(obj.e), nextC=normCode(obj.c);
         if(!nextE || !nextC){ stripLinkParam(); return false; }
         var cur=cfg(), curE=normEndpoint(cur.endpoint), curC=normCode(cur.code);
-        if(curC && (curC!==nextC || curE!==nextE)){
-          var curHost="", nextHost="";
+        var nextHost="";
+        try{ nextHost=new URL(nextE).host; }catch(e3){}
+        /* 链接与当前配置完全相同：不用弹，也不用改 */
+        if(curC && curC===nextC && curE===nextE){ stripLinkParam(); return false; }
+        /* 首次配置同样必须确认：否则恶意链接可静默把同步目标换成攻击者服务器，
+           随后 init() 的自动同步会把本机全部作答记录加密上传过去。
+           只有确认链接来自你自己的另一台设备时才继续。 */
+        if(!curC){
+          var okFirst=confirm("这个链接要把本机的云端同步配置设为：\n\n服务器："+(nextHost||"—")+
+            "\n同步码："+maskCode(nextC)+"\n\n确认后会立即把本机学习记录（作答、错题、计划勾选）加密上传到该服务器。\n只有确认链接来自你自己的另一台设备时才点「确定」。");
+          if(!okFirst){ stripLinkParam(); toast("已忽略链接中的同步配置"); return false; }
+        }else if(curC!==nextC || curE!==nextE){
+          var curHost="";
           try{ curHost=new URL(curE).host; }catch(e2){}
-          try{ nextHost=new URL(nextE).host; }catch(e3){}
           var ok=confirm("这台设备已经配置同步码 "+maskCode(curC)+"（服务器："+(curHost||"—")+"）。\n链接带来的是另一组同步配置（服务器："+(nextHost||"—")+"）。\n\n继续会改用链接中的配置，并把本机记录同步到该服务器。只有确认链接来自你自己的另一台设备时才继续。");
           if(!ok){ stripLinkParam(); toast("已忽略链接中的同步配置"); return false; }
         }
