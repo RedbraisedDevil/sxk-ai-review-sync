@@ -2328,10 +2328,12 @@ function drawDashCharts(){
   var names=CAT_DEF.map(function(c){ return c.label; });
   var vals=CAT_DEF.map(function(c){ return byCat[c.k]||0; });
   applyChart("#c-source", {
+    /* 窄屏（平板 768 / 手机）下卡片内绘图区只有 ~180px，六个 x 轴刻度必然叠成一团；
+       柱末已经标了数值，x 轴刻度是冗余信息，直接关掉。 */
     grid:{left:8,right:40,top:8,bottom:4,containLabel:true},
     tooltip:{trigger:"axis", triggerOn:"click", renderMode:"richText", confine:true, axisPointer:{type:"shadow"},
       formatter:function(p){ if(!p||!p.length) return ""; return p[0].name+"：" + p[0].value + " 题"; }},
-    xAxis:Object.assign({type:"value", minInterval:1}, AXIS),
+    xAxis:Object.assign({type:"value", minInterval:1}, AXIS, {axisLabel:{show:false}}),
     yAxis:Object.assign({type:"category", inverse:true, data:names}, AXIS, {splitLine:{show:false}}),
     series:[{type:"bar", data:vals, barWidth:12, itemStyle:{color:"#0D9488"},
       label:{show:true, position:"right", formatter:"{c}", color:"#475569", fontFamily:"Lexend", fontSize:12}}]
@@ -2350,15 +2352,16 @@ function drawDashCharts(){
     ? '阈值线 60% · <span class="demo">示例数据</span> 本机暂无作答记录，此图沿用效果图占位数值'
     : '阈值线 60% · <span class="live">本机记录</span> 按知识单元折算，数据来自本机作答（localStorage）';
   applyChart("#c-mastery", {
-    grid:{left:8,right:46,top:8,bottom:4,containLabel:true},
+    grid:{left:8,right:36,top:8,bottom:4,containLabel:true},
     tooltip:{trigger:"axis", triggerOn:"click", renderMode:"richText", confine:true, axisPointer:{type:"shadow"},
       formatter:function(p){ if(!p||!p.length) return ""; return p[0].name+"：" + p[0].value + "%"; }},
-    xAxis:Object.assign({type:"value", max:100}, AXIS),
+    xAxis:Object.assign({type:"value", max:100}, AXIS, {axisLabel:{show:false}}),
     yAxis:Object.assign({type:"category", inverse:true, data:mastery.map(function(x){ return x[0]; })}, AXIS, {splitLine:{show:false}}),
     series:[{type:"bar", data:mastery.map(function(x){ return x[1]; }), barWidth:11, itemStyle:{color:"#0D9488"},
       label:{show:true, position:"right", formatter:"{c}%", color:"#475569", fontFamily:"Lexend", fontSize:12},
       markLine:{silent:true, symbol:"none", lineStyle:{color:"#EA580C", type:"dashed", width:1},
-        label:{formatter:"阈值 60%", color:"#9A3412", fontSize:11, position:"insideEndTop"}, data:[{xAxis:60}]}}]
+        /* 副标题已写「阈值线 60%」；窄屏下这行 label 会被挤成竖排贴住柱末数值，去掉文字只留虚线 */
+        label:{show:false}, data:[{xAxis:60}]}}]
   }, mastery.map(function(x){ return x[0]+" "+x[1]+"%"; }).join("；"));
 }
 
