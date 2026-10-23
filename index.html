@@ -1014,33 +1014,41 @@ var Store=(function(){
   var localBackend={
     id:"local",
     available:function(){ return backendOk; },
+    /* 读：localStorage 优先，取不到再回退内存。
+       以前 backendOk 为真时只读 localStorage——会话中配额满、写入落到 mem 之后，
+       同页 Store.get 读不到刚写的值，界面显示「已保存」实际已丢。 */
     read:function(k){
-      try{ return backendOk ? window.localStorage.getItem(k)
-                            : (Object.prototype.hasOwnProperty.call(mem,k) ? mem[k] : null); }
-      catch(e){ return null; }
+      var v=null;
+      try{ if(backendOk) v=window.localStorage.getItem(k); }catch(e){ v=null; }
+      if(v===null || v===undefined){
+        if(Object.prototype.hasOwnProperty.call(mem,k)) return mem[k];
+      }
+      return v;
     },
+    /* 写：返回是否真落盘（false = 只写进内存，刷新即丢，由调用方提示） */
     write:function(k,s){
-      try{ if(backendOk) window.localStorage.setItem(k,s); else mem[k]=s; }
-      catch(e){ mem[k]=s; }                    /* 写失败（配额/隐私模式）退回内存 */
+      if(backendOk){
+        try{ window.localStorage.setItem(k,s); delete mem[k]; return true; }
+        catch(e){ /* 配额满／隐私策略：退回内存 */ }
+      }
+      mem[k]=s;
+      return false;
     },
     remove:function(k){
-      try{ if(backendOk) window.localStorage.removeItem(k); else delete mem[k]; }
-      catch(e){ delete mem[k]; }
+      try{ if(backendOk) window.localStorage.removeItem(k); }catch(e){}
+      delete mem[k];                            /* 内存副本同步清掉，否则读又把它捞回来 */
     },
     keys:function(){
-      var out=[];
+      var out=[], seen={};
       try{
-        if(backendOk){
-          for(var i=0;i<window.localStorage.length;i++){
-            var k=window.localStorage.key(i);
-            if(k && k.indexOf(NS)===0) out.push(k);
-          }
-        } else {
-          for(var k2 in mem){
-            if(Object.prototype.hasOwnProperty.call(mem,k2) && k2.indexOf(NS)===0) out.push(k2);
-          }
+        for(var i=0;i<window.localStorage.length;i++){
+          var k=window.localStorage.key(i);
+          if(k && k.indexOf(NS)===0 && !seen[k]){ seen[k]=1; out.push(k); }
         }
       }catch(e){}
+      for(var k2 in mem){
+        if(Object.prototype.hasOwnProperty.call(mem,k2) && k2.indexOf(NS)===0 && !seen[k2]){ seen[k2]=1; out.push(k2); }
+      }
       return out;
     }
   };
@@ -1050,7 +1058,7 @@ var Store=(function(){
     id:"remote-stub",
     available:function(){ return false; },     /* 未接入：因此永不会被选中 */
     read:function(k){ return localBackend.read(k); },
-    write:function(k,s){ localBackend.write(k,s); },
+    write:function(k,s){ return localBackend.write(k,s); },
     remove:function(k){ localBackend.remove(k); },
     keys:function(){ return localBackend.keys(); }
   };
@@ -1072,6 +1080,16 @@ var Store=(function(){
   function parse(raw){
     if(raw===null || raw===undefined) return null;
     try{ return JSON.parse(raw); }catch(e){ return null; }
+  }
+  /* 写失败只提示一次：配额满时每次 set 都弹 toast 会刷屏 */
+  var writeFailWarned=false;
+  function notifyWriteFail(){
+    if(writeFailWarned) return;
+    writeFailWarned=true;
+    setTimeout(function(){
+      if(typeof toast==="function")
+        toast("本机存储写入失败（配额已满或被浏览器限制）：新记录只留在本次会话内存里，刷新会丢。请先「导出进度」备份，再清理浏览器存储空间。");
+    },0);
   }
   return {
     /* 状态与自述 */
@@ -1105,8 +1123,9 @@ var Store=(function(){
         deviceId: deviceId(),
         schemaVersion: SCHEMA
       };
-      var okw=true;
-      try{ active.write(key, JSON.stringify(env)); }catch(e){ okw=false; }
+      var okw;
+      try{ okw=(active.write(key, JSON.stringify(env))!==false); }catch(e){ okw=false; }
+      if(!okw) notifyWriteFail();
       return okw;
     },
     /* 读元数据槽（供将来做同步的冲突判定用） */
@@ -1199,6 +1218,14 @@ var S={
    · 同步码只存本机；Store.exportAll / importAll 均排除 sync.*，不会混进导出文件
    · 冲突：先拉取并按 updatedAt 合并，再回传合并后的全量记录；同时写入仍是“后写覆盖”
    ========================================================================= */
+/* 墓碑 ts 的计算：必须同时压过「当前时间」「记录自身的 ts」「已有墓碑」。
+   记录 ts 可能来自时钟偏快的另一台设备，或导入文件里带未来时间戳；
+   删除侧若只取 Date.now()，ts > tomb 的记录会在 saveMis 的合并里被重新保留——
+   界面上就表现为「刚删掉的错题 / 刚取消的勾选自己又回来了」。
+   放在 CloudSync 外层的顶层函数，供错题本、计划勾选与云端合并共用。 */
+function tombTs(now, recordTs, prevTomb){
+  return Math.max(Number(now)||0, (Number(recordTs)||0)+1, (Number(prevTomb)||0)+1);
+}
 var CloudSync=(function(){
   var K_ENDPOINT="sync.endpoint.v1";
   var K_CODE="sync.code.v1";
@@ -1441,6 +1468,18 @@ var CloudSync=(function(){
     }
     return {value:out, changed:changed};
   }
+  /* 云端结构异常不能整体失败：以前直接 throw，syncNow 的 catch 一退就不再 push，
+     这台设备此后每次同步都卡在合并阶段，本机数据永远修不好云端，只能换码重配。
+     现在把异常键当空处理，以本机为准继续上传，并只提示一次。 */
+  var shapeWarned=false;
+  function noteRemoteShape(keys){
+    if(shapeWarned) return;
+    shapeWarned=true;
+    setTimeout(function(){
+      if(typeof toast==="function")
+        toast("云端有 "+keys.length+" 个键结构异常（"+keys.join("、")+"）：已按空处理并以本机数据覆盖，同步继续");
+    },0);
+  }
   function mergeRemote(payload){
     var localRec=Store.get(KEY_REC)||{};
     var localMis=Store.get(KEY_MIS)||[];
@@ -1448,9 +1487,10 @@ var CloudSync=(function(){
     var remoteRec=recValue(payload,"rec.v1");
     var remoteMis=recValue(payload,"mis.v1");
     var remoteDel=recValue(payload,KEY_MIS_DEL);
-    if(remoteRec && (typeof remoteRec!=="object" || Array.isArray(remoteRec))) throw new Error("云端作答记录格式不对");
-    if(remoteMis && !Array.isArray(remoteMis)) throw new Error("云端错题记录格式不对");
-    if(remoteDel && (typeof remoteDel!=="object" || Array.isArray(remoteDel))) throw new Error("云端错题删除记录格式不对");
+    var badShape=[];
+    if(remoteRec && (typeof remoteRec!=="object" || Array.isArray(remoteRec))){ badShape.push("rec.v1"); remoteRec=null; }
+    if(remoteMis && !Array.isArray(remoteMis)){ badShape.push("mis.v1"); remoteMis=null; }
+    if(remoteDel && (typeof remoteDel!=="object" || Array.isArray(remoteDel))){ badShape.push(KEY_MIS_DEL); remoteDel=null; }
     var dels=mergeDelMaps(localDel, remoteDel||{});
     var rec=mergeRecMaps(localRec, remoteRec||{});
     var mis=mergeMisList(localMis, remoteMis||[], dels.value);
@@ -1458,7 +1498,8 @@ var CloudSync=(function(){
        取消勾选靠墓碑压制——云端旧勾选在墓碑之前，不再复活。 */
     var localPlanDel=Store.get(KEY_PLAN_DEL)||{};
     var remotePlanDel=recValue(payload, KEY_PLAN_DEL);
-    if(remotePlanDel && (typeof remotePlanDel!=="object" || Array.isArray(remotePlanDel))) throw new Error("云端计划删除记录格式不对");
+    if(remotePlanDel && (typeof remotePlanDel!=="object" || Array.isArray(remotePlanDel))){ badShape.push(KEY_PLAN_DEL); remotePlanDel=null; }
+    if(badShape.length) noteRemoteShape(badShape);
     var planDels=mergeDelMaps(localPlanDel, remotePlanDel||{});
     var plan=mergePlanMaps(Store.get(KEY_PLAN)||{}, recValue(payload, KEY_PLAN)||{}, planDels.value);
     if(dels.changed) Store.set(KEY_MIS_DEL, dels.value);
@@ -2131,8 +2172,10 @@ document.addEventListener("change", function(e){
        墓碑本身保留不动——它还要继续压制远端更老的勾选记录。 */
     S.plan[id]=Math.max(Date.now(), (Number(S.planDel[id])||0)+1);
   }else{
+    /* 取消勾选同样要压过勾选自身的 ts 与已有墓碑，否则未来 ts 的勾选会把它拉回来 */
+    var prevTs=Number(S.plan[id])||0;
     delete S.plan[id];
-    S.planDel[id]=Date.now();   /* 取消勾选必须留墓碑，否则下次云同步旧勾选复活 */
+    S.planDel[id]=tombTs(Date.now(), prevTs, S.planDel[id]);
   }
   savePlan();
   var li=cb.closest("li"); if(li) li.classList.toggle("done", cb.checked);
@@ -2144,7 +2187,9 @@ document.addEventListener("click", function(e){
     if(Object.keys(S.plan).length && !window.confirm("确定清空全部勾选记录？本机保存的计划进度会一并清掉。")) return;
     /* 清空也要给每一项写墓碑：否则下次云同步，远端旧勾选整批复活 */
     var nowR=Date.now();
-    Object.keys(S.plan).forEach(function(k){ S.planDel[k]=Math.max(nowR, Number(S.planDel[k])||0); });
+    Object.keys(S.plan).forEach(function(k){
+      S.planDel[k]=tombTs(nowR, S.plan[k], S.planDel[k]);
+    });
     S.plan={}; savePlan(); renderPlan(); return;
   }
   var btn=e.target.closest ? e.target.closest("[data-pgo]") : null;
@@ -2540,13 +2585,20 @@ function addMis(id, why, tip){
   saveMis(); return true;
 }
 function removeMis(id){
-  S.misDel[id]=Date.now();
+  /* 墓碑必须压过记录自身的 ts：另一台设备时钟偏快或导入的未来 ts 记录，
+     用 Date.now() 写墓碑会被它顶回去——删除当场复活，同步到云端也压不住。 */
+  var cur=null;
+  for(var i=0;i<S.mis.length;i++){ if(S.mis[i] && S.mis[i].id===id){ cur=S.mis[i]; break; } }
+  S.misDel[id]=tombTs(Date.now(), cur&&cur.ts, S.misDel[id]);
   S.mis=S.mis.filter(function(m){ return m.id!==id; });
   saveMis();
 }
 function clearMis(){
   var now=Date.now();
-  S.mis.forEach(function(m){ if(m && m.id) S.misDel[m.id]=now; });
+  S.mis.forEach(function(m){
+    if(!m || !m.id) return;
+    S.misDel[m.id]=tombTs(now, m.ts, S.misDel[m.id]);
+  });
   S.mis=[];
   saveMis();
 }
@@ -2815,8 +2867,14 @@ function officialHtml(o){
   if(!parts.length) return "";
   return '<div class="note info'+(multi?' pre':'')+'"><b>官方原文</b>：'+parts.join("；")+'</div>';
 }
-function evShot(u, cap, bbox, zoomHint){
-  var inner='<img src="'+esc(u)+'" alt="'+esc(cap)+'" data-cap="'+esc(cap)+'" referrerpolicy="no-referrer" loading="lazy">';
+/* cap 默认按纯文本处理、内部统一转义——调用点直接传 q.* 也不会变成注入点。
+   需要加粗等标记的调用点显式传 capIsHtml=true，此时 cap 由调用点自行负责安全。 */
+function evShot(u, cap, bbox, zoomHint, capIsHtml){
+  var raw=(cap===null||cap===undefined)?"":String(cap);
+  var capHtml=capIsHtml?raw:esc(raw);
+  var capText=raw.replace(/<[^>]*>/g,"");
+  var hint=zoomHint?esc(String(zoomHint)):"";
+  var inner='<img src="'+esc(u)+'" alt="'+esc(capText)+'" data-cap="'+esc(capText)+'" referrerpolicy="no-referrer" loading="lazy">';
   if(bbox && bbox.length===4){
     var l=bbox[0]*100, t=bbox[1]*100, w=(bbox[2]-bbox[0])*100, h=(bbox[3]-bbox[1])*100;
     var r=(l+w).toFixed(2), b=(t+h).toFixed(2), L=l.toFixed(2), T=t.toFixed(2);
@@ -2825,7 +2883,7 @@ function evShot(u, cap, bbox, zoomHint){
       +'<span class="dim" style="clip-path:polygon('+poly+')"></span>'
       +'<span class="markspot" style="left:'+L+'%;top:'+T+'%;width:'+w.toFixed(2)+'%;height:'+h.toFixed(2)+'%"></span></span>';
   }
-  return '<figure>'+inner+'<figcaption>'+cap+(zoomHint?'　'+zoomHint:'')+'</figcaption></figure>';
+  return '<figure>'+inner+'<figcaption>'+capHtml+(hint?'　'+hint:'')+'</figcaption></figure>';
 }
 /* 解析页/教材页共用的「教材依据」块：优先给局部图（红框内即为本题依据），再给整页 */
 function evBlock(q, opt){
@@ -2842,17 +2900,17 @@ function evBlock(q, opt){
   if(b.quote) body+='<div class="quote" style="margin:0 0 11px">依据原文：'+esc(b.quote)+'</div>';
   if(b.focus){
     body+='<div style="margin-bottom:11px">'+evShot(b.focus,
-      '<b>依据位置</b>　上图是定位示意，阅读以上方原文为准', null, '点击可放大')+'</div>';
+      '<b>依据位置</b>　上图是定位示意，阅读以上方原文为准', null, '点击可放大', true)+'</div>';
   } else {
     body+='<div class="note" style="margin:0 0 11px"><b>未能定位到具体行</b>　本题只提供整页图，请按页码人工核对。</div>';
   }
   body+='<details'+(opt.openPage?' open':'')+'><summary style="font-size:12.5px;color:var(--brand-text);cursor:pointer;margin-bottom:8px">查看整页'+
         (b.bbox?'（整页里红框标出同一位置）':'')+'</summary>'+
-        evShot(b.img, esc(String(b.title||"教材"))+" · "+esc(String(b.pdf||""))+" 整页", b.bbox||null, '点击可放大')+'</details>';
+        evShot(b.img, String(b.title||"教材")+" · "+String(b.pdf||"")+" 整页", b.bbox||null, '点击可放大')+'</details>';
   if(b.img2){
     body+='<div style="margin-top:11px">'+evShot(b.img2,
       '<b>另一处依据页</b>　'+(b.imgPage2?'PDF p.'+esc(String(b.imgPage2)):'')+(b.imgNote?'　'+esc(b.imgNote):''),
-      null, '点击可放大')+'</div>';
+      null, '点击可放大', true)+'</div>';
   }
   return '<div class="ev">'+head+'<div class="bd">'+body+'</div></div>';
 }
@@ -2907,7 +2965,7 @@ function renderPanes(q){
     /* 未作答时连「教材依据」一起收起：依据原文往往就是本题答案的原文表述，
        局部红框图更是直接框住答案句，留在页面上等于把答案摊开给你看。 */
     parseHtml='<div class="note info"><b>答案已锁定</b>：请先在左侧'+act+'，这里才会显示答案、逐项判断、解题步骤与教材依据。</div>'+
-      '<p class="tiny muted">未作答时依据原文与依据截图同样不显示——它们往往就是答案本身。作答后「解析」「教材页」两个页签都会出现。「考纲坐标」「怎么做」不含答案，可先看。</p>';
+      '<p class="tiny muted">未作答时依据原文与依据截图同样不显示——它们往往就是答案本身。作答后「解析」「教材页」「怎么做」三个页签都会出现。「考纲坐标」只有模块/领域/单元/知识点与要求档位，不含答案，可以随时看。</p>';
   }
   $("#p-parse").innerHTML=parseHtml;
   var ptab=$("#tab-parse"); if(ptab) ptab.textContent=locked?"解析（作答后）":"解析";
@@ -2972,11 +3030,21 @@ function renderPanes(q){
   }
 
   /* --- 怎么做 --- */
+  /* 未作答时同样锁住：howto/pitfalls 里常有「答案必然是第四次＋智能化」「唯一非现实项」
+     这类直接点名正确项的措辞（实测 SEC2-CH1-05、38A-B-09 可据此不做题就选出答案），
+     留着它等于给答案锁定开了后门。只有「考纲坐标」是真的不含答案，可以随时看。 */
   var how=list(q.howto), pit=list(q.pitfalls);
-  $("#p-howto").innerHTML=
-    (how.length ? '<h4 style="font-size:13.5px;margin:0 0 8px">这类题的作答程序</h4>'+listHtml(how,"plain")
-                : '<p class="tiny muted">该题未提供作答程序（howto 为空）。</p>')+
-    (how.length ? '<h4 style="font-size:13.5px;margin:16px 0 8px">易错点</h4>'+listHtml(pit,"plain") : "");
+  if(locked){
+    $("#p-howto").innerHTML='<div class="note info"><b>作答后显示</b>　「怎么做」讲的是这类题的作答程序与易错点，其中常直接点名正确项（例如「答案必然是第四次＋智能化」），未作答时一并锁住，避免绕开答案解析。先在左侧'+(
+      isChoiceQ(q) ? (isMulti(q)?"选中全部正确项并提交后":"选择一个选项后")
+                   : (isJudgeQ(q)?"选择“对”或“错”后":"提交作答后"))+'这里就会出现。</div>';
+  } else {
+    $("#p-howto").innerHTML=
+      (how.length ? '<h4 style="font-size:13.5px;margin:0 0 8px">这类题的作答程序</h4>'+listHtml(how,"plain")
+                  : '<p class="tiny muted">该题未提供作答程序（howto 为空）。</p>')+
+      (how.length ? '<h4 style="font-size:13.5px;margin:16px 0 8px">易错点</h4>'+listHtml(pit,"plain") : "");
+  }
+  var htab=$("#tab-howto"); if(htab) htab.textContent=locked?"怎么做（作答后）":"怎么做";
 }
 function renderRelated(q){
   var host=$("#q-related"); if(!host) return;
@@ -3153,6 +3221,22 @@ function loadExam(){
   T.results=(e.results && typeof e.results==="object" && !Array.isArray(e.results)) ? e.results : {};
   return true;
 }
+/* 刷新/重载后把整场考试接回来：题集、计时、已答结果。
+   以前只在进入 #/exam 时 loadExam，而 startPack 跳的是 #/practice——
+   在练习页刷新后 T.started=false，之后的作答不进本场成绩，tickTimer 也没在跑，
+   到点不会自动交卷；若超时后才进考试页，旧逻辑直接清盘、不产出成绩。 */
+function restoreExamSession(){
+  if(!loadExam()) return false;
+  var idxs=[];
+  T.ids.forEach(function(id){ if(IDX[id]!==undefined) idxs.push(IDX[id]); });
+  if(idxs.length){
+    /* 题集必须一起恢复：否则 renderPractice 会把 S.order 填成全库，
+       刷新后看到的是 942 题而不是本场的那一套。 */
+    S.order=idxs; S.cur=0; S.redo={};
+    S.ctx="模拟考场 · "+T.label;
+  }
+  return true;
+}
 function syncLeft(){
   if(!T.running || !T.deadline) return;
   T.left=Math.max(0, Math.ceil((T.deadline-Date.now())/1000));
@@ -3208,7 +3292,7 @@ function submitExam(auto){
   });
   var used=EXAM_SECONDS-T.left, rate=graded?pctOf(correct,graded)+"%":"—";
   var host=$("#exam-result");
-  host.innerHTML='<div class="row" style="gap:8px;margin-bottom:10px">'+
+  var resHtml='<div class="row" style="gap:8px;margin-bottom:10px">'+
       '<span class="chip">已答 <b class="num">'+answered+'</b> / '+T.ids.length+'</span>'+
       '<span class="chip">可判分 <b class="num">'+graded+'</b></span>'+
       '<span class="chip">答对 <b class="num">'+correct+'</b></span>'+
@@ -3220,17 +3304,26 @@ function submitExam(auto){
     '<div class="row" style="margin-top:10px"><button class="btn sm" type="button" id="exam-redo">重做本套全部</button>'+
     '<button class="btn sm" type="button" id="exam-addmis">把未答与错题加入错题本</button></div>'+
     '<p class="tiny muted" style="margin-top:10px">注：'+(auto?"本次为时间到自动交卷。":"")+'统计只取本场考试开始后的作答；正确率分母为可判分题，不含填空／主观题。这是自测结果，不是官方评分。</p>';
+  if(host) host.innerHTML=resHtml;
+  /* 恢复时可能在别的视图里判卷（#/practice 刷新且已超时）：成绩先存起来，
+     切到考试页由 renderExam 补上，不能因为拿不到宿主节点就丢成绩。 */
+  else { PENDING_EXAM_RESULT=resHtml; if(location.hash!=="#/exam") location.hash="#/exam"; }
   toast(auto?"时间到，已交卷":"已交卷");
 }
-var EXAM_RESTORED=false;
+var EXAM_RESTORED=false, EXAM_RESTORED_BY_INIT=false, PENDING_EXAM_RESULT="";
 function renderExam(){
   if(!EXAM_RESTORED){
     EXAM_RESTORED=true;
-    if(loadExam() && !T.running){
+    /* init 的 restoreExamSession 已经接过一次就别再 loadExam：重复恢复会用磁盘值盖掉内存态 */
+    if(!EXAM_RESTORED_BY_INIT && loadExam() && !T.running){
       var s=clockOf(T.left);
       if(T.left<=0){ Store.remove(KEY_EXAM); T.started=false; T.ids=[]; T.results={}; T.label="—"; }
       else setTimeout(function(){ toast("已恢复上次未交卷的计时（暂停中 · 剩余 "+s+"）"+T.label.replace(/^题包 /," · 题包 ")); },700);
     }
+  }
+  if(PENDING_EXAM_RESULT){
+    var rh=$("#exam-result");
+    if(rh){ rh.innerHTML=PENDING_EXAM_RESULT; PENDING_EXAM_RESULT=""; }
   }
   paintTimer();
   var grid=$("#pack-grid");
@@ -3504,16 +3597,18 @@ function renderSources(){
   }
 }
 /* ---------- 教材页放大 ---------- */
-/* 425 道题的教材图是第三方外链；加载失败时给出可读提示，而不是留下一块空白 */
+/* 教材图为本地 bookimg 文件；加载失败时给出可读提示，而不是留下一块空白。
+   选择器覆盖所有 figure：解析页由 evBlock 生成的依据图不带 .book class，
+   以前只绑 figure.book，那些图破了就静默空白。 */
 document.addEventListener("error", function(e){
   var img=e.target;
   if(!img || img.tagName!=="IMG" || img.getAttribute("data-img-failed")) return;
-  if(!img.closest || !img.closest("figure.book")) return;
+  if(!img.closest || !img.closest("figure")) return;
   img.setAttribute("data-img-failed","1");
   img.style.display="none";
   var tip=document.createElement("div");
   tip.className="note";
-  tip.textContent="教材页图加载失败：该图来自第三方链接，可能已失效或当前处于离线状态。可先看上方页码与原文摘录，或换网络后重试。";
+  tip.textContent="教材页图加载失败：图片文件可能缺失（bookimg 目录未完整部署）或当前处于离线状态。可先看同一位置的页码与原文摘录，或检查网络后刷新重试。";
   img.parentNode.insertBefore(tip, img.nextSibling);
 }, true);
 document.addEventListener("click", function(e){
@@ -3543,7 +3638,21 @@ document.addEventListener("keydown", function(e){
   paintTimer();
   var cd=$("#cd-days"); if(cd) cd.textContent=daysLeft();
   if(!S.order.length) S.order=QS.map(function(_,i){ return i; });
+  /* 先接考试会话再路由：route() 到 #/practice 时，renderPractice 要用恢复后的题集，
+     否则刷新后题集变成全库、计时归零、之后的作答也不进本场成绩。 */
+  var examBack=false;
+  try{ examBack=restoreExamSession(); }catch(e){ examBack=false; }
+  if(examBack){ EXAM_RESTORED=true; EXAM_RESTORED_BY_INIT=true; }
   route();
+  paintTimer();      /* 恢复考试后必须重刷一次：init 开头那次跑在 loadExam 之前，chip 会一直是 hide */
+  if(examBack){
+    if(T.started && T.left<=0){
+      /* 恢复时已过截止时间：按磁盘里已保存的作答直接判卷出成绩，不再静默清盘 */
+      setTimeout(function(){ submitExam(true); if(location.hash!=="#/exam") location.hash="#/exam"; },0);
+    } else if(T.started){
+      setTimeout(function(){ toast("已恢复未交卷的考试："+T.label+" · 剩余 "+clockOf(T.left)+"（计时暂停，点「继续」接着走）"); },900);
+    }
+  }
   CloudSync.init();
 })();
 </script>
