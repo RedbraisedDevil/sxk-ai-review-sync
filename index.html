@@ -372,6 +372,35 @@ figure.book figcaption{font-size:12.5px; color:var(--ink-2); margin-top:8px}
 .note.info b{color:var(--brand-text)}
 .empty{border:1px dashed var(--line); border-radius:var(--r-s); padding:18px 16px; color:var(--ink-2); font-size:14px; background:var(--surface)}
 
+/* ===== 题库分类（学习目标 → 考纲章节） ===== */
+.gcard{border:1px solid var(--line); border-radius:var(--r); background:var(--surface); margin-bottom:9px; overflow:hidden}
+.gcard.focus{border-color:var(--brand); box-shadow:0 0 0 2px var(--brand-soft)}
+.gcard.pend{background:#FAFCFC}
+.gh{display:flex; align-items:center; gap:9px; padding:10px 14px; flex-wrap:wrap}
+.gh h3{margin:0; font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0}
+.gh .gid{font-family:var(--font-num); font-size:11px; color:var(--ink-3); white-space:nowrap}
+.gh .gsp{flex:1 1 60px; min-width:0}
+.gh .gn{font-family:var(--font-num); font-size:12px; color:var(--ink-2); white-space:nowrap}
+.gh .gr{font-family:var(--font-num); font-size:12px; color:var(--ink-3); white-space:nowrap}
+.gh .gr.warn{color:var(--accent)}
+.gscope{padding:0 14px 9px; font-size:12.5px; color:var(--ink-2); line-height:1.65}
+.gscope b{color:var(--ink)}
+.gbar{height:5px; border-radius:3px; background:var(--brand-soft); overflow:hidden; margin:0 14px 10px}
+.gbar i{display:block; height:100%; background:var(--brand); transition:width .25s ease}
+.gbody{padding:10px 14px 12px; border-top:1px solid var(--line)}
+.gch{list-style:none; margin:0; padding:0; display:grid; gap:5px}
+.gch li{display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; padding:6px 9px; border-radius:var(--r-s); background:var(--bg)}
+.gch li:hover{background:var(--brand-soft)}
+.gch .c1{font-size:13px; line-height:1.5; min-width:0}
+.gch .c1 .u{display:block; font-size:11.5px; color:var(--ink-3); margin-top:1px}
+.gch .c2{display:flex; align-items:center; gap:8px; white-space:nowrap}
+.gch .c2 .n{font-family:var(--font-num); font-size:11.5px; color:var(--ink-2)}
+@media (max-width:560px){
+  .gch li{grid-template-columns:1fr}
+  .gch .c2{justify-content:flex-start; flex-wrap:wrap}
+  .gh .gsp{flex:1 1 100%}
+}
+
 /* ===== 章节练习 / 考点地图 ===== */
 .tree{display:grid; gap:var(--sp-3)}
 .mod{border:1px solid var(--line); border-radius:var(--r); background:var(--surface); overflow:hidden}
@@ -497,7 +526,8 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
     <nav class="nav" aria-label="主导航">
       <button data-go="#/dashboard" aria-current="page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span>工作台</span></button>
       <button data-go="#/plan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5.5h10M10 12h10M10 18.5h10"/><path d="M4 5.5 5.4 7 7.4 4.6M4 12l1.4 1.5L7.4 11M4 18.5l1.4 1.5 2-2.4"/></svg><span>学习计划</span></button>
-      <button data-go="#/bank"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/></svg><span>题库</span></button>      <button data-go="#/chapters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M11 4h7.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H11"/></svg><span>章节练习</span></button>
+      <button data-go="#/bank"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/></svg><span>题库</span></button>      <button data-go="#/goal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><span>题库分类</span></button>
+      <button data-go="#/chapters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M11 4h7.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H11"/></svg><span>章节练习</span></button>
       <button data-go="#/practice"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M16.5 3.8 20.2 7.5 8.7 19H5v-3.7z"/><path d="M4 21h16"/></svg><span>做题</span></button>
       <button data-go="#/exam"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2M9 2.5h6"/></svg><span>模拟考场</span></button>
       <button data-go="#/map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6.5 9.5 4 15 6.5 21 4v13.5L15 20l-5.5-2.5L3 20z"/><path d="M9.5 4v13.5M15 6.5V20"/></svg><span>考点地图</span></button>
@@ -588,7 +618,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
       <div class="card" style="margin-bottom:var(--sp-4)">
         <h2>总进度</h2>
-        <p class="sub">按勾选项计；「去做」跳到对应入口，带题型筛选的直接落到那批题上</p>
+        <p class="sub">按勾选项计；「去做」一律跳到「<b>题库分类</b>」里这一目标的章节清单——目标挂不到题的（文件读写、计算复杂度、错题归档这类），那里会写明没有对应题目，不会给你一张空表</p>
         <div class="plan-sum"><b id="plan-done">0</b><span>/ <span id="plan-total">0</span> 项</span><span class="muted" id="plan-note"></span></div>
         <div class="pbar" id="plan-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="学习计划完成进度"><i></i></div>
         <div class="row" style="margin-top:var(--sp-3)">
@@ -598,7 +628,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
       <div id="plan-body"></div>
 
-      <p class="tiny muted" style="margin-top:var(--sp-3)">为什么先写程序：38A 的程序填空与编程题合计 38 道，是主观题的全部；题库里涉代码的题共 107 道，其中 47 道落在「Python 编程基础」。这类只能靠手写练出来，塞不进最后几天的记忆窗口。反之，知道级的 36 条只要「定义 + 一个例子」，放到最后一周反而记得更牢——所以顺序是反着来的，不是随便排的。</p>
+      <p class="tiny muted" style="margin-top:var(--sp-3)">为什么先写程序：题库里要动手写代码的硬题共 <b>55 道</b>（编程题 45、程序填空 7、程序选择 2、程序阅读 1），其中 38A 卷内只有 12 道，另外 43 道散在教材题与补题里——只刷 38A 会漏掉大半。这类只能靠手写练出来，塞不进最后几天的记忆窗口。反之，知道级的 36 条只要「定义 + 一个例子」，放到最后一周反而记得更牢——所以顺序是反着来的，不是随便排的。</p>
     </section>
 
     <!-- ===== 视图：题库 ===== -->
@@ -628,6 +658,29 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       </div>
 
       <ul class="qlist" id="bank-list"></ul>
+    </section>
+
+    <!-- ===== 视图：题库分类 ===== -->
+    <section class="view" id="v-goal" aria-labelledby="h-goal">
+      <div class="vhead">
+        <div>
+          <h1 id="h-goal">题库分类</h1>
+          <p>最外层是<b>学习目标</b>——与「学习计划」同一套 21 项，不是另立一套说法；点开是<b>章节</b>，即考纲的知识单元与知识点条目。每一层的题量、已练题数、正确率都按题库现算，一个数字都不写死；哪一块题库里还没题，这里会直接说没有，不拿空卡片糊弄。</p>
+        </div>
+        <span class="chip" id="goal-cov">—</span>
+      </div>
+
+      <div class="card" style="margin-bottom:var(--sp-4)">
+        <h2>归属总览</h2>
+        <p class="sub" id="goal-sum">—</p>
+        <div class="pbar" id="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="题库被学习目标覆盖的比例"><i></i></div>
+        <div class="row" style="margin-top:var(--sp-3)">
+          <button class="btn sm ghost" type="button" id="goal-fold">全部折叠</button>
+          <button class="btn sm ghost" type="button" id="goal-goto-plan">回到学习计划</button>
+        </div>
+      </div>
+
+      <div id="goal-body"></div>
     </section>
 
     <!-- ===== 视图：章节练习 ===== -->
@@ -1973,7 +2026,7 @@ function qbForNode(node){
 }
 
 /* ---------- 路由（哈希路由多视图） ---------- */
-var VIEWS=["dashboard","plan","bank","chapters","practice","exam","map","mistakes","sources"];
+var VIEWS=["dashboard","plan","goal","bank","chapters","practice","exam","map","mistakes","sources"];
 function route(){
   var h=String(location.hash||"").replace(/^#\//,"");
   if(VIEWS.indexOf(h)<0) h="dashboard";
@@ -1981,6 +2034,7 @@ function route(){
   $$(".nav button").forEach(function(b){ b.setAttribute("aria-current", b.getAttribute("data-go")==="#/"+h ? "page" : "false"); });
   if(h==="dashboard") renderDash();
   else if(h==="plan") renderPlan();
+  else if(h==="goal") renderGoals();
   else if(h==="bank") renderBank();
   else if(h==="chapters") renderChapters();
   else if(h==="practice") renderPractice();
@@ -2049,67 +2103,84 @@ function renderTimeline(){
 
 /* ---------- 学习计划（勾选存本机） ----------
    顺序原则：P1 先把「要写程序」的部分啃下来，P4 最后几天只看概念、不再开新代码。
-   依据是题库实测：涉代码的题 107 道（Python 编程基础 47、数据处理 19、机器学习 22、
-   深度学习 9、搜索 3、其它 7），其中程序填空 7 + 编程题 28 = 38 道是要动手写的硬题，
-   塞不进最后几天的记忆窗口；反过来知道级 36 条只要「定义 + 一个例子」，最后一周背更牢。
-   每项带 n（验收口径）与可选 go（入口）/bank（题型筛选），勾选写入 Store，刷新不丢。 */
+   依据是题库实测：要动手写代码的硬题 55 道（编程题 45、程序填空 7、程序选择 2、程序阅读 1），
+   其中 38A 卷内只有 12 道（程序填空 7 + 编程题 5），其余 43 道散在教材题与补题里；
+   这类题塞不进最后几天的记忆窗口。反过来知道级 36 条只要「定义 + 一个例子」，最后一周背更牢。
+   每项带 n（验收口径）与 scope（题库归属范围，见「题库分类」视图），scope 命中量一律由题库现算；
+   无 scope 的是策略项（错题归档、概念对照），不假装有题。勾选写入 Store，刷新不丢。 */
 var PLAN=[
   {ph:"P1", name:"先写程序", when:"10/22 – 11/05（15 天）",
-   why:"涉代码的题共 <b>107 道</b>，其中 47 道在「Python 编程基础」下；38A 的程序填空与编程题合计 <b>38 道</b>，是主观题的全部。这块只能手写练出来，越早越好——最后几天是背概念的，补不进代码。",
+   why:"要动手写代码的题共 <b>55 道</b>（编程题 45、程序填空 7、程序选择 2、程序阅读 1），其中 38A 卷内只有 12 道，另外 <b>43 道</b>在教材题与补题里。这块只能手写练出来，越早越好——最后几天是背概念的，补不进代码。题量按题库现算，见「题库分类」。",
    items:[
-     {id:"p1-1", t:"Python 变量、类型与运算符", n:"Python 编程基础 47 题",
-      s:"验收：不看书写出类型转换、字符串拼接、数字与字符串互转各 3 行。", go:"#/chapters"},
-     {id:"p1-2", t:"分支与循环（break、continue）", n:"手写 5 个小题",
-      s:"验收：自己写出 while 求和、for 找最大值、嵌套循环打印图形。"},
-     {id:"p1-3", t:"函数与 lambda", n:"手写 5 个小题",
-      s:"验收：定义函数、默认参数、返回值、lambda 各写出 1 个能跑的例子。"},
-     {id:"p1-4", t:"列表 / 元组 / 字典 / 集合", n:"手写 5 个小题",
-      s:"验收：增删查改 + 推导式各写 1 段；列表与元组的区别能说出 3 点。"},
-     {id:"p1-5", t:"文件读写与异常处理", n:"手写 3 个小题",
-      s:"验收：读 txt、写 txt、try/except 各 1 个例子，能解释异常被捕获后的流程。"},
+     {id:"p1-1", t:"Python 变量、类型与运算符", n:"2 个知识点 · 25 题",
+      s:"验收：不看书写出类型转换、字符串拼接、数字与字符串互转各 3 行。",
+      scope:[{area:"Python 编程基础", item:"变量、命名规则与注释"},{area:"Python 编程基础", item:"数字、字符串与类型转换"}]},
+     {id:"p1-2", t:"分支与循环（break、continue）", n:"1 个知识点 · 27 题",
+      s:"验收：自己写出 while 求和、for 找最大值、嵌套循环打印图形。",
+      scope:[{area:"Python 编程基础", item:"分支与循环结构（break、continue）"}]},
+     {id:"p1-3", t:"函数与 lambda", n:"1 个知识点 · 10 题",
+      s:"验收：定义函数、默认参数、返回值、lambda 各写出 1 个能跑的例子。",
+      scope:[{area:"Python 编程基础", item:"函数定义、参数与 lambda"}]},
+     {id:"p1-4", t:"列表 / 元组 / 字典 / 集合", n:"1 个知识点 · 14 题",
+      s:"验收：增删查改 + 推导式各写 1 段；列表与元组的区别能说出 3 点。",
+      scope:[{area:"Python 编程基础", item:"列表、元组、字典与集合"}]},
+     {id:"p1-5", t:"文件读写与异常处理", n:"题库未覆盖",
+      s:"验收：读 txt、写 txt、try/except 各 1 个例子，能解释异常被捕获后的流程。<b>考纲与本题库都没有对应条目</b>，只能按教材自练——别在这里等题出现。"},
      {id:"p1-6", t:"程序填空 7 道全对（38A 原题）", n:"7 题",
-      s:"验收：逐字对照官方答案，写出每空为什么填这个；填错的题当天重写一遍。", go:"#/bank", bank:{type:"程序填空题"}},
-     {id:"p1-7", t:"编程题 28 道", n:"28 题",
-      s:"验收：先写思路再手写代码，单题 30 分钟内完成；只用默认库。", go:"#/bank", bank:{type:"编程题"}},
-     {id:"p1-8", t:"数据处理三件套（NumPy / Pandas / Matplotlib）", n:"数据处理 19 题",
-      s:"验收：三个库各跑通 1 个示例，能说出输入什么、输出什么。"},
-     {id:"p1-9", t:"38A 全卷摸底一遍", n:"对齐 10/24 节点",
-      s:"目标是知道哪个领域最差，不是做对；摸底没做完，当天教材精读就取消，先摸完。", go:"#/exam"}
+      s:"验收：逐字对照官方答案，写出每空为什么填这个；填错的题当天重写一遍。",
+      scope:{type:"程序填空题"}},
+     {id:"p1-7", t:"编程题 45 道", n:"45 题",
+      s:"验收：先写思路再手写代码，单题 30 分钟内完成；只用默认库。其中 38A 卷内只有 5 道，另 40 道来自教材题与补题。",
+      scope:{type:"编程题"}},
+     {id:"p1-8", t:"数据处理三件套（NumPy / Pandas / Matplotlib）", n:"3 个单元 · 67 题",
+      s:"验收：三个库各跑通 1 个示例，能说出输入什么、输出什么。",
+      scope:{area:"人工智能数据处理基础"}},
+     {id:"p1-9", t:"38A 全卷摸底一遍", n:"38A 全卷 · 95 题",
+      s:"目标是知道哪个领域最差，不是做对；摸底没做完，当天教材精读就取消，先摸完。整卷计时去「模拟考场」，这里按章节看分布。",
+      scope:{src:"38A"}, exam:true}
    ]},
   {ph:"P2", name:"攻算法与计算", when:"11/06 – 11/15（10 天）",
    why:"38A 里最费分的不是背诵，是「给你一个算法场景，问你下一步会怎样」。这一档靠想清楚，不靠记住。<b>掌握级 38 条</b>是默认优先范围（考纲树 106 条：掌握 38 / 理解 32 / 知道 36）。",
    items:[
-     {id:"p2-1", t:"搜索与博弈：BFS / DFS / A* / minimax / α-β 剪枝", n:"扩展条目 6 条",
-      s:"验收：能画出一棵 3 层的搜索树，标出剪枝位置；说得出 BFS 与 DFS 的搜索顺序差在哪。"},
-     {id:"p2-2", t:"sklearn：fit / predict / score 跑通", n:"机器学习 22 题",
-      s:"验收：在 toy 数据上训练一个模型并评分，能说清 fit 与 predict 各自做什么。"},
-     {id:"p2-3", t:"损失函数与梯度下降", n:"手算一轮",
-      s:"验收：给定 w、lr 与样本，手算一轮参数更新，写出结果。"},
-     {id:"p2-4", t:"反向传播", n:"讲清 3 分钟",
-      s:"验收：能说清链式求导在算什么、为什么叫「反向」。讲不出来就说明没懂。"},
-     {id:"p2-5", t:"计算与复杂度", n:"手算 5 题",
-      s:"验收：时间/空间复杂度各写 3 个例子；矩阵运算规模手算 1 题。"}
+     {id:"p2-1", t:"搜索与博弈：BFS / DFS / A* / minimax / α-β 剪枝", n:"4 个单元 · 51 题",
+      s:"验收：能画出一棵 3 层的搜索树，标出剪枝位置；说得出 BFS 与 DFS 的搜索顺序差在哪。",
+      scope:{area:"搜索与博弈"}},
+     {id:"p2-2", t:"sklearn：fit / predict / score 跑通", n:"两个领域 · 211 题",
+      s:"验收：在 toy 数据上训练一个模型并评分，能说清 fit 与 predict 各自做什么。",
+      scope:[{area:"机器学习基础"},{area:"机器学习"}]},
+     {id:"p2-3", t:"损失函数与梯度下降", n:"2 个知识点 · 17 题",
+      s:"验收：给定 w、lr 与样本，手算一轮参数更新，写出结果。",
+      scope:[{item:"损失函数"},{item:"梯度下降法"}]},
+     {id:"p2-4", t:"反向传播", n:"1 个知识点 · 11 题",
+      s:"验收：能说清链式求导在算什么、为什么叫「反向」。讲不出来就说明没懂。",
+      scope:{item:"反向传播"}},
+     {id:"p2-5", t:"计算与复杂度", n:"题库未覆盖",
+      s:"验收：时间/空间复杂度各写 3 个例子；矩阵运算规模手算 1 题。<b>考纲没有「复杂度」独立条目</b>，题库也就不可能有——按教材自练，别在这儿找题。"}
    ]},
   {ph:"P3", name:"扫理解级", when:"11/16 – 11/21（6 天）",
    why:"理解级只要求「概念 + 与相邻概念的区别」，不要求推导。这一档靠对比记，单条背是浪费时间。",
    items:[
-     {id:"p3-1", t:"理解级 32 条：一句话定义 + 与相邻概念的区别", n:"32 条",
-      s:"验收：每条写 1 句定义 + 1 对区别（例如监督 vs 无监督、精确率 vs 召回率）。", go:"#/chapters"},
-     {id:"p3-2", t:"多选题专项", n:"多选题",
-      s:"题库里多选占 15.6%，而 38A 卷面占 30.5%——这块明显是短板，补一轮。", go:"#/bank", bank:{type:"多选题"}},
-     {id:"p3-3", t:"错题本第一轮归档", n:"按三类分",
+     {id:"p3-1", t:"理解级 32 条：一句话定义 + 与相邻概念的区别", n:"32 条 · 262 题",
+      s:"验收：每条写 1 句定义 + 1 对区别（例如监督 vs 无监督、精确率 vs 召回率）。条目 32 条、题 262 道，本机一个人练不完就按章节挑。",
+      scope:{req:"理解"}},
+     {id:"p3-2", t:"多选题专项", n:"147 题",
+      s:"题库里多选占 15.6%（147/942），而 38A 卷面占 30.5%（29/95）——这块明显是短板，补一轮。",
+      scope:{type:"多选题"}},
+     {id:"p3-3", t:"错题本第一轮归档", n:"按三类分", go:"#/mistakes", golabel:"去错题本",
       s:"验收：每道错题标「盲区 / 偏差 / 粗心」之一；盲区型回头补原理，不是再做一遍就完。", go:"#/mistakes"}
    ]},
   {ph:"P4", name:"只看概念", when:"11/22 – 11/28（7 天）",
    why:"最后七天<b>不再开新代码</b>。知道级只要「定义 + 一个例子 + 使用场景」，这是典型的短期记忆窗口任务，放这里记得最牢。把时间花在默写上，比从头写代码划算。",
    items:[
-     {id:"p4-1", t:"知道级 36 条：定义 + 一个例子 + 场景", n:"36 条",
-      s:"验收：遮住笔记能说出台定义与例子；说不出的就是没记住，当天补。"},
+     {id:"p4-1", t:"知道级 36 条：定义 + 一个例子 + 场景", n:"36 条 · 209 题",
+      s:"验收：遮住笔记能说出台定义与例子；说不出的就是没记住，当天补。",
+      scope:{req:"知道"}},
      {id:"p4-2", t:"易混概念对照 20 组", n:"20 组",
       s:"验收：过拟合/欠拟合、精确率/召回率、监督/无监督、批/流…每组写出一句区分。"},
-     {id:"p4-3", t:"38A 二刷 ≥75%", n:"对齐 11/26 节点",
-      s:"低于 65% 就放弃编程题专项，全力保单多选——这是临考 2 天能救回来的部分。", go:"#/exam"},
-     {id:"p4-4", t:"考前最后一天：只看错题本与概念卡", n:"不写新代码",
+     {id:"p4-3", t:"38A 二刷 ≥75%", n:"对齐 11/26 节点 · 95 题",
+      s:"低于 65% 就放弃编程题专项，全力保单多选——这是临考 2 天能救回来的部分。",
+      scope:{src:"38A"}, exam:true},
+     {id:"p4-4", t:"考前最后一天：只看错题本与概念卡", n:"不写新代码", go:"#/mistakes", golabel:"去错题本",
       s:"验收：晚上不碰新题，只翻错题本与 20 组对照表；把作息对齐 11/28 11:30 开考。", go:"#/mistakes"}
    ]}
 ];
@@ -2153,7 +2224,7 @@ function renderPlan(){
         '<label><input type="checkbox" data-pid="'+it.id+'"'+(on?" checked":"")+'>'+
         '<span class="c"><span class="t">'+esc(it.t)+(it.n?'<span class="n">'+esc(it.n)+'</span>':'')+'</span>'+
         '<span class="s">'+it.s+'</span></span></label>'+
-        (it.go?'<button class="btn sm ghost" type="button" data-pgo="'+it.id+'">去做</button>':'')+
+        '<button class="btn sm ghost" type="button" data-pgo="'+it.id+'">去做</button>'+
       '</li>';
     }).join("");
     return '<div class="planph"><div class="planph-h"><h2>'+esc(ph.ph)+' '+esc(ph.name)+'</h2>'+
@@ -2197,9 +2268,205 @@ document.addEventListener("click", function(e){
   var id=btn.getAttribute("data-pgo"), it=null;
   PLAN.forEach(function(p){ p.items.forEach(function(x){ if(x.id===id) it=x; }); });
   if(!it) return;
-  if(it.bank && it.bank.type){ S.bank={cat:"all", pack:"all", type:it.bank.type, req:"all", kw:"", syl:null}; }
-  var hash=it.go || "#/bank";
-  if(location.hash===hash){ route(); } else { location.hash=hash; }
+  /* 有 scope 的目标一律去「题库分类」里这一项：章节清单、题量、进度都在那儿，
+     留在这儿跳一次筛选等于让用户自己再找一遍。没 scope 的才走各自入口。 */
+  GOAL_FOCUS=it.id; GOAL_OPEN[it.id]=true;
+  if(location.hash==="#/goal"){ renderGoals(); } else { location.hash="#/goal"; }
+});
+
+/* ---------- 题库分类（学习目标 → 考纲章节） ----------
+   学习目标与「学习计划」是同一套 21 项，不另立一套说法：改计划只需改一处。
+   每个目标声明 scope（归属范围），题量／已练／正确率一律由题库与作答记录现算——
+   写死数字会在题库补录后失真，而且没人会发现它已经错了（本次就抓到 47／28／107 三个错的）。
+   scope 字段：area 知识领域 / unit 知识单元 / item 知识点 / type 题型 / req 考纲要求 / src 来源；
+   数组表示取并集。没有 scope 的是策略项（错题归档、概念对照、自练项），明确标「题库未覆盖」。 */
+var GOAL_OPEN={}, GOAL_FOCUS="";
+function goalMatch(q, sc){
+  var s=q.syllabus||{};
+  if(sc.area && String(s.知识领域||"")!==sc.area) return false;
+  if(sc.unit && String(s.知识单元||"")!==sc.unit) return false;
+  if(sc.item && String(s.知识点||"")!==sc.item) return false;
+  if(sc.type && typeOf(q)!==sc.type) return false;
+  if(sc.req && reqOf(q)!==sc.req) return false;
+  if(sc.src && String(q.source||"")!==sc.src) return false;
+  return true;
+}
+function goalHits(scope){
+  if(!scope) return [];
+  var arr=Object.prototype.toString.call(scope)==="[object Array]" ? scope : [scope];
+  var out=[], seen={}, i, j;
+  for(i=0;i<QB.length;i++){
+    for(j=0;j<arr.length;j++){
+      if(goalMatch(QB[i].q, arr[j])){ if(!seen[i]){ seen[i]=1; out.push(i); } break; }
+    }
+  }
+  return out;
+}
+function goalStat(idxs){
+  var done=0, graded=0, ok=0;
+  list(idxs).forEach(function(i){
+    var q=QS[i]; if(!q) return;
+    var r=S.rec[q.id]; if(!r) return;
+    done++;
+    if(r.ok===true){ graded++; ok++; } else if(r.ok===false){ graded++; }
+  });
+  return {n:list(idxs).length, done:done, graded:graded, ok:ok, pct:graded?Math.round(ok*100/graded):0};
+}
+/* 章节 = 知识单元 › 知识点（即考纲条目）；顺序跟考纲树走，考纲没挂上的题归入「考纲未列」排最后 */
+function goalChapters(idxs){
+  var g={}, keys=[];
+  list(idxs).forEach(function(i){
+    var s=QS[i].syllabus||{};
+    var item=String(s.知识点||"");
+    var key=item ? (norm(s.模块)+"|"+norm(s.知识领域)+"|"+norm(s.知识单元)+"|"+norm(item)) : "__none__";
+    if(!g[key]){
+      var nd=item ? NODEKEY[key] : null;
+      g[key]={area:String(s.知识领域||""), unit:String(s.知识单元||""), item:item, req:String(s.要求||""),
+              idxs:[], ord:(nd?nd.idx:1e9)};
+      keys.push(key);
+    }
+    g[key].idxs.push(i);
+  });
+  keys.sort(function(a,b){ return (g[a].ord-g[b].ord) || (a<b?-1:1); });
+  return keys.map(function(k){ return g[k]; });
+}
+function scopeLabel(scope){
+  var arr=Object.prototype.toString.call(scope)==="[object Array]" ? scope : [scope];
+  /* 同一领域下的多个知识点合并写：否则「领域「X」· 知识点「A」＋领域「X」· 知识点「B」」会把领域重复两遍 */
+  if(arr.length>1 && arr.every(function(x){ return x.area && x.area===arr[0].area && !x.src && !x.type && !x.req && !x.unit; })){
+    return "领域「"+arr[0].area+"」· 知识点 "+arr.map(function(x){ return "「"+x.item+"」"; }).join("");
+  }
+  return arr.map(function(sc){
+    var seg=[];
+    if(sc.src) seg.push("来源「"+(sc.src==="38A"?"38A 官方模拟卷":sc.src)+"」");
+    if(sc.area) seg.push("领域「"+sc.area+"」");
+    if(sc.unit) seg.push("单元「"+sc.unit+"」");
+    if(sc.item) seg.push("知识点「"+sc.item+"」");
+    if(sc.type) seg.push("题型「"+sc.type+"」");
+    if(sc.req) seg.push("考纲要求「"+sc.req+"」");
+    return seg.join(" · ") || "全部题目";
+  }).join(" ＋ ");
+}
+/* 单张目标卡：头部（题量、进度、入口）+ 展开后的章节清单 */
+function goalCardHtml(ph, it){
+  var hits=it._hits||[], st=goalStat(hits), open=!!GOAL_OPEN[it.id];
+  var chs=hits.length ? goalChapters(hits) : [];
+  it._chs=chs;
+  var rate = st.done ? ("已练 "+st.done+"/"+st.n+(st.graded?(" · 答对率 "+st.pct+"%"):" · 待判分")) : "未开始";
+  var pctv = st.n ? Math.round(st.done*100/st.n) : 0;
+  var head='<div class="gh"><span class="gid">'+esc(ph.ph+" · "+it.id)+'</span>'+
+    '<h3>'+esc(it.t)+'</h3><span class="gsp"></span>'+
+    (hits.length
+      ? '<span class="gn">'+st.n+' 题</span><span class="gr'+(st.graded&&st.pct<60?" warn":"")+'">'+esc(rate)+'</span>'+
+        '<button class="btn sm primary" type="button" data-gall="'+esc(it.id)+'">练全部 '+st.n+' 题</button>'
+      : '<span class="gn">0 题</span><span class="gr">题库未覆盖</span>'+
+        (it.go?'<button class="btn sm ghost" type="button" data-go="'+esc(it.go)+'">'+esc(it.golabel||"去对应入口")+'</button>':""))+
+    (it.exam?'<button class="btn sm ghost" type="button" data-go="#/exam">整卷计时</button>':"")+
+    (hits.length
+      ? '<button class="btn sm ghost" type="button" data-gtog="'+esc(it.id)+'" aria-expanded="'+String(open)+'">'+
+        (open?"收起章节 ▴":"章节 "+chs.length+" ▾")+'</button>'
+      : "")+
+    '</div>';
+  var sub='';
+  if(hits.length){
+    /* 「未归属」那张卡没有 scope（它就是所有目标之外剩下的题），别把 undefined 丢进 scopeLabel */
+    var lab = it.scope ? scopeLabel(it.scope) : "不属于任何学习目标（题库中剩下的题）";
+    sub='<p class="gscope"><b>归属范围</b>　'+esc(lab)+'　·　章节 <b>'+chs.length+'</b> 个，题量按题库现算</p>';
+  }else{
+    sub='<p class="gscope"><b>归属范围</b>　'+(it.scope?esc(scopeLabel(it.scope)):"策略项，不指向具体题目（题库里没有对应条目）")+
+        '　·　'+(it.n?esc(it.n):"")+'</p>';
+  }
+  var bar='<div class="gbar"><i style="width:'+pctv+'%"></i></div>';
+  var body="";
+  if(hits.length && open){
+    body='<div class="gbody"><ul class="gch">'+chs.map(function(c,ci){
+      var cs=goalStat(c.idxs);
+      var label=c.item ? esc(c.item) : '<span style="color:var(--accent)">考纲未列的题</span>';
+      var u=c.item ? (c.area?esc(c.area)+" · ":"")+esc(c.unit) : "这些题没有挂考纲坐标";
+      return '<li><span class="c1">'+label+' '+reqChip(c.req)+'<span class="u">'+u+'</span></span>'+
+        '<span class="c2"><span class="n">'+cs.n+' 题'+(cs.done?(' · 已练 '+cs.done):'')+(cs.graded?(' · '+cs.pct+'%'):'')+'</span>'+
+        '<button class="btn sm ghost" type="button" data-gch="'+esc(it.id)+'" data-gi="'+ci+'">练这章</button></span></li>';
+    }).join("")+'</ul></div>';
+  }
+  return '<div class="gcard'+(GOAL_FOCUS===it.id?" focus":"")+(hits.length?"":" pend")+'" id="gcard-'+esc(it.id)+'">'+
+    head+sub+bar+body+'</div>';
+}
+function renderGoals(){
+  ensureNodeQs();
+  var cov={}, targets=0, withQs=0, pend=0;
+  PLAN.forEach(function(ph){
+    ph.items.forEach(function(it){
+      targets++;
+      if(it.scope){ it._hits=goalHits(it.scope); it._hits.forEach(function(i){ cov[i]=1; }); withQs++; }
+      else { it._hits=[]; pend++; }
+    });
+  });
+  var orphan=[];
+  QB.forEach(function(b){ if(!cov[b.i]) orphan.push(b.i); });
+  PLAN._orphan=orphan;   /* 「未归属」卡片的练题入口要用，别只渲染一次就丢 */
+  var covN=QB.length-orphan.length;
+  var chip=$("#goal-cov"); if(chip) chip.textContent="覆盖 "+K(covN)+" / "+K(QB.length)+" 题";
+  var sum=$("#goal-sum");
+  if(sum) sum.innerHTML="学习目标 <b>"+targets+"</b> 项：<b>"+withQs+"</b> 项挂到了题库，<b>"+pend+"</b> 项是策略项（题库里没有对应题目，不假装有）。"+
+    "题库 <b>"+K(QB.length)+"</b> 题中 <b>"+K(covN)+"</b> 题至少归属一个目标，另有 <b>"+K(orphan.length)+"</b> 题没挂到任何目标，单列在页尾。"+
+    "所有数字随题库与作答记录实时计算，题库补录后自动更新。";
+  var bar=$("#goal-bar");
+  if(bar){
+    var p=QB.length?Math.round(covN*100/QB.length):0;
+    bar.setAttribute("aria-valuenow", String(p));
+    var i=bar.querySelector("i"); if(i) i.style.width=p+"%";
+    bar.setAttribute("title","已归属 "+K(covN)+" / "+K(QB.length)+" 题（"+p+"%）");
+  }
+  var host=$("#goal-body"); if(!host) return;
+  host.innerHTML=PLAN.map(function(ph){
+    return '<div class="planph"><div class="planph-h"><h2>'+esc(ph.ph+" "+ph.name)+'</h2>'+
+      '<span class="when">'+esc(ph.when)+'</span></div>'+
+      '<p class="why">'+ph.why+'</p>'+
+      ph.items.map(function(it){ return goalCardHtml(ph, it); }).join("")+'</div>';
+  }).join("")+
+  '<div class="planph"><div class="planph-h"><h2>未归属</h2><span class="when">'+K(orphan.length)+' 题</span></div>'+
+    '<p class="why">这些题在题库里，但没有任何一个学习目标覆盖到——不是不重要，是计划还没给它们派活。点开按章节看分布，觉得该练就整章练；也可以据此往计划里补目标。</p>'+
+    goalCardHtml({ph:"—"}, {id:"__orphan", t:"没挂到学习目标的题", n:K(orphan.length)+" 题", _hits:orphan})+
+  '</div>';
+  if(GOAL_FOCUS){
+    var el=document.getElementById("gcard-"+GOAL_FOCUS);
+    if(el) setTimeout(function(){ try{ el.scrollIntoView({block:"start",behavior:"auto"}); }catch(e){ el.scrollIntoView(); } },0);
+  }
+}
+$("#goal-body") && $("#goal-body").addEventListener("click", function(e){
+  var t=e.target;
+  var b=t.closest ? t.closest("[data-gtog]") : null;
+  if(b){ var gid=b.getAttribute("data-gtog"); GOAL_OPEN[gid]=!GOAL_OPEN[gid]; renderGoals(); return; }
+  b=t.closest ? t.closest("[data-gall]") : null;
+  if(b){
+    var id=b.getAttribute("data-gall"), hit=null, item=null;
+    PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if(it.id===id){ hit=it; item=it; } }); });
+    if(id==="__orphan"){ hit={_hits:(PLAN._orphan||[])}; }
+    if(!hit || !(hit._hits||[]).length){ toast("这个目标在题库里没有题"); return; }
+    startPractice(hit._hits.slice(), "题库分类："+(item?item.t:"未归属题目"));
+    return;
+  }
+  b=t.closest ? t.closest("[data-gch]") : null;
+  if(b){
+    var gid2=b.getAttribute("data-gch"), gi=parseInt(b.getAttribute("data-gi"),10);
+    var it2=null;
+    PLAN.forEach(function(ph){ ph.items.forEach(function(x){ if(x.id===gid2) it2=x; }); });
+    if(gid2==="__orphan") it2={_chs:goalChapters(PLAN._orphan||[])};
+    var c=it2 && it2._chs ? it2._chs[gi] : null;
+    if(!c || !c.idxs.length){ toast("这一章没有题目"); return; }
+    startPractice(c.idxs.slice(), "题库分类："+(c.item||"考纲未列")+(c.unit?"（"+c.unit+"）":""));
+    return;
+  }
+});
+$("#goal-fold") && $("#goal-fold").addEventListener("click", function(){
+  var any=false; PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if(GOAL_OPEN[it.id]) any=true; }); });
+  if(GOAL_OPEN.__orphan) any=true;
+  if(any){ GOAL_OPEN={}; GOAL_FOCUS=""; this.textContent="全部展开"; }
+  else { PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if((it._hits||[]).length) GOAL_OPEN[it.id]=true; }); }); GOAL_OPEN.__orphan=true; this.textContent="全部折叠"; }
+  renderGoals();
+});
+$("#goal-goto-plan") && $("#goal-goto-plan").addEventListener("click", function(){
+  if(location.hash==="#/plan"){ route(); } else { location.hash="#/plan"; }
 });
 
 /* ---------- 工作台 ---------- */
