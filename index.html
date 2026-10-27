@@ -249,6 +249,12 @@ a{color:var(--brand-text)}
 
 /* ===== 做题 ===== */
 .exam{display:grid; grid-template-columns:1fr; gap:var(--sp-3); align-items:start}
+/* 宽屏双栏时左右各自成为独立滚动区：鼠标停在左栏就只滚左栏，停在右栏就只滚右栏。
+   高度由 JS 量出 .exam 到视口顶的距离写进 --exam-h（顶栏换行时高度会变，纯 CSS 算不准）。
+   overscroll-behavior:contain 负责把滚动链截断在本栏内，不往整页传导。 */
+.exam.pane-scroll{height:var(--exam-h, 70vh); align-items:stretch}
+.exam.pane-scroll > .card{overflow-y:auto; overscroll-behavior-y:contain; min-height:0}
+.exam.pane-scroll > .qcard{position:static}
 .qcard{min-width:0}
 .qmeta{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:var(--sp-3)}
 .qidx{font-family:var(--font-num); font-size:13px; color:var(--ink-2)}
@@ -3046,7 +3052,34 @@ function renderPractice(){
     pt.setAttribute("aria-pressed", String(!!S.parseAlways && !!S.answered));
     pt.textContent=S.answered ? (S.parseAlways?"详解常显":"详解已隐藏") : "作答后显示详解";
   }
+  syncExamBox();
+  /* 换题才回顶：同一题判卷后重新渲染时不动滚动位置，否则刚滚到解析中段就被弹回去 */
+  if(q.id!==LAST_QID){
+    LAST_QID=q.id;
+    var qc=$("#v-practice .qcard"), pc=$("#q-pane-card");
+    if(qc) qc.scrollTop=0;
+    if(pc) pc.scrollTop=0;
+  }
 }
+var LAST_QID=null;
+/* 左右分栏各自滚动：只有宽到能并排（≥768px）才启用；窄屏保持整页滚动，避免把
+   一屏高的容器塞进手机。高度必须实测——顶栏（标题＋说明）在两栏宽度下会换行，高度不固定。 */
+function syncExamBox(){
+  var ex=document.querySelector("#v-practice .exam");
+  if(!ex) return;
+  var narrow = window.innerWidth < 768;
+  if(narrow){ ex.classList.remove("pane-scroll"); ex.style.removeProperty("--exam-h"); return; }
+  var v=document.getElementById("v-practice");
+  /* 视图用 .on 类控制 display，不是 hidden 属性：隐藏时 rect 全为 0，量出来的是假高度 */
+  if(!v || !v.classList.contains("on")) return;
+  var topDoc = ex.getBoundingClientRect().top + window.pageYOffset;
+  var avail = Math.round(window.innerHeight - topDoc - 14);
+  if(avail < 320){ ex.classList.remove("pane-scroll"); ex.style.removeProperty("--exam-h"); return; }
+  ex.style.setProperty("--exam-h", avail+"px");
+  ex.classList.add("pane-scroll");
+}
+window.addEventListener("resize", syncExamBox);
+window.addEventListener("orientationchange", function(){ setTimeout(syncExamBox, 120); });
 function renderQBody(q){
   var body=$("#q-body"), area=$("#q-answer-area"); if(!body||!area) return;
   var r=S.rec[q.id], done=S.answered;
