@@ -176,6 +176,7 @@ a{color:var(--brand-text)}
 .chk > li.done .t{text-decoration:line-through; color:var(--ink-2)}
 .chk .s{font-size:12.5px; color:var(--ink-2); display:block; margin-top:1px; line-height:1.6}
 .chk .n{font-family:var(--font-num); font-size:11.5px; color:var(--ink-3); white-space:nowrap; margin-left:6px; font-weight:400}
+.chk .pnreq{display:inline-flex; align-items:center; gap:5px; margin-left:6px; vertical-align:1px; flex-wrap:wrap}
 .pbar{height:6px; border-radius:3px; background:var(--brand-soft); overflow:hidden; margin:var(--sp-2) 0 4px}
 .pbar i{display:block; height:100%; background:var(--brand); width:0; transition:width .25s ease}
 .plan-sum{display:flex; align-items:baseline; gap:var(--sp-2); flex-wrap:wrap; font-size:13px; color:var(--ink-2)}
@@ -661,8 +662,9 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
       <div class="card" style="margin-bottom:var(--sp-4)">
         <h2>总进度</h2>
-        <p class="sub">按勾选项计；「去做」一律跳到「<b>题库分类</b>」里这一目标的章节清单——目标挂不到题的（文件读写、计算复杂度、错题归档这类），那里会写明没有对应题目，不会给你一张空表</p>
+        <p class="sub">勾选项记的是<b>「这项任务做完没」</b>，旁边那组数字记的是<b>「题实际做了多少」</b>——题量、已练、答对率与考纲档位全部从题库现算，和「题库分类」用的是同一套计算，两页数字必然一致，不存在谁抄错谁。按勾选项计数；「去做」一律跳到「<b>题库分类</b>」里这一目标的章节清单——目标挂不到题的（文件读写、计算复杂度、错题归档这类），那里会写明没有对应题目，不会给你一张空表</p>
         <div class="plan-sum"><b id="plan-done">0</b><span>/ <span id="plan-total">0</span> 项</span><span class="muted" id="plan-note"></span></div>
+        <p class="tiny muted" style="margin:2px 0 0">题库已练 <b class="num" id="plan-qn">0</b> / <b class="num" id="plan-qt">0</b> 题<span id="plan-qpct"></span>——这一行数题，上面一行数项，两边都对得上「题库分类」里的同一批数</p>
         <div class="pbar" id="plan-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="学习计划完成进度"><i></i></div>
         <div class="row" style="margin-top:var(--sp-3)">
           <button class="btn sm ghost" id="plan-reset" type="button">重置全部勾选</button>
@@ -671,7 +673,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 
       <div id="plan-body"></div>
 
-      <p class="tiny muted" style="margin-top:var(--sp-3)">为什么先写程序：题库里要动手写代码的硬题共 <b>55 道</b>（编程题 45、程序填空 7、程序选择 2、程序阅读 1），其中 38A 卷内只有 12 道，另外 43 道散在教材题与补题里——只刷 38A 会漏掉大半。这类只能靠手写练出来，塞不进最后几天的记忆窗口。反之，知道级的 36 条只要「定义 + 一个例子」，放到最后一周反而记得更牢——所以顺序是反着来的，不是随便排的。</p>
+      <p class="tiny muted" style="margin-top:var(--sp-3)">为什么先写程序：题库里要动手写代码的硬题共 <b>55 道</b>（编程题 45、程序填空 7、程序选择 2、程序阅读 1），其中 38A 卷内只有 12 道，另外 43 道散在教材题与补题里——只刷 38A 会漏掉大半。这类只能靠手写练出来，塞不进最后几天的记忆窗口。反之，知道级（＝了解级）的 36 条只要「定义 + 一个例子」，放到最后一周反而记得更牢——所以顺序是反着来的，不是随便排的。</p>
     </section>
 
     <!-- ===== 视图：题库 ===== -->
@@ -709,6 +711,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
         <div>
           <h1 id="h-goal">题库分类</h1>
           <p>最外层是<b>学习目标</b>——与「学习计划」同一套 21 项，不是另立一套说法；点开是<b>章节</b>，即考纲的知识单元与知识点条目。每一层的题量、已练题数、正确率都按题库现算，一个数字都不写死；哪一块题库里还没题，这里会直接说没有，不拿空卡片糊弄。</p>
+          <p>每个目标与每条知识点都标出<b>考纲要求档位</b>，取值逐字来自考纲表格，不是我们自己分级的：<span class="ok-chip">掌握</span> 要会做、要能写出代码；<span class="need-chip">理解</span> 概念＋与相邻概念的区别，不要求推导；<span class="know-chip">知道</span> 就是平时说的<b>了解级</b>——认得出定义、举得出一个例子、说得出用在哪，不展开。考纲原件第三档写的是「知道」，本页不另造「了解」二字，以免和考纲转录表、筛选器、逐题坐标三处对不上。<b>「掌握」级是默认优先练习范围。</b></p>
         </div>
         <span class="chip" id="goal-cov">—</span>
       </div>
@@ -2155,46 +2158,46 @@ var PLAN=[
   {ph:"P1", name:"先写程序", when:"10/22 – 11/05（15 天）",
    why:"要动手写代码的题共 <b>55 道</b>（编程题 45、程序填空 7、程序选择 2、程序阅读 1），其中 38A 卷内只有 12 道，另外 <b>43 道</b>在教材题与补题里。这块只能手写练出来，越早越好——最后几天是背概念的，补不进代码。题量按题库现算，见「题库分类」。",
    items:[
-     {id:"p1-1", t:"Python 变量、类型与运算符", n:"2 个知识点 · 25 题",
+     {id:"p1-1", t:"Python 变量、类型与运算符", n:"2 个知识点",
       s:"验收：不看书写出类型转换、字符串拼接、数字与字符串互转各 3 行。",
       scope:[{area:"Python 编程基础", item:"变量、命名规则与注释"},{area:"Python 编程基础", item:"数字、字符串与类型转换"}]},
-     {id:"p1-2", t:"分支与循环（break、continue）", n:"1 个知识点 · 27 题",
+     {id:"p1-2", t:"分支与循环（break、continue）", n:"1 个知识点",
       s:"验收：自己写出 while 求和、for 找最大值、嵌套循环打印图形。",
       scope:[{area:"Python 编程基础", item:"分支与循环结构（break、continue）"}]},
-     {id:"p1-3", t:"函数与 lambda", n:"1 个知识点 · 10 题",
+     {id:"p1-3", t:"函数与 lambda", n:"1 个知识点",
       s:"验收：定义函数、默认参数、返回值、lambda 各写出 1 个能跑的例子。",
       scope:[{area:"Python 编程基础", item:"函数定义、参数与 lambda"}]},
-     {id:"p1-4", t:"列表 / 元组 / 字典 / 集合", n:"1 个知识点 · 14 题",
+     {id:"p1-4", t:"列表 / 元组 / 字典 / 集合", n:"1 个知识点",
       s:"验收：增删查改 + 推导式各写 1 段；列表与元组的区别能说出 3 点。",
       scope:[{area:"Python 编程基础", item:"列表、元组、字典与集合"}]},
      {id:"p1-5", t:"文件读写与异常处理", n:"题库未覆盖",
       s:"验收：读 txt、写 txt、try/except 各 1 个例子，能解释异常被捕获后的流程。<b>考纲与本题库都没有对应条目</b>，只能按教材自练——别在这里等题出现。"},
-     {id:"p1-6", t:"程序填空 7 道全对（38A 原题）", n:"38A 卷内 7 道",
+     {id:"p1-6", t:"程序填空全对（38A 原题）", n:"38A 卷内",
       s:"验收：逐字对照官方答案，写出每空为什么填这个；填错的题当天重写一遍。",
       scope:{type:"程序填空题"}},
-     {id:"p1-7", t:"编程题 45 道", n:"全库 45 道",
+     {id:"p1-7", t:"编程题全做一遍", n:"全库",
       s:"验收：先写思路再手写代码，单题 30 分钟内完成；只用默认库。其中 38A 卷内只有 5 道，另 40 道来自教材题与补题。",
       scope:{type:"编程题"}},
-     {id:"p1-8", t:"数据处理三件套（NumPy / Pandas / Matplotlib）", n:"3 个单元 · 67 题",
+     {id:"p1-8", t:"数据处理三件套（NumPy / Pandas / Matplotlib）", n:"3 个单元",
       s:"验收：三个库各跑通 1 个示例，能说出输入什么、输出什么。",
       scope:{area:"人工智能数据处理基础"}},
-     {id:"p1-9", t:"38A 全卷摸底一遍", n:"38A 全卷 · 95 题",
+     {id:"p1-9", t:"38A 全卷摸底一遍", n:"38A 全卷",
       s:"目标是知道哪个领域最差，不是做对；摸底没做完，当天教材精读就取消，先摸完。整卷计时去「模拟考场」，这里按章节看分布。",
       scope:{src:"38A"}, exam:true}
    ]},
   {ph:"P2", name:"攻算法与计算", when:"11/06 – 11/15（10 天）",
    why:"38A 里最费分的不是背诵，是「给你一个算法场景，问你下一步会怎样」。这一档靠想清楚，不靠记住。<b>掌握级 38 条</b>是默认优先范围（考纲树 106 条：掌握 38 / 理解 32 / 知道 36）。",
    items:[
-     {id:"p2-1", t:"搜索与博弈：BFS / DFS / A* / minimax / α-β 剪枝", n:"4 个单元 · 51 题",
+     {id:"p2-1", t:"搜索与博弈：BFS / DFS / A* / minimax / α-β 剪枝", n:"4 个单元",
       s:"验收：能画出一棵 3 层的搜索树，标出剪枝位置；说得出 BFS 与 DFS 的搜索顺序差在哪。",
       scope:{area:"搜索与博弈"}},
-     {id:"p2-2", t:"sklearn：fit / predict / score 跑通", n:"两个领域 · 211 题",
+     {id:"p2-2", t:"sklearn：fit / predict / score 跑通", n:"两个领域",
       s:"验收：在 toy 数据上训练一个模型并评分，能说清 fit 与 predict 各自做什么。",
       scope:[{area:"机器学习基础"},{area:"机器学习"}]},
-     {id:"p2-3", t:"损失函数与梯度下降", n:"2 个知识点 · 17 题",
+     {id:"p2-3", t:"损失函数与梯度下降", n:"2 个知识点",
       s:"验收：给定 w、lr 与样本，手算一轮参数更新，写出结果。",
       scope:[{item:"损失函数"},{item:"梯度下降法"}]},
-     {id:"p2-4", t:"反向传播", n:"1 个知识点 · 11 题",
+     {id:"p2-4", t:"反向传播", n:"1 个知识点",
       s:"验收：能说清链式求导在算什么、为什么叫「反向」。讲不出来就说明没懂。",
       scope:{item:"反向传播"}},
      {id:"p2-5", t:"计算与复杂度", n:"题库未覆盖",
@@ -2203,11 +2206,11 @@ var PLAN=[
   {ph:"P3", name:"扫理解级", when:"11/16 – 11/21（6 天）",
    why:"理解级只要求「概念 + 与相邻概念的区别」，不要求推导。这一档靠对比记，单条背是浪费时间。",
    items:[
-     {id:"p3-1", t:"理解级 32 条：一句话定义 + 与相邻概念的区别", n:"32 条 · 262 题",
+     {id:"p3-1", t:"理解级 32 条：一句话定义 + 与相邻概念的区别", n:"",
       s:"验收：每条写 1 句定义 + 1 对区别（例如监督 vs 无监督、精确率 vs 召回率）。条目 32 条、题 262 道，本机一个人练不完就按章节挑。",
       scope:{req:"理解"}},
-     {id:"p3-2", t:"多选题专项", n:"147 题",
-      s:"题库里多选占 15.6%（147/942），而 38A 卷面占 30.5%（29/95）——这块明显是短板，补一轮。",
+     {id:"p3-2", t:"多选题专项", n:"全库",
+      s:"题库里多选占 15.6%（147/945），而 38A 卷面占 30.5%（29/95）——这块明显是短板，补一轮。",
       scope:{type:"多选题"}},
      {id:"p3-3", t:"错题本第一轮归档", n:"按三类分", go:"#/mistakes", golabel:"去错题本",
       s:"验收：每道错题标「盲区 / 偏差 / 粗心」之一；盲区型回头补原理，不是再做一遍就完。", go:"#/mistakes"}
@@ -2215,12 +2218,12 @@ var PLAN=[
   {ph:"P4", name:"只看概念", when:"11/22 – 11/28（7 天）",
    why:"最后七天<b>不再开新代码</b>。知道级只要「定义 + 一个例子 + 使用场景」，这是典型的短期记忆窗口任务，放这里记得最牢。把时间花在默写上，比从头写代码划算。",
    items:[
-     {id:"p4-1", t:"知道级 36 条：定义 + 一个例子 + 场景", n:"36 条 · 209 题",
+     {id:"p4-1", t:"知道级 36 条：定义 + 一个例子 + 场景", n:"",
       s:"验收：遮住笔记能说出台定义与例子；说不出的就是没记住，当天补。",
       scope:{req:"知道"}},
      {id:"p4-2", t:"易混概念对照 20 组", n:"20 组",
       s:"验收：过拟合/欠拟合、精确率/召回率、监督/无监督、批/流…每组写出一句区分。"},
-     {id:"p4-3", t:"38A 二刷 ≥75%", n:"对齐 11/26 节点 · 95 题",
+     {id:"p4-3", t:"38A 二刷 ≥75%", n:"对齐 11/26 节点",
       s:"低于 65% 就放弃编程题专项，全力保单多选——这是临考 2 天能救回来的部分。",
       scope:{src:"38A"}, exam:true},
      {id:"p4-4", t:"考前最后一天：只看错题本与概念卡", n:"不写新代码", go:"#/mistakes", golabel:"去错题本",
@@ -2244,6 +2247,12 @@ function updatePlanBar(){
     bar.setAttribute("title", "已完成 "+c.done+" / "+c.total+" 项");
   }
   if(note) note.textContent = c.done ? ("已完成 "+c.done+" 项") : "勾选后会自动存本机";
+  /* 题库侧进度：与工作台 KPI、「题库分类」同一套 recStat／QB，不另算一份 */
+  var rs=recStat();
+  var qn=$("#plan-qn"), qt=$("#plan-qt"), qp=$("#plan-qpct");
+  if(qn) qn.textContent=rs.n;
+  if(qt) qt.textContent=QB.length;
+  if(qp) qp.textContent = QB.length ? ("（"+(QB.length?Math.round(rs.n*100/QB.length):0)+"%）") : "";
   return c;
 }
 function savePlan(){
@@ -2260,12 +2269,24 @@ function savePlan(){
 }
 function renderPlan(){
   var body=$("#plan-body"); if(!body) return;
+  ensureNodeQs();
   body.innerHTML=PLAN.map(function(ph){
     var rows=ph.items.map(function(it){
       var on=!!S.plan[it.id];
+      /* 题量、已练、答对率与档位一律走「题库分类」那套现算，两页同一个数。
+         原先把题量写死在 it.n 里，题库一补录就失真——p2-2 已经当场把 214 写成 211。 */
+      var hits=it.scope?goalHits(it.scope):[], st=goalStat(hits);
+      var meta;
+      if(hits.length){
+        meta='<span class="n">'+(it.n?esc(it.n)+" · ":"")+st.n+' 题'+
+            (st.done?' · 已练 '+st.done:'')+(st.graded?' · 答对 '+st.pct+'%':'')+'</span>'+
+            '<span class="pnreq">'+reqDistHtml(hits)+'</span>';
+      }else{
+        meta='<span class="n">'+esc(it.n||"题库未覆盖")+'</span>';
+      }
       return '<li class="'+(on?"done":"")+'">'+
         '<label><input type="checkbox" data-pid="'+it.id+'"'+(on?" checked":"")+'>'+
-        '<span class="c"><span class="t">'+esc(it.t)+(it.n?'<span class="n">'+esc(it.n)+'</span>':'')+'</span>'+
+        '<span class="c"><span class="t">'+esc(it.t)+meta+'</span>'+
         '<span class="s">'+it.s+'</span></span></label>'+
         '<button class="btn sm ghost" type="button" data-pgo="'+it.id+'">去做</button>'+
       '</li>';
@@ -2355,6 +2376,32 @@ function goalStat(idxs){
   });
   return {n:list(idxs).length, done:done, graded:graded, ok:ok, pct:graded?Math.round(ok*100/graded):0};
 }
+/* 档位分布：一个目标／一个计划项覆盖的题分别落在哪几档，全部由题库现算。
+   「掌握／理解／知道」三档名用的是考纲原件用语，页面不另造词；
+   考纲第三档原件写「知道」，口语里常说的「了解」就是它——只在术语说明里点一次，
+   标签本身不改，否则与考纲转录表、筛选器、逐题坐标三处对不上。 */
+function reqDist(idxs){
+  var c={};
+  list(idxs).forEach(function(i){
+    var q=QS[i]; if(!q) return;
+    var r=reqOf(q);
+    c[r]=(c[r]||0)+1;
+  });
+  var out=[];
+  REQ_LEVELS.forEach(function(r){ if(c[r]) out.push({r:r, n:c[r]}); });
+  if(c["未列"]) out.push({r:"未列", n:c["未列"]});
+  return out;
+}
+/* 只有一档时只写档位名（「理解」），多档时带题数（「掌握 12 · 理解 8」）——
+   单档还硬写题数等于把同一信息说两遍，挤掉了旁边的进度。 */
+function reqDistHtml(idxs){
+  var d=reqDist(idxs);
+  if(!d.length) return "";
+  var only=d.length===1;
+  return d.map(function(x){
+    return '<span class="'+reqClass(x.r)+'">'+esc(x.r==="未列"?"考纲未列":x.r)+(only?"":" "+x.n)+'</span>';
+  }).join(" ");
+}
 /* 章节 = 知识单元 › 知识点（即考纲条目）；顺序跟考纲树走，考纲没挂上的题归入「考纲未列」排最后 */
 function goalChapters(idxs){
   var g={}, keys=[];
@@ -2398,7 +2445,7 @@ function goalCardHtml(ph, it){
   var rate = st.done ? ("已练 "+st.done+"/"+st.n+(st.graded?(" · 答对率 "+st.pct+"%"):" · 待判分")) : "未开始";
   var pctv = st.n ? Math.round(st.done*100/st.n) : 0;
   var head='<div class="gh"><span class="gid">'+esc(ph.ph+" · "+it.id)+'</span>'+
-    '<h3>'+esc(it.t)+'</h3><span class="gsp"></span>'+
+    '<h3>'+esc(it.t)+'</h3>'+(hits.length?reqDistHtml(hits):"")+'<span class="gsp"></span>'+
     (hits.length
       ? '<span class="gn">'+st.n+' 题</span><span class="gr'+(st.graded&&st.pct<60?" warn":"")+'">'+esc(rate)+'</span>'+
         '<button class="btn sm primary" type="button" data-gall="'+esc(it.id)+'">练全部 '+st.n+' 题</button>'
