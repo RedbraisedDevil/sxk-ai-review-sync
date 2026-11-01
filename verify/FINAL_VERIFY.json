@@ -1,10 +1,10 @@
 {
  "file": "D:\\ai\\qoderstudy\\work-459\\dist-sync-pages\\index.html",
- "bytes": 5056113,
+ "bytes": 5067167,
  "checks": {
   "app_data_parsed": true,
   "schemaVersion": "1.0",
-  "builtAt": "2026-11-01T19:14:04+0800",
+  "builtAt": "2026-11-01T21:37:14+0800",
   "question_count": 945,
   "tree_len": 2,
   "stats_counts_qbank": 945,
@@ -80,14 +80,14 @@
   "emoji_hits": 0,
   "script_src_tags": 0,
   "echarts_inlined": true,
-  "localStorage_total": 16,
+  "localStorage_total": 17,
   "localStorage_in_store_block": 10,
-  "localStorage_outside_store": 6,
+  "localStorage_outside_store": 7,
   "img_sample": []
  },
  "problems": [],
  "notes": [
-  "Store 适配层之外仍有 6 处 localStorage 出现（需人工确认是否为界面文案或注释）",
+  "Store 适配层之外仍有 7 处 localStorage 出现（需人工确认是否为界面文案或注释）",
   "已跳过外链抽样（--skip-network）"
  ],
  "summary": {
