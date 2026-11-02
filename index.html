@@ -75,7 +75,7 @@
   --t-scroll:#C8D8D5; --t-scroll-h:#A9C2BE;
   --t-brand-on:#FFFFFF; --t-accent-on:#FFFFFF;
   --t-strong-bg:#0B2422; --t-strong-fg:#FFFFFF;
-  --t-scrim:rgba(11,36,34,.72); --t-topbar:rgba(255,255,255,.94);
+  --t-scrim:rgba(11,36,34,.72);
   --t-chart-line:#D7E6E3; --t-chart-label:#475569; --t-chart-split:#EAF2F1;
   --t-chart-bar:#0D9488; --t-chart-mark:#EA580C; --t-chart-bar2:#94A3B8;
   --font-num:"Lexend","Source Sans 3",system-ui,sans-serif;
@@ -121,7 +121,7 @@ html[data-theme="dark"]{
   --t-scroll:#2A4643; --t-scroll-h:#3A5B57;
   --t-brand-on:#052E2A; --t-accent-on:#231000;
   --t-strong-bg:#14332F; --t-strong-fg:#E8F3F1;
-  --t-scrim:rgba(0,0,0,.82); --t-topbar:rgba(17,30,29,.94);
+  --t-scrim:rgba(0,0,0,.82);
   --t-chart-line:#243A38; --t-chart-label:#A9BEBB; --t-chart-split:#1C2E2C;
   --t-chart-bar:#2DD4BF; --t-chart-mark:#FB923C; --t-chart-bar2:#7C8F8C;
 }
@@ -188,17 +188,28 @@ a{color:var(--brand-text)}
 .theme-btn .i-sun{display:none}
 html[data-theme="dark"] .theme-btn .i-sun{display:block}
 html[data-theme="dark"] .theme-btn .i-moon{display:none}
+@media (max-width:767px){
+  /* 窄屏顶栏横条只能容一行：品牌名 + 主题按钮占第一行，倒计时独占第二行，导航第三行 */
+  .rail .brand{flex:1 1 auto; min-width:0; padding:0 2px}
+  /* 窄屏原本整块 .brandtxt 被 .brand span{display:none} 藏掉了，只剩一个图标；这里显示名称、仍隐藏两行副标题 */
+  .rail .brandtxt{display:block; min-width:0; flex:1 1 auto}
+  .rail .brandtxt > span{display:none}
+  .rail .brand b{font-size:15.5px; overflow:hidden; text-overflow:ellipsis}
+  .rail .brand{order:1}
+  .rail .theme-btn{order:2}
+  .rail .countdown{order:3; flex:1 1 100%; justify-content:center}
+  .rail .timer-chip{order:4; width:100%; justify-content:center}
+  .rail .nav{order:5}
+  .rail .rail-foot{order:6}
+  /* 导航本身是横向滚动条，其滚动内容会被浏览器算进顶栏的可滚动溢出，撑出整页横向滚动；clip 只裁外面，不影响导航自己滚 */
+  .rail{overflow-x:clip}
+}
 @media (min-width:768px){
   .theme-btn{margin-left:0; align-self:flex-start; padding:0 12px}
   .theme-btn .tlabel{display:inline}
 }
 
 .main{min-width:0; display:flex; flex-direction:column}
-.topbar{
-  position:static; z-index:20; background:var(--surface);
-  border-bottom:1px solid var(--line); padding:10px var(--sp-3);
-  display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap;
-}
 .chip{
   display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
   background:var(--surface); border-radius:999px; padding:4px 10px; font-size:15px; color:var(--ink-2);
@@ -212,8 +223,9 @@ html[data-theme="dark"] .theme-btn .i-moon{display:none}
   background:var(--t-warm); border:1px solid var(--t-warm-line); color:var(--t-warm-fg); font-weight:500;
 }
 .countdown{
-  margin-left:0; display:flex; align-items:baseline; gap:8px;
-  background:var(--accent); color:var(--t-accent-on); border-radius:999px; padding:6px 14px;
+  display:inline-flex; align-items:baseline; justify-content:center; gap:8px; flex-wrap:wrap;
+  background:var(--accent); color:var(--t-accent-on); border-radius:var(--r-s); padding:7px 13px;
+  max-width:100%; flex:0 0 auto;
 }
 .countdown .num{font-size:21px; font-weight:700}
 .timer-chip{background:var(--t-strong-bg); color:var(--t-strong-fg); border-color:var(--t-strong-bg)}
@@ -681,12 +693,16 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
   .nav button{width:100%; min-width:0; justify-content:flex-start; padding:0 10px}
   .nav button span{position:static; width:auto; height:auto; overflow:visible; clip:auto; white-space:normal}
   .rail-foot{display:block}
-  .topbar{position:sticky; top:0; background:var(--t-topbar); padding:10px var(--sp-5)}
   .view{padding:var(--sp-5)}
   .vhead h1{font-size:24px}
   .exam{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
-  .qcard{position:sticky; top:76px}
-  .countdown{margin-left:auto}
+  .qcard{position:sticky; top:var(--sp-4)}
+  /* 顶栏已折叠：倒计时与考场计时都落在侧栏里，撑满列宽；
+     侧栏只有 224px，倒计时按「一行日期 + 一行大数字」两行排，避免「天」字被挤成孤行 */
+  .rail .countdown{align-self:stretch; flex-wrap:wrap; row-gap:0; column-gap:6px; padding:8px 10px}
+  .rail .countdown .tiny:first-child{flex:1 1 100%; text-align:center}
+  .rail .countdown .num{font-size:26px; line-height:1.25}
+  .rail .timer-chip{width:100%; justify-content:center}
   .bar{grid-template-columns:150px 1fr 64px}
 }
 @media (min-width:1100px){
@@ -723,6 +739,17 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       <span class="brandtxt"><b>上信考 AI 备考程序</b><span>人工智能技术及应用（二三级）<br>依据 2025 年版考纲</span></span>
     </div>
 
+    <!-- 倒计时：原顶栏折叠后常驻品牌名下方；窄屏与品牌同行，不单独占一条横栏 -->
+    <div class="countdown" aria-label="距考试天数">
+      <span class="tiny">距 11 月 28 日考试</span><span class="num" id="cd-days">—</span><span class="tiny">天</span>
+    </div>
+
+    <!-- 考场计时：只在考场视图出现，原来挂在顶栏右侧，随顶栏一并挪进侧栏 -->
+    <span class="chip timer-chip hide" id="timer-chip" aria-live="off">
+      <span>考场计时</span><span class="num" id="timer-left">150:00</span>
+      <button id="timer-toggle" type="button">暂停</button>
+    </span>
+
     <!-- 一键切换深浅色：图标随主题互换（太阳＝当前深色，月亮＝当前浅色），文字标签由脚本改写 -->
     <button class="theme-btn" id="theme-toggle" type="button" aria-pressed="false" title="切换深色 / 浅色模式">
       <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9z"/></svg>
@@ -748,19 +775,6 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
   </aside>
 
   <div class="main">
-    <header class="topbar">
-      <span class="chip dot">科目：人工智能技术及应用（二三级）</span>
-      <span class="chip">考纲：2025 年版</span>
-      <span class="chip">卷面：150 分 / 150 分钟</span>
-      <span class="chip timer-chip hide" id="timer-chip" aria-live="off">
-        <span>考场计时</span><span class="num" id="timer-left">150:00</span>
-        <button id="timer-toggle" type="button">暂停</button>
-      </span>
-      <div class="countdown" aria-label="距考试天数">
-        <span class="tiny">距 11 月 28 日考试</span><span class="num" id="cd-days">—</span><span class="tiny">天</span>
-      </div>
-    </header>
-
     <!-- ===== 视图：工作台 ===== -->
     <section class="view on" id="v-dashboard" aria-labelledby="h-dashboard">
       <div class="vhead">
