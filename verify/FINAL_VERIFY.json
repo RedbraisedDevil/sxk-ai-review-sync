@@ -1,6 +1,6 @@
 {
  "file": "D:\\ai\\qoderstudy\\work-459\\dist-sync-pages\\index.html",
- "bytes": 5082622,
+ "bytes": 5096356,
  "checks": {
   "app_data_parsed": true,
   "schemaVersion": "1.0",
@@ -87,8 +87,7 @@
  },
  "problems": [],
  "notes": [
-  "Store 适配层之外仍有 7 处 localStorage 出现（需人工确认是否为界面文案或注释）",
-  "已跳过外链抽样（--skip-network）"
+  "Store 适配层之外仍有 7 处 localStorage 出现（需人工确认是否为界面文案或注释）"
  ],
  "summary": {
   "题目数": 945,
@@ -109,6 +108,6 @@
   "带教材定位": 888,
   "唯一教材截图": 1124,
   "问题数": 0,
-  "提示数": 2
+  "提示数": 1
  }
 }

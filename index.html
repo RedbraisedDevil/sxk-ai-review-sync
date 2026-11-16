@@ -489,6 +489,30 @@ pre.sample .eof{display:block; height:0}
   width:100%; min-height:44px; font-size:18px; font-family:var(--font-cjk);
   border:1px solid var(--line); border-radius:var(--r-s); padding:8px 10px;
 }
+/* 带候选项的填空：空位是可点的槽，候选项是可点的块，避免让人手打字母。
+   槽与块同高（44px），触屏也够点；active 用品牌色描边，表示“下一个字母填这里”。 */
+.blanks.pick li{grid-template-columns:56px 1fr}
+.bslot{
+  width:100%; min-height:44px; display:flex; align-items:center; gap:10px;
+  border:1px dashed var(--line); background:var(--surface); border-radius:var(--r-s);
+  padding:8px 12px; font-family:var(--font-num); font-size:18px; color:var(--ink-2);
+  text-align:left; transition:border-color .18s ease, background-color .18s ease;
+}
+.bslot.empty::after{content:"点击后选字母"; font-family:var(--font-cjk); font-size:15px; color:var(--ink-2)}
+.bslot.active{border:2px solid var(--brand); background:var(--brand-soft)}
+.bslot.filled{border-style:solid; color:var(--ink)}
+.bslot .bval{font-weight:700; color:var(--brand-text); min-width:1.2em}
+.bslot .btxt{font-family:var(--font-cjk); font-size:15px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bchip-list{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 var(--sp-3)}
+.bchip{
+  display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:8px 14px;
+  border:1px solid var(--line); background:var(--surface); border-radius:999px;
+  font-size:16px; text-align:left;
+}
+.bchip:hover{border-color:var(--brand); background:var(--brand-soft)}
+.bchip .ck{font-family:var(--font-num); font-weight:700; color:var(--brand-text)}
+.bchip.used{border-color:var(--brand); background:var(--brand-soft)}
+.ansbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px}
 .answer-box{
   width:100%; min-height:132px; font-size:18px; font-family:var(--font-cjk); line-height:1.6;
   border:1px solid var(--line); border-radius:var(--r-s); padding:12px; margin-bottom:var(--sp-3);
@@ -944,7 +968,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
             <button class="btn sm" id="q-prev" type="button">上一题</button>
             <button class="btn sm" id="q-next" type="button">下一题</button>
             <button class="btn sm ghost" id="q-toggle-parse" type="button" aria-pressed="true">详解常显</button>
-            <button class="btn sm" id="q-fav" type="button">标记为错题</button>
+            <button class="btn sm" id="q-fav" type="button" title="显示本题答案并加入错题本">标记为错题（看答案）</button>
           </div>
           <div id="q-related" style="margin-top:var(--sp-3)"></div>
         </div>
@@ -1484,6 +1508,12 @@ var S={
   misDel: Store.get(KEY_MIS_DEL)||{},   /* {id:ts} 错题删除墓碑，跨设备同步 */
   order: [], cur: 0, ctx: "全部题目",
   answered: false, multiSel: [], redo: {},
+  /* 「标记为错题」强制展开详解的题号。只活在本页内存：展开答案不该改写用户的
+     「详解常显」偏好，更不该写进同步数据，刷新后由既有作答记录自然决定显示。 */
+  revealSet: {},
+  /* 填空题的草稿（按题号）：提交前逐空输入／点选的字不能只活在这个 DOM 里，
+     否则后台同步、换页签、误点重绘都会把没提交的作答清掉。 */
+  fillDraft: {},
   parseAlways: (Store.get(KEY_PREF)||{}).parseAlways!==false,
   bank: {cat:"all", pack:"all", type:"all", req:"all", kw:"", syl:null},
   mapFilter: "all",
@@ -2128,6 +2158,68 @@ function blankCount(q){
   if(runs) return runs;
   var letters=an.replace(/[^A-Za-z]/g,"").length;
   return letters || 0;
+}
+/* ---------- 填空题的“基本判断能力” ----------
+   题库里填空的答案是自由文本，至少四种形态：(1)F (2)E (3)A ／ J、C、H、G、E ／
+   （1）…；（2）… 长句 ／ 单值。这里只判“规则能稳稳切出来”的三种：
+   ① 编号型 按 (n) 切出每空期望值；② 分隔型 按 、;； 切成 n 段；③ 单空型 整段即期望值。
+   切不出与空数一致的段数、或某段是整句话（超过 SLOT_MAX 字／含括号）时返回 null——
+   判不了就老实说“不自动判分”，绝不拿长句去硬比，避免把对的判成错。 */
+var SLOT_MAX=12;                 /* 单个空期望值的字数上限：超过它基本是整句答案，不适合逐空比对 */
+function normJudge(s){
+  return String(s===null||s===undefined?"":s)
+    .replace(/[\uFF01-\uFF5E]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+    .replace(/[\s\u3000]/g, "")
+    .replace(/[.,;:!?`'"·、，。；：！？“”‘’（）()【】\[\]<>《》\/\\|]/g, "")
+    .toLowerCase();
+}
+/* 字符二元组 Dice 系数：手写答案多一个字少一个字不算错，整句换措辞才算错 */
+function dice(a,b){
+  if(!a || !b) return 0;
+  if(a===b) return 1;
+  var m={}, i, n=0;
+  for(i=0;i<a.length-1;i++){ var k=a.substr(i,2); m[k]=(m[k]||0)+1; }
+  for(i=0;i<b.length-1;i++){ var k2=b.substr(i,2); if(m[k2]>0){ m[k2]--; n++; } }
+  return (2*n)/(Math.max(0,a.length-1)+Math.max(0,b.length-1));
+}
+function slotExpect(q, n){
+  var a=String(q.answer||"");
+  var out=[], m, re=/[(（]\s*(\d{1,2})\s*[)）]\s*([^（(；;，,、\n]{1,40})/g;
+  while((m=re.exec(a))){ out[parseInt(m[1],10)-1]=String(m[2]).replace(/\s+$/,""); }
+  var okSlots=function(arr){
+    if(arr.length!==n) return null;
+    for(var i=0;i<n;i++){
+      var v=String(arr[i]==null?"":arr[i]).trim();
+      if(!v || v.length>SLOT_MAX || /[（()）]/.test(v)) return null;   /* 整句答案不硬比 */
+      arr[i]=v;
+    }
+    return arr;
+  };
+  var byNum=okSlots(out.slice());
+  if(byNum) return byNum;
+  var parts=a.split(/[、;；]/).map(function(x){ return x.trim(); }).filter(function(x){ return x; });
+  var bySep=okSlots(parts);
+  if(bySep) return bySep;
+  if(n===1) return okSlots([a]);
+  return null;
+}
+/* 返回 {ok:true|false|null, exp:[期望值]|null, per:[逐空对错]} */
+function judgeFill(q, vals){
+  var n=Math.max(1, blankCount(q));
+  var exp=slotExpect(q, n);
+  if(!exp) return {ok:null, exp:null, per:[]};
+  var isBank=list(q.options).length>0, ok=true, per=[];
+  for(var i=0;i<n;i++){
+    var got=normJudge(vals[i]||""), want=normJudge(exp[i]||""), hit=false;
+    if(!got){ hit=false; }
+    else if(isBank){ hit=(got===want); }            /* 字母候选：必须完全对上，不做模糊 */
+    else if(got===want){ hit=true; }
+    else if(want.length>=2 && (got.indexOf(want)>=0 || want.indexOf(got)>=0)){ hit=true; }
+    else { hit=dice(got,want)>=0.75; }
+    per.push(hit);
+    if(!hit) ok=false;
+  }
+  return {ok:ok, exp:exp, per:per};
 }
 function levelChip(q){
   var l=String(q.level||"").toUpperCase();
@@ -3291,7 +3383,11 @@ function renderPractice(){
   var q=curQ();
   if(!q){ $("#q-body").innerHTML='<div class="empty">题库中还没有题目（QS 为空）。请先运行 tools/build_app.py 生成题库。</div>'; return; }
   var r=S.rec[q.id]; S.answered=!!r && !S.redo[q.id];
+  /* 点「标记为错题」后必须立刻能看到答案，否则按钮点完像没反应：
+     强制展开右侧「解析」，不受 parseAlways 偏好限制；不改偏好本身。 */
+  var forced=!!((S.answered && r && r.revealed) || S.revealSet[q.id]);
   S.multiSel=(S.answered && r && r.pick) ? String(r.pick).split("") : [];
+  if(q.id!==LAST_QID) BLANK_ACTIVE=0;
   $("#q-idx").textContent="第 "+(S.cur+1)+" / "+S.order.length+" 题";
   $("#q-grid").innerHTML=S.order.map(function(ix,i){
     var qq=QS[ix], rr=S.rec[qq.id], redoing=!!S.redo[qq.id];
@@ -3300,7 +3396,7 @@ function renderPractice(){
   }).join("");
   $("#q-meta").innerHTML='<span class="chip">'+esc(typeOf(q))+' · '+esc(scoreOf(q))+'</span>'+levelChip(q)+srcTag(q)+kindChip(q)+reqChip(reqOf(q))+'<span class="chip num">'+esc(q.id)+'</span>';
   renderQBody(q); renderVerdict(q); renderPanes(q); renderRelated(q);
-  var card=$("#q-pane-card"); if(card) card.style.display=(S.answered && !S.parseAlways)?"none":"";
+  var card=$("#q-pane-card"); if(card) card.style.display=(S.answered && !S.parseAlways && !forced)?"none":"";
   var pt=$("#q-toggle-parse");
   if(pt){
     pt.disabled=!S.answered;
@@ -3425,6 +3521,19 @@ function sampleHtml(q){
   return '<div class="samplewrap">'+(cap?'<div class="cap">'+esc(cap)+'</div>':"")+
     '<pre class="sample">'+body+'</pre></div>';
 }
+/* 当前正在填的那个空（1 起）；只影响高亮与“下一个字母填哪里”，换题即归零 */
+var BLANK_ACTIVE=0;
+function firstEmptySlot(draft, n){
+  for(var i=1;i<=n;i++){ if(!String((draft||[])[i-1]||"").trim()) return i; }
+  return n;                                   /* 全填满时停在最后一空，便于继续改 */
+}
+/* 显示答案与加入错题本已合并到 pager 的「标记为错题（看答案）」，此处只留指引；
+   已作答时保留「重做这题」，它与标记动作互不干扰。 */
+function ansBarHtml(done){
+  if(done) return '<div class="ansbar"><button class="btn sm" type="button" id="q-redo">重做这题</button>'+
+    '<span class="tiny muted">重做会清掉本题本次判定（错题本保留），可以重新作答。</span></div>';
+  return '<div class="ansbar"><span class="tiny muted">不会做？点下方「标记为错题」展开答案并加入错题本，原作答记录不改动。</span></div>';
+}
 function renderQBody(q){
   var body=$("#q-body"), area=$("#q-answer-area"); if(!body||!area) return;
   var r=S.rec[q.id], done=S.answered;
@@ -3475,24 +3584,64 @@ function renderQBody(q){
                        : '本题为<b>开放性作答</b>（逐空作答不适用）：请写下自己的结论，再对照右侧参考答案与评分要点自评。')+
       '</div>'+
       '<label class="sr" for="q-text">作答区</label>'+
-      '<textarea class="answer-box" id="q-text" placeholder="写下你的作答要点（只在本页可见，不上传）" '+(done?"readonly":"")+'>'+esc(prevText)+'</textarea>'+
-      (done?'':'<button class="btn primary" type="button" id="q-submit">提交并展开参考答案</button>');
+      /* 不能加 readonly：一旦本机有记录，题就永久锁死，连改一个字都做不到 */
+      '<textarea class="answer-box" id="q-text" autocomplete="off" spellcheck="false" placeholder="写下你的作答要点（只在本页可见，不上传）">'+esc(prevText)+'</textarea>'+
+      /* 已提交时也要留提交口，否则“能改不能存” */
+      '<button class="btn primary" type="button" id="q-submit">'+(done?"重新提交并展开参考答案":"提交并展开参考答案")+'</button>';
   } else {
-    var n=Math.max(1,bc), prev=(done && r.fill) ? r.fill : [], rows="";
-    for(var i=1;i<=n;i++){
-      rows+='<li><span>空 '+i+'</span><label class="sr" for="blank-'+i+'">第 '+i+' 空</label>'+
-        '<input id="blank-'+i+'" type="text" data-blank="'+i+'" value="'+esc(prev[i-1]||"")+'" '+(done?"readonly":"")+' placeholder="第 '+i+' 空的作答"></li>';
+    var n=Math.max(1,bc);
+    var saved=(done && r.fill) ? r.fill : null;
+    var draft=S.fillDraft[q.id] || (saved ? saved.slice() : []);
+    var bank=list(q.options), rows="";
+    if(bank.length){
+      /* 带候选项的填空（原卷给 A~H 的候选答案集合）：空位与候选块都能点，
+         点空位定槽、点候选块填字母，填完自动跳下一个空。手打字母会因全角/大小写判错，
+         点选从源头消掉这类误判。 */
+      var txtOf={};
+      bank.forEach(function(o){ txtOf[String(o[0]).toUpperCase()]=String(o[1]); });
+      if(!BLANK_ACTIVE || BLANK_ACTIVE>n || String(draft[BLANK_ACTIVE-1]||"")) BLANK_ACTIVE=firstEmptySlot(draft,n);
+      for(var i=1;i<=n;i++){
+        var v=String(draft[i-1]||"").toUpperCase();
+        rows+='<li><span>空 '+i+'</span><button type="button" class="bslot'+(v?" filled":" empty")+(i===BLANK_ACTIVE?" active":"")+'" data-slot="'+i+'">'+
+          (v?'<span class="bval">'+esc(v)+'</span><span class="btxt">'+esc(txtOf[v]||"")+'</span>':'')+'</button></li>';
+      }
+      /* 候选项已经在下面做成可点的块，就不再重复一遍静态「备选答案」清单 */
+      area.innerHTML='<ul class="blanks pick">'+rows+'</ul>'+
+        '<div class="bchip-list">'+bank.map(function(o){
+          var k=String(o[0]).toUpperCase(), used=String(draft.join("")).toUpperCase().indexOf(k)>=0;
+          return '<button type="button" class="bchip'+(used?" used":"")+'" data-chip="'+esc(k)+'"><span class="ck">'+esc(k)+'</span><span>'+esc(o[1])+'</span></button>';
+        }).join("")+'</div>'+
+        '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)">先点一个空位再点候选块；点已填的空位可以清空重选。</p>';
+    } else {
+      for(var j=1;j<=n;j++){
+        rows+='<li><span>空 '+j+'</span><label class="sr" for="blank-'+j+'">第 '+j+' 空</label>'+
+          '<input id="blank-'+j+'" type="text" data-blank="'+j+'" value="'+esc(draft[j-1]||"")+'" autocomplete="off" spellcheck="false" placeholder="第 '+j+' 空的作答"></li>';
+      }
+      area.innerHTML=ref+'<ul class="blanks">'+rows+'</ul>';
     }
-    area.innerHTML=ref+'<ul class="blanks">'+rows+'</ul>'+
-      (done?'':'<button class="btn primary" type="button" id="q-submit">提交（按参考答案自核）</button>')+
-      '<p class="tiny muted" style="margin-top:8px">填空／程序填空类没有客观判分依据：提交后展开参考答案原文，请逐空自行核对。</p>';
+    /* 已提交后改过字母却没重新判定：判定条还是旧结论，容易误读，明说一句 */
+    var changed=!!(done && r && r.fill && draft.join("\u0001")!==r.fill.join("\u0001"));
+    area.innerHTML+='<div class="ansbar">'+
+      '<button class="btn primary" type="button" id="q-submit">'+(done?"重新判定":"提交判定")+'</button>'+
+      '<span class="tiny muted">'+(bank.length?"字母题按字母判分，全部对上才算对。":"短答案自动比对；整句答案没有客观判分依据，提交后按参考答案自核。")+'</span>'+
+      (changed?'<span class="tiny" style="color:var(--brand-text)">已改动，点「重新判定」重新判分</span>':'')+'</div>';
   }
+  area.innerHTML+=ansBarHtml(done);
 }
 function renderVerdict(q){
   var v=$("#q-verdict"); if(!v) return;
   var r=S.rec[q.id];
   if(!r || S.redo[q.id]){ v.hidden=true; v.className="verdict"; v.textContent=""; return; }
   v.hidden=false;
+  var inMis=false;
+  for(var i=0;i<S.mis.length;i++){ if(S.mis[i] && S.mis[i].id===q.id){ inMis=true; break; } }
+  /* 未作答就点「标记为错题」时记录写成 ok:null（不进正确率分母），
+     所以这条分支必须排在「不自动判分」之前，否则会被吞掉。 */
+  if(r.revealed){
+    v.className="verdict no";
+    v.innerHTML='<b>已标记为错题</b>：答案已展开'+(inMis?'，已加入错题本':'')+'。正确答案：'+esc(q.answer||"—")+'。'+levelChip(q)+levelNote(q)+'';
+    return;
+  }
   if(r.ok===null || r.ok===undefined){
     v.className="verdict";
     v.innerHTML='<b>本题不自动判分</b>：此处为 '+(isSubjective(q)?"主观题":(isOpenQ(q)?"开放性作答题":"填空／程序填空类，需逐空自核"))+'，没有客观判分依据。参考答案与评分要点见右侧「解析」页签。'+levelChip(q)+levelNote(q)+'';
@@ -3500,6 +3649,9 @@ function renderVerdict(q){
   }
   v.className="verdict "+(r.ok?"ok":"no");
   v.innerHTML=(r.ok?"回答正确。":"回答错误，正确答案是 "+esc(q.answer||"—")+"。")+
+    (!r.ok ? (inMis?'<b>已加入错题本</b>，可在「错题本」页按错因重做。':'') : "")+
+    /* 已作答的题点标记时记录刻意不改，判定条仍是原判定；这里补一行可见反馈 */
+    (S.revealSet[q.id] ? '<b>已标记为错题</b>，答案已展开（原有判定保留）。' : "")+
     ' 答案级别：'+levelChip(q)+levelNote(q)+'。右侧「解析／考纲坐标／教材页／怎么做」已同步本题内容。';
 }
 function listHtml(arr, cls){
@@ -3859,6 +4011,34 @@ function renderRelated(q){
 $("#q-answer-area") && $("#q-answer-area").addEventListener("click", function(e){
   var q=curQ(); if(!q) return;
   if(e.target.closest && e.target.closest("#q-submit")){ submitAnswer(q); return; }
+  if(e.target.closest && e.target.closest("#q-redo")){ redoQuestion(q); return; }
+  /* 候选项填空：点空位定槽（再点一次清空），点候选块把字母填进当前空 */
+  var slot=e.target.closest ? e.target.closest("[data-slot]") : null;
+  if(slot){
+    var si=parseInt(slot.getAttribute("data-slot"),10)||1;
+    var dq=S.fillDraft[q.id]||[];
+    if(String(dq[si-1]||"")){ dq[si-1]=""; S.fillDraft[q.id]=dq; BLANK_ACTIVE=si; }
+    else { BLANK_ACTIVE=si; }
+    renderQBody(q);
+    return;
+  }
+  var chip=e.target.closest ? e.target.closest("[data-chip]") : null;
+  if(chip){
+    var n=Math.max(1,blankCount(q)), draft=S.fillDraft[q.id]||[];
+    var k2=String(chip.getAttribute("data-chip")||"").toUpperCase();
+    /* 落点优先级：当前选中的空（且为空）→ 第一个空 → 全填满时落回当前选中的空。
+       以前全填满会覆盖最后一空，明明选着空 1 却改了空 3。 */
+    var empty=firstEmptySlot(draft,n), hasEmpty=!String(draft[empty-1]||"");
+    var activeOk=(BLANK_ACTIVE>=1 && BLANK_ACTIVE<=n);
+    var at = hasEmpty ? ((activeOk && !String(draft[BLANK_ACTIVE-1]||"")) ? BLANK_ACTIVE : empty)
+                      : (activeOk ? BLANK_ACTIVE : 1);
+    draft[at-1]=k2;
+    S.fillDraft[q.id]=draft;
+    var nx=firstEmptySlot(draft,n);
+    BLANK_ACTIVE=(String(draft[nx-1]||"") ? n : nx);
+    renderQBody(q);
+    return;
+  }
   var jb=e.target.closest ? e.target.closest("[data-jk]") : null;
   if(jb){
     if(S.answered) return;
@@ -3884,6 +4064,15 @@ $("#q-answer-area") && $("#q-answer-area").addEventListener("click", function(e)
   }
   judgeChoice(q, k);
 });
+/* 逐空输入实时写进草稿：换题、后台同步重绘、误点页签都不会把没提交的字弄丢 */
+$("#q-answer-area") && $("#q-answer-area").addEventListener("input", function(e){
+  var inp=e.target;
+  if(!inp || !inp.getAttribute || inp.getAttribute("data-blank")===null) return;
+  var q=curQ(); if(!q) return;
+  var n=Math.max(1,blankCount(q)), arr=S.fillDraft[q.id]||[];
+  arr[parseInt(inp.getAttribute("data-blank"),10)-1]=inp.value;
+  S.fillDraft[q.id]=arr;
+});
 function judgeChoice(q, pick){
   var ok = ansKeys(q)!=="" && pickKeys(pick)===ansKeys(q);
   delete S.redo[q.id];
@@ -3899,6 +4088,32 @@ function captureExamAnswer(id){
   T.results[id]=S.rec[id];
   if(typeof saveExamNow==="function") saveExamNow();
 }
+/* 「标记为错题（看答案）」＝ 展开答案 + 加入错题本，合并原来的「不会，看答案」与手动标记。
+   进度保护：S.rec 里已有记录时一个字段都不改——用户此前做过的题（判定、选项、
+   时间戳、正确率）不能被这个动作覆盖；只有从未作答的题才补一条 ok:null 的
+   「已看答案」记录，专门用于解锁右侧答案，且不进正确率分母。 */
+function markWrongAndReveal(q){
+  var had=!!S.rec[q.id];
+  delete S.redo[q.id];
+  if(!had){
+    S.rec[q.id]={ok:null, revealed:true, pick:"", fill:[], text:"", ts:Date.now()};
+    S.fillDraft[q.id]=[];
+    saveRec(); captureExamAnswer(q.id);
+  }
+  var added=addMis(q.id, "手动标记为错题：已展开答案。", "按计划重做一次，再回看解析页签。");
+  S.revealSet[q.id]=true;      /* 只影响本页强制展开，不写盘、不改偏好 */
+  renderPractice();
+  toast("答案已展开"+(added?"，已加入错题本":"，该题已在错题本")+(had?"；原有作答记录保持不变":""));
+}
+/* 「重做这题」：把 readonly／disabled 的死局打开。只清本次判定，不动错题本。 */
+function redoQuestion(q){
+  S.redo[q.id]=true;
+  S.fillDraft[q.id]=[];
+  BLANK_ACTIVE=0;
+  S.multiSel=[];
+  renderPractice();
+  toast("可以重新作答了");
+}
 function submitAnswer(q){
   if(isMulti(q)){
     if(!S.multiSel.length){ toast("先选至少一个选项"); return; }
@@ -3913,12 +4128,29 @@ function submitAnswer(q){
     toast(isSubjective(q)?"已展开评分要点，请按要点自评":"已展开参考答案，请对照自评");
     return;
   }
-  var arr=[];
-  $$("#q-answer-area input[data-blank]").forEach(function(inp){ arr.push(inp.value); });
+  /* 逐空：有候选项的题从草稿取（点选写入），纯文本题从输入框取 */
+  var n=Math.max(1,blankCount(q)), arr=[];
+  if(list(q.options).length){
+    var dq=S.fillDraft[q.id]||[];
+    for(var i=0;i<n;i++) arr.push(String(dq[i]||""));
+  } else {
+    $$("#q-answer-area input[data-blank]").forEach(function(inp){ arr.push(inp.value); });
+  }
+  var filled=arr.filter(function(x){ return String(x||"").trim(); }).length;
+  if(!filled){ toast("先填至少一个空再提交"); return; }
+  var res=judgeFill(q, arr);
   delete S.redo[q.id];
-  S.rec[q.id]={ok:null, fill:arr, ts:Date.now()};
-  saveRec(); captureExamAnswer(q.id); renderPractice();
-  toast("已展开参考答案，请逐空核对");
+  S.fillDraft[q.id]=arr;
+  S.rec[q.id]={ok:res.ok, fill:arr, ts:Date.now()};
+  saveRec(); captureExamAnswer(q.id);
+  if(res.ok===false){
+    var bad=[];
+    for(var j=0;j<n;j++){ if(res.per[j]===false) bad.push("空"+(j+1)+"填「"+String(arr[j]||"（空）")+"」"); }
+    addMis(q.id, "本轮答错："+bad.join("、")+"；参考答案为 "+escq(q.answer)+"。", "回看该题「解析」页签，按空逐条对照。");
+  }
+  BLANK_ACTIVE=0;
+  renderPractice();
+  toast(res.ok===true ? "回答正确" : (res.ok===false ? "回答错误，已加入错题本" : "已展开参考答案，请逐空核对"));
 }
 $("#q-grid") && $("#q-grid").addEventListener("click", function(e){
   var b=e.target.closest ? e.target.closest("[data-jump]") : null; if(!b) return;
@@ -3928,8 +4160,7 @@ $("#q-prev") && $("#q-prev").addEventListener("click", function(){ S.cur=(S.cur-
 $("#q-next") && $("#q-next").addEventListener("click", function(){ S.cur=(S.cur+1)%S.order.length; renderPractice(); });
 $("#q-fav") && $("#q-fav").addEventListener("click", function(){
   var q=curQ(); if(!q) return;
-  var added=addMis(q.id, "手动标记。", "按计划重做一次。");
-  toast(added ? ("已加入错题本："+q.id) : ("该题已在错题本："+q.id));
+  markWrongAndReveal(q);
 });
 $("#q-toggle-parse") && $("#q-toggle-parse").addEventListener("click", function(){
   if(!S.answered){ toast("请先作答，答案与解析会在选择后显示"); return; }
@@ -4321,7 +4552,7 @@ function fmtTs(ts){ var d=new Date(ts); return ymd(d)+" "+("0"+d.getHours()).sli
 function renderMistakes(){
   var host=$("#mistake-list"); if(!host) return;
   if(!S.mis.length){
-    host.innerHTML='<div class="empty">本机暂无错题记录。答错时会自动记入，也可以在任意题目上点「标记为错题」。<div class="row" style="margin-top:10px"><button class="btn sm primary" data-go="#/bank">去题库挑题</button><button class="btn sm" data-go="#/exam">去模拟考场</button></div></div>';
+    host.innerHTML='<div class="empty">本机暂无错题记录。答错时会自动记入，也可以在任意题目上点「标记为错题（看答案）」。<div class="row" style="margin-top:10px"><button class="btn sm primary" data-go="#/bank">去题库挑题</button><button class="btn sm" data-go="#/exam">去模拟考场</button></div></div>';
     return;
   }
   host.innerHTML=S.mis.map(function(m){
