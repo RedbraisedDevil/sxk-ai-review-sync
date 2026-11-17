@@ -636,6 +636,11 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
   .gch .c2{justify-content:flex-start; flex-wrap:wrap}
   .gh .gsp{flex:1 1 100%}
 }
+/* P0 冲刺区：整块用强调色立起来，一眼能在 21 项目标之前看到它 */
+.p0ph{border-left:3px solid var(--accent); padding-left:12px}
+.p0ph>.planph-h h2{color:var(--accent)}
+.gcard.p0card{border-left:3px solid var(--accent)}
+.gcard.p0card .gh .gid{color:var(--accent); font-weight:600}
 
 /* ===== 章节练习 / 考点地图 ===== */
 .tree{display:grid; gap:var(--sp-3)}
@@ -911,8 +916,9 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       <div class="vhead">
         <div>
           <h1 id="h-goal">题库分类</h1>
-          <p>最外层是<b>学习目标</b>——与「学习计划」同一套 21 项，不是另立一套说法；点开是<b>章节</b>，即考纲的知识单元与知识点条目。每一层的题量、已练题数、正确率都按题库现算，一个数字都不写死；哪一块题库里还没题，这里会直接说没有，不拿空卡片糊弄。</p>
+          <p>P0 那块往下、从「归属总览」起，最外层是<b>学习目标</b>——与「学习计划」同一套 21 项，不是另立一套说法；点开是<b>章节</b>，即考纲的知识单元与知识点条目。每一层的题量、已练题数、正确率都按题库现算，一个数字都不写死；哪一块题库里还没题，这里会直接说没有，不拿空卡片糊弄。</p>
           <p>每个目标与每条知识点都标出<b>考纲要求档位</b>，取值逐字来自考纲表格，不是我们自己分级的：<span class="ok-chip">掌握</span> 要会做、要能写出代码；<span class="need-chip">理解</span> 概念＋与相邻概念的区别，不要求推导；<span class="know-chip">知道</span> 就是平时说的<b>了解级</b>——认得出定义、举得出一个例子、说得出用在哪，不展开。考纲原件第三档写的是「知道」，本页不另造「了解」二字，以免和考纲转录表、筛选器、逐题坐标三处对不上。<b>「掌握」级是默认优先练习范围。</b></p>
+          <p><b>页面最上面另有一块 P0 冲刺优先级</b>，那是另一把尺子——「考纲要求掌握」×「官方卷真考过」，按官方命中次数分四档，再把 52 道落在理解／知道条目上的官方题单独捞出来。它与下面 21 项目标<b>共用同一批题</b>，题量必然重叠，所以单列计数、不计入下面那张归属总览；判据全部由题库与作答记录现算，没有一条写死的题号或条目名。</p>
         </div>
         <span class="chip" id="goal-cov">—</span>
       </div>
@@ -2618,6 +2624,28 @@ document.addEventListener("click", function(e){
    scope 字段：area 知识领域 / unit 知识单元 / item 知识点 / type 题型 / req 考纲要求 / src 来源；
    数组表示取并集。没有 scope 的是策略项（错题归档、概念对照、自练项），明确标「题库未覆盖」。 */
 var GOAL_OPEN={}, GOAL_FOCUS="";
+/* ---------- P0 判据的两个派生量（全部现算，不写死） ----------
+   官方题 = source 为 38A（官方模拟卷 95 题）或 guide（考纲题型示例 8 题）；
+   OFFN[条目四元组] = 该条目下的官方题数——P0-②③④ 就是按这个数分档的。
+   条目 key 的拼法与 goalChapters 同一份（模块|领域|单元|知识点），避免两处口径不一。 */
+var BIG_TYPES=["编程题","论述题","方案设计题","程序阅读题","程序选择题","程序填空题"];
+var OFFN=null, OFF_ALL=0;
+function isOfficial(q){ var s=String(q.source||""); return s==="38A"||s==="guide"; }
+function sylKey(q){
+  var s=q.syllabus||{};
+  return norm(s.模块)+"|"+norm(s.知识领域)+"|"+norm(s.知识单元)+"|"+norm(s.知识点);
+}
+function ensureOffn(){
+  if(OFFN) return;
+  OFFN={}; OFF_ALL=0;
+  for(var i=0;i<QB.length;i++){
+    var q=QB[i].q;
+    if(!isOfficial(q)) continue;
+    OFF_ALL++;
+    var k=sylKey(q);
+    OFFN[k]=(OFFN[k]||0)+1;
+  }
+}
 function goalMatch(q, sc){
   var s=q.syllabus||{};
   if(sc.area && String(s.知识领域||"")!==sc.area) return false;
@@ -2626,6 +2654,16 @@ function goalMatch(q, sc){
   if(sc.type && typeOf(q)!==sc.type) return false;
   if(sc.req && reqOf(q)!==sc.req) return false;
   if(sc.src && String(q.source||"")!==sc.src) return false;
+  /* 以下四项专供 P0 分档，学习计划的 scope 不用它们，行为完全不变 */
+  if(sc.official && !isOfficial(q)) return false;
+  if(sc.big && BIG_TYPES.indexOf(typeOf(q))<0) return false;
+  if(sc.lvIn && list(sc.lvIn).indexOf(reqOf(q))<0) return false;
+  if(sc.noffMin!=null || sc.noffMax!=null){
+    ensureOffn();
+    var n=OFFN[sylKey(q)]||0;
+    if(sc.noffMin!=null && n<sc.noffMin) return false;
+    if(sc.noffMax!=null && n>sc.noffMax) return false;
+  }
   return true;
 }
 function goalHits(scope){
@@ -2707,6 +2745,16 @@ function scopeLabel(scope){
     if(sc.item) seg.push("知识点「"+sc.item+"」");
     if(sc.type) seg.push("题型「"+sc.type+"」");
     if(sc.req) seg.push("考纲要求「"+sc.req+"」");
+    /* P0 专用判据的说明，保证卡片上写得清「这堆题是按什么挑出来的」 */
+    if(sc.lvIn) seg.push("考纲要求 "+list(sc.lvIn).map(function(x){ return "「"+x+"」"; }).join("／"));
+    if(sc.official) seg.push("只取官方题（38A 模拟卷／考纲题型示例）");
+    if(sc.big) seg.push("题型限编程／论述／方案设计／程序阅读／程序选择／程序填空");
+    if(sc.noffMin!=null && sc.noffMax!=null && sc.noffMin===sc.noffMax){
+      seg.push("该条目官方题命中 "+sc.noffMin+" 道");
+    }else{
+      if(sc.noffMin!=null) seg.push("该条目官方题 ≥ "+sc.noffMin+" 道");
+      if(sc.noffMax!=null) seg.push("该条目官方题 ≤ "+sc.noffMax+" 道");
+    }
     return seg.join(" · ") || "全部题目";
   }).join(" ＋ ");
 }
@@ -2751,8 +2799,70 @@ function goalCardHtml(ph, it){
         '<button class="btn sm ghost" type="button" data-gch="'+esc(it.id)+'" data-gi="'+ci+'">练这章</button></span></li>';
     }).join("")+'</ul></div>';
   }
-  return '<div class="gcard'+(GOAL_FOCUS===it.id?" focus":"")+(hits.length?"":" pend")+'" id="gcard-'+esc(it.id)+'">'+
+  return '<div class="gcard'+(GOAL_FOCUS===it.id?" focus":"")+(hits.length?"":" pend")+
+    (String(it.id).indexOf("p0-")===0?" p0card":"")+'" id="gcard-'+esc(it.id)+'">'+
     head+sub+bar+body+'</div>';
+}
+/* ---------- P0 冲刺优先级（题库分类页最上面那一块） ----------
+   为什么不并进 PLAN：PLAN 那 21 项按「先写程序→最后看概念」的时间顺序排，
+   而 P0 是另一把尺子——「考纲要求掌握」×「官方卷真考过」。两套口径的题会重叠
+   （官方 102 题里 52 题落在理解／知道条目上），混进同一份统计只会把数字搅乱。
+   所以它单列、不计入上面的归属覆盖，题量按自己的判据现算。
+   判据全部是本文件里能复算的字段，没有一条写死的条目名或题号：
+     big      题型属于编程／论述／方案设计／程序阅读／程序选择／程序填空
+     official 只取官方题（38A 模拟卷 95 题 + 考纲题型示例 8 题 = 103 题）
+     lvIn     该题挂的考纲条目档位属于这几档
+     noffMin / noffMax  该题所属条目的官方题数落在什么范围 */
+var P0_GROUP={ph:"P0", name:"冲刺优先级", when:"距考试 11 天 ─ 先啃这块",
+  why:"P0 不是又一套计划，是把<b>「考纲要求掌握」</b>与<b>「官方卷真考过」</b>两把尺子叠起来的切法。"+
+      "反直觉的地方在于：官方 102 题里有 <b>52 题落在理解／知道条目</b>上，比落在掌握条目的 50 题还多——只背「掌握」直接丢一半分。"+
+      "五块按顺序啃：① 大题分值最重且最不可能跳过；② 官方反复命中的条目就是必考区；③④ 是按官方命中次数递减；⑤ 补那 52 题。"+
+      "这五块与下面 21 项学习目标<b>共用同一批题</b>，题量必然重叠，因此不计入上面的归属覆盖统计，只按自己的口径现算。",
+  items:[
+    {id:"p0-1", t:"① 官方大题靶心", n:"",
+     s:"官方卷里所有大题与程序类题。验收：先写思路再手写代码，写完对照参考答案改一遍；编程题 KNN、线性回归、K-Means 优先。它与 ②～⑤ 是同一批官方题的另一种切法，重复计数是故意的。",
+     scope:{official:true, big:true}},
+    {id:"p0-2", t:"② 掌握 + 官方反复考（官方题 ≥ 2）", n:"",
+     s:"出题人在这里命中两次以上，是必考区。验收：不看资料讲出原理并举一个例子；CNN、决策树、逻辑回归、SVM 还要能默写关键步骤。前三天拿下这 14 条。",
+     scope:{lvIn:["掌握"], noffMin:2}},
+    {id:"p0-3", t:"③ 掌握 + 官方考过一次（官方题 = 1）", n:"",
+     s:"要求与 ② 同级，优先级排在其后。验收：讲得清概念，看得懂选择题每个选项为什么对、为什么错。",
+     scope:{lvIn:["掌握"], noffMin:1, noffMax:1}},
+    {id:"p0-4", t:"④ 掌握 + 官方零命中（官方题 = 0）", n:"",
+     s:"考纲白纸黑字要「掌握」，样卷却一道没考。只求认得概念、能做单选，不追证明与推导——别在这上面耗掉最后几天。",
+     scope:{lvIn:["掌握"], noffMax:0}},
+    {id:"p0-5", t:"⑤ 官方题落在「理解／知道」条目", n:"",
+     s:"最容易被跳过、也最容易丢分的一档。只做这里的官方题，不扩散到同一条目的教材题——这些条目等级低，练多了性价比反而下降。",
+     scope:{official:true, lvIn:["理解","知道"]}}
+  ]};
+function allPlanItems(){
+  var out=[];
+  P0_GROUP.items.forEach(function(it){ out.push(it); });
+  PLAN.forEach(function(p){ p.items.forEach(function(it){ out.push(it); }); });
+  return out;
+}
+function findPlanItem(id){
+  var hit=null;
+  allPlanItems().forEach(function(it){ if(it.id===id) hit=it; });
+  return hit;
+}
+/* P0 那一块：题量在渲染时现算，「共 N 题」是五块去重后的并集，不重复计 */
+function p0BlockHtml(){
+  var uni={}, rest={};
+  P0_GROUP.items.forEach(function(it,i){
+    it._hits=goalHits(it.scope);
+    /* ① 与 ②～⑤ 重叠，算总数只取 ②～⑤ 的并集，再把 ① 独有的补上 */
+    if(i){ it._hits.forEach(function(x){ uni[x]=1; rest[x]=1; }); }
+  });
+  var own=P0_GROUP.items[0]._hits.filter(function(x){ return !rest[x]; }).length;
+  var n=Object.keys(uni).length+own;
+  return '<div class="planph p0ph" id="p0-block">'+
+    '<div class="planph-h"><h2>'+esc(P0_GROUP.ph+" "+P0_GROUP.name)+'</h2>'+
+    '<span class="when">'+esc(P0_GROUP.when)+' · 共 '+n+' 题去重'+
+      (own?'（含 '+own+' 道无考纲坐标的官方题，只出现在 ①）':'')+'</span></div>'+
+    '<p class="why">'+P0_GROUP.why+'</p>'+
+    P0_GROUP.items.map(function(it){ return goalCardHtml(P0_GROUP, it); }).join("")+
+  '</div>';
 }
 function renderGoals(){
   ensureNodeQs();
@@ -2781,7 +2891,7 @@ function renderGoals(){
     bar.setAttribute("title","已归属 "+K(covN)+" / "+K(QB.length)+" 题（"+p+"%）");
   }
   var host=$("#goal-body"); if(!host) return;
-  host.innerHTML=PLAN.map(function(ph){
+  host.innerHTML=p0BlockHtml()+PLAN.map(function(ph){
     return '<div class="planph"><div class="planph-h"><h2>'+esc(ph.ph+" "+ph.name)+'</h2>'+
       '<span class="when">'+esc(ph.when)+'</span></div>'+
       '<p class="why">'+ph.why+'</p>'+
@@ -2803,7 +2913,7 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
   b=t.closest ? t.closest("[data-gall]") : null;
   if(b){
     var id=b.getAttribute("data-gall"), hit=null, item=null;
-    PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if(it.id===id){ hit=it; item=it; } }); });
+    item=findPlanItem(id); hit=item;
     if(id==="__orphan"){ hit={_hits:(PLAN._orphan||[])}; }
     if(!hit || !(hit._hits||[]).length){ toast("这个目标在题库里没有题"); return; }
     startPractice(hit._hits.slice(), "题库分类："+(item?item.t:"未归属题目"));
@@ -2812,8 +2922,7 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
   b=t.closest ? t.closest("[data-gch]") : null;
   if(b){
     var gid2=b.getAttribute("data-gch"), gi=parseInt(b.getAttribute("data-gi"),10);
-    var it2=null;
-    PLAN.forEach(function(ph){ ph.items.forEach(function(x){ if(x.id===gid2) it2=x; }); });
+    var it2=findPlanItem(gid2);
     if(gid2==="__orphan") it2={_chs:goalChapters(PLAN._orphan||[])};
     var c=it2 && it2._chs ? it2._chs[gi] : null;
     if(!c || !c.idxs.length){ toast("这一章没有题目"); return; }
@@ -2822,10 +2931,10 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
   }
 });
 $("#goal-fold") && $("#goal-fold").addEventListener("click", function(){
-  var any=false; PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if(GOAL_OPEN[it.id]) any=true; }); });
+  var any=false; allPlanItems().forEach(function(it){ if(GOAL_OPEN[it.id]) any=true; });
   if(GOAL_OPEN.__orphan) any=true;
   if(any){ GOAL_OPEN={}; GOAL_FOCUS=""; this.textContent="全部展开"; }
-  else { PLAN.forEach(function(ph){ ph.items.forEach(function(it){ if((it._hits||[]).length) GOAL_OPEN[it.id]=true; }); }); GOAL_OPEN.__orphan=true; this.textContent="全部折叠"; }
+  else { allPlanItems().forEach(function(it){ if((it._hits||[]).length) GOAL_OPEN[it.id]=true; }); GOAL_OPEN.__orphan=true; this.textContent="全部折叠"; }
   renderGoals();
 });
 $("#goal-goto-plan") && $("#goal-goto-plan").addEventListener("click", function(){
