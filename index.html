@@ -3568,33 +3568,66 @@ function opBarHtml(q){
   '</div>';
 }
 function opHintHtml(){
-  return '没检测到本机启动器（也可能是浏览器把协议弹窗拦了）。第一次用请在 <b>本机终端</b> 跑一次注册——'+
-    '只写当前用户，不要管理员：<br><code>'+esc(OP_REG_CMD)+'</code>'+
+  return '如果你没看到 VS Code 窗口，多半是<b>本机协议还没注册</b>（也可能被浏览器的协议弹窗拦了）。'+
+    '第一次用请在 <b>本机终端</b> 跑一次注册——只写当前用户，不要管理员：'+
+    '<br><code>'+esc(OP_REG_CMD)+'</code>'+
     '<div class="row"><button class="btn sm ghost" type="button" data-copycmd="1">复制命令</button>'+
-    '<span class="tiny muted">注册后刷新本页即可。手机端不显示这个按钮是设计如此——手机上没有本机 Python。</span></div>';
+    '<button class="btn sm ghost" type="button" data-dismisshint="1">窗口已经开了，忽略</button>'+
+    '<span class="tiny muted">注册后刷新本页。还是没反应就看 <code>workspace\\_launcher.log</code> 最后一行——'+
+    '那行写了到底有没有跑起来。</span></div>';
 }
+/* 判定「到底打没打开」：网页看不到本机进程，只能看自己有没有失去焦点。
+   旧逻辑只等 1.5 秒、只听一次 blur——VS Code 冷启动 + 取素材往往超过 1.5 秒，
+   或者窗口排在浏览器后面没抢焦点，于是明明打开了还提示"没检测到启动器"。
+   现在等 8 秒、每 200ms 轮询 hasFocus/visibility，任一条命中就算调起；
+   8 秒仍无信号时也不再断言"没检测到"，改成条件句 + 让用户自己点掉。 */
+var OP_WAIT_MS = 8000;
 function openLocalEnv(id, bar){
   var hint=bar ? bar.querySelector(".ophint") : null;
-  var fired=false;
+  var btn=bar ? bar.querySelector("[data-openenv]") : null;
+  var fired=false, timer=null, poll=null, closed=false;
   function mark(){ fired=true; }
-  document.addEventListener("visibilitychange", mark, {once:true});
-  window.addEventListener("blur", mark, {once:true});
+  function onBlur(){ mark(); }
+  function onVis(){ if(document.visibilityState==="hidden") mark(); }
+  function cleanup(){
+    if(closed) return;
+    closed=true;
+    clearInterval(poll); clearTimeout(timer);
+    window.removeEventListener("blur", onBlur);
+    document.removeEventListener("visibilitychange", onVis);
+    if(btn){ btn.disabled=false; btn.removeAttribute("data-busy"); btn.textContent="在 VS Code 里打开这道题"; }
+  }
+  function done(ok){
+    if(closed) return;
+    if(ok){ cleanup(); if(hint) hint.classList.remove("on"); toast("已交给本机 VS Code"); }
+    else { cleanup(); if(hint){ hint.innerHTML=opHintHtml(); hint.classList.add("on"); } }
+  }
+  if(btn){ btn.disabled=true; btn.setAttribute("data-busy","1"); btn.textContent="正在打开 VS Code…"; }
+  var wasFocus=document.hasFocus();     /* 只认「本来有焦点 → 焦点掉了」，否则页面本来就没激活会误判 */
+  window.addEventListener("blur", onBlur);
+  document.addEventListener("visibilitychange", onVis);
+  poll=setInterval(function(){
+    var f=document.hasFocus();
+    if(wasFocus && !f) mark();
+    if(!document.hasFocus() && document.visibilityState==="hidden") mark();
+    wasFocus=f;
+    if(fired) done(true);
+  },200);
   var fr=document.createElement("iframe");
   fr.style.display="none"; fr.setAttribute("aria-hidden","true");
   fr.src="sxkpy://q/"+encodeURIComponent(id);
   document.body.appendChild(fr);
-  setTimeout(function(){
-    document.removeEventListener("visibilitychange", mark);
-    window.removeEventListener("blur", mark);
+  timer=setTimeout(function(){
     try{ if(fr.parentNode) fr.parentNode.removeChild(fr); }catch(e){}
-    if(fired){ if(hint) hint.classList.remove("on"); toast("已交给本机 VS Code"); }
-    else if(hint){ hint.innerHTML=opHintHtml(); hint.classList.add("on"); }
-  },1500);
+    done(fired);
+  }, OP_WAIT_MS);
 }
 document.addEventListener("click", function(e){
   var t=e.target;
   var a=(t && t.closest) ? t.closest("[data-openenv]") : null;
-  if(a){ e.preventDefault(); openLocalEnv(a.getAttribute("data-openenv"), a.closest(".opbar")); return; }
+  if(a){ e.preventDefault(); if(a.disabled) return; openLocalEnv(a.getAttribute("data-openenv"), a.closest(".opbar")); return; }
+  var dh=(t && t.closest) ? t.closest("[data-dismisshint]") : null;
+  if(dh){ e.preventDefault(); var hh=dh.closest(".ophint"); if(hh){ hh.classList.remove("on"); hh.innerHTML=""; } return; }
   var c=(t && t.closest) ? t.closest("[data-copycmd]") : null;
   if(c){
     e.preventDefault();
