@@ -316,6 +316,8 @@ html[data-theme="dark"] .theme-btn .i-moon{display:none}
 .btn.ghost{border-color:transparent; color:var(--brand-text)}
 .btn.danger{border-color:var(--err); color:var(--err)}
 .btn.danger:hover{background:var(--err-soft)}
+/* 「标记为错题」已生效态：这题现在就在错题本里，按钮用实心红表示已落袋 */
+.btn.is-mis{background:var(--err-soft); border-color:var(--err); color:var(--t-err-fg); font-weight:600}
 .btn.sm{min-height:44px; padding:0 12px; font-size:16px}
 .row{display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap}
 .bars{display:grid; gap:10px}
@@ -410,6 +412,13 @@ html[data-theme="dark"] .theme-btn .i-moon{display:none}
 .numgrid button[aria-current="true"]{border-color:var(--brand); background:var(--brand-soft); color:var(--brand-text); font-weight:700}
 .numgrid button.ok{border-color:var(--t-ok-line); background:var(--ok-soft); color:var(--t-ok-fg)}
 .numgrid button.no{border-color:var(--t-err-line); background:var(--err-soft); color:var(--t-err-fg)}
+/* 「标记为错题」：整格转红。颜色不是唯一信号（ux-guidelines Accessibility/Color Only
+   判为 High：不能只用红绿传达状态），所以额外给右上角实心三角 + 2px 实边——
+   与「答错」的 1px 浅红边（.no）在灰度下也能分开。当前题的红格改用 outline 保辨识度，
+   不让状态色盖掉位置提示。 */
+.numgrid button.mis{position:relative; border-color:var(--err); border-width:2px; background:var(--err-soft); color:var(--t-err-fg); font-weight:700; box-shadow:inset 0 -2px 0 var(--err)}
+.numgrid button.mis::after{content:""; position:absolute; top:-1px; right:-1px; width:0; height:0; border-top:9px solid var(--err); border-left:9px solid transparent; border-top-right-radius:3px}
+.numgrid button.mis[aria-current="true"]{outline:2px solid var(--brand); outline-offset:1px}
 .stem{font-size:18px; line-height:1.75; margin:2px 0 var(--sp-4)}
 .stem b{font-weight:600; color:var(--brand-text)}
 /* 题干自带换行的题目（论述题／方案设计题等）：保留原卷换行、缩进与列对齐，不做空白折叠 */
@@ -541,6 +550,9 @@ pre.sample .eof{display:block; height:0}
 }
 .verdict.ok{border-color:var(--t-ok-line); background:var(--ok-soft); color:var(--t-ok-fg)}
 .verdict.no{border-color:var(--t-err-line); background:var(--err-soft); color:var(--t-err-fg)}
+/* 手动「标记为错题」的题：判定条整条转红 + 左侧红条（形状信号），文字里写明原判定，
+   不因转红就丢掉「这题其实答对过」这个事实 */
+.verdict.marked{border-color:var(--err); background:var(--err-soft); color:var(--t-err-fg); box-shadow:inset 3px 0 0 var(--err)}
 .pager{display:flex; gap:var(--sp-2); align-items:center; margin-top:var(--sp-4); flex-wrap:wrap}
 .tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); margin-bottom:var(--sp-3); flex-wrap:wrap}
 .tabs button{
@@ -3345,6 +3357,18 @@ function addMis(id, why, tip){
   S.mis.push({id:id, why:why||"—", tip:tip||"", ts:ts});
   saveMis(); return true;
 }
+/* 「这题被人手动标成错题了吗」——只认手动标记那一条，答错自动进错题本的不算。
+   两者在题号网格里都是红，但样式不同：答错用 .no（虚线感浅红），手动标记用 .mis
+   （实红 + 右上角三角），这样一眼能分出「我做错了」和「我不会、先记下来」。
+   判据走 S.mis（已有云端同步与墓碑机制），不另建存储，免得两端不同步。 */
+function misEntry(id){
+  for(var i=0;i<S.mis.length;i++){ if(S.mis[i] && S.mis[i].id===id) return S.mis[i]; }
+  return null;
+}
+function isMarkedWrong(id){
+  var e=misEntry(id);
+  return !!(e && String(e.why||"").indexOf("手动标记")===0);
+}
 function removeMis(id){
   /* 墓碑必须压过记录自身的 ts：另一台设备时钟偏快或导入的未来 ts 记录，
      用 Date.now() 写墓碑会被它顶回去——删除当场复活，同步到云端也压不住。 */
@@ -3504,13 +3528,28 @@ function renderPractice(){
   S.multiSel=(S.answered && r && r.pick) ? String(r.pick).split("") : [];
   if(q.id!==LAST_QID) BLANK_ACTIVE=0;
   $("#q-idx").textContent="第 "+(S.cur+1)+" / "+S.order.length+" 题";
+  var mkSet={};
+  S.mis.forEach(function(m){ if(m && m.id && String(m.why||"").indexOf("手动标记")===0) mkSet[m.id]=1; });
   $("#q-grid").innerHTML=S.order.map(function(ix,i){
     var qq=QS[ix], rr=S.rec[qq.id], redoing=!!S.redo[qq.id];
     var cls=(!redoing && rr)?(rr.ok===true?"ok":(rr.ok===false?"no":"")):"";
-    return '<li><button type="button" class="'+cls+'" data-jump="'+i+'"'+(i===S.cur?' aria-current="true"':'')+'>'+(i+1)+'</button></li>';
+    /* 手动标记的题压在判定色之上：答对过也要红，否则「标记了却还是绿的」会让人以为没生效 */
+    if(mkSet[qq.id]) cls=cls?cls+" mis":"mis";
+    return '<li><button type="button" class="'+cls+'" data-jump="'+i+'"'+(i===S.cur?' aria-current="true"':'')+
+      (mkSet[qq.id]?' title="第'+(i+1)+'题 · 已标记为错题" aria-label="第'+(i+1)+'题，已标记为错题"':'')+'>'+(i+1)+'</button></li>';
   }).join("");
   $("#q-meta").innerHTML='<span class="chip">'+esc(typeOf(q))+' · '+esc(scoreOf(q))+'</span>'+levelChip(q)+srcTag(q)+kindChip(q)+reqChip(reqOf(q))+'<span class="chip num">'+esc(q.id)+'</span>';
   renderQBody(q); renderVerdict(q); renderPanes(q); renderRelated(q);
+  /* 按钮自己也要跟着变红：点了没变化会让人以为没点上。
+     判据用「在不在错题本」而不是「是不是手动标记」——答错的题本来也在错题本里，
+     按钮显示同一个状态才不会自相矛盾；点它依旧展开答案，不会重复记账。 */
+  var fav=$("#q-fav");
+  if(fav){
+    var inMisNow=!!misEntry(q.id);
+    fav.classList.toggle("is-mis", inMisNow);
+    fav.textContent=inMisNow ? "已在错题本（点开答案）" : "标记为错题（看答案）";
+    fav.title=inMisNow ? "本题已在错题本；点一下展开答案，不会重复添加" : "显示本题答案并加入错题本";
+  }
   var card=$("#q-pane-card"); if(card) card.style.display=(S.answered && !S.parseAlways && !forced)?"none":"";
   var pt=$("#q-toggle-parse");
   if(pt){
@@ -3785,18 +3824,26 @@ function renderVerdict(q){
   var r=S.rec[q.id];
   if(!r || S.redo[q.id]){ v.hidden=true; v.className="verdict"; v.textContent=""; return; }
   v.hidden=false;
-  var inMis=false;
+  var inMis=false, mk=isMarkedWrong(q.id);
   for(var i=0;i<S.mis.length;i++){ if(S.mis[i] && S.mis[i].id===q.id){ inMis=true; break; } }
   /* 未作答就点「标记为错题」时记录写成 ok:null（不进正确率分母），
      所以这条分支必须排在「不自动判分」之前，否则会被吞掉。 */
   if(r.revealed){
-    v.className="verdict no";
+    v.className="verdict no"+(mk?" marked":"");
     v.innerHTML='<b>已标记为错题</b>：答案已展开'+(inMis?'，已加入错题本':'')+'。正确答案：'+esc(q.answer||"—")+'。'+levelChip(q)+levelNote(q)+'';
     return;
   }
   if(r.ok===null || r.ok===undefined){
-    v.className="verdict";
-    v.innerHTML='<b>本题不自动判分</b>：此处为 '+(isSubjective(q)?"主观题":(isOpenQ(q)?"开放性作答题":"填空／程序填空类，需逐空自核"))+'，没有客观判分依据。参考答案与评分要点见右侧「解析」页签。'+levelChip(q)+levelNote(q)+'';
+    v.className="verdict"+(mk?" marked":"");
+    v.innerHTML='<b>本题不自动判分</b>：此处为 '+(isSubjective(q)?"主观题":(isOpenQ(q)?"开放性作答题":"填空／程序填空类，需逐空自核"))+'，没有客观判分依据。参考答案与评分要点见右侧「解析」页签。'+(mk?'<b>已标记为错题</b>，已加入错题本。':'')+levelChip(q)+levelNote(q)+'';
+    return;
+  }
+  /* 手动标记后整条转红。但「原本答对过」是事实，不能因为标红就抹掉——
+     文案里明写原判定，颜色只表达「这题现在躺在错题本里」。 */
+  if(mk){
+    v.className="verdict marked";
+    v.innerHTML='<b>已标记为错题</b>：已加入错题本，答案已展开。原判定为'+(r.ok?'「回答正确」':'「回答错误」')+
+      (r.ok?'':'，正确答案是 '+esc(q.answer||"—"))+'。'+levelChip(q)+levelNote(q)+'。右侧「解析／考纲坐标／教材页／怎么做」已同步本题内容。';
     return;
   }
   v.className="verdict "+(r.ok?"ok":"no");
