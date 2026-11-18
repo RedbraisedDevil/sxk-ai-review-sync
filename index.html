@@ -713,8 +713,14 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 }
 @media (min-width:768px){
   .app{grid-template-columns:minmax(0,224px) minmax(0,1fr)}
-  .rail{position:sticky; top:0; height:100vh; flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:var(--sp-4);
-    padding:var(--sp-4) var(--sp-3); border-right:1px solid var(--line); border-bottom:0}
+  /* height:100vh 只是侧栏自己的可视高度；窗口一矮（笔记本 1366×768、或浏览器缩到半屏），
+     侧栏内容会超过 100vh。不给 overflow 的话溢出部分默认 visible，会把整个文档撑高
+     ——做题页两栏被 JS 限成一屏高，页面却能再滚一段，滚下去就是一片空白。
+     这里让侧栏自己滚，文档高度就只由内容决定，不再被侧栏拖长。 */
+  .rail{position:sticky; top:0; height:100vh; overflow-y:auto; overscroll-behavior:contain;
+    flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:var(--sp-4);
+    padding:var(--sp-4) var(--sp-3); border-right:1px solid var(--line); border-bottom:0;
+    scrollbar-width:thin; scrollbar-color:var(--ink-3) transparent}
   .brand{align-items:flex-start}
   .brand b{font-size:16px}
   .brand span{display:block}
@@ -3533,7 +3539,11 @@ function syncExamBox(){
   /* 视图用 .on 类控制 display，不是 hidden 属性：隐藏时 rect 全为 0，量出来的是假高度 */
   if(!v || !v.classList.contains("on")) return;
   var topDoc = ex.getBoundingClientRect().top + window.pageYOffset;
-  var avail = Math.round(window.innerHeight - topDoc - 14);
+  /* 底部留的量要跟视图自身的内边距对上，不能随手写个数：给多了页面还能再滚一截，
+     滚下去就是两栏已经走掉、下面一片空白；给少了又把最后一行切掉。
+     实测往下滑出现大片空白，根因就是这里减的 14px 小于 .view 的 padding-bottom（24px）。 */
+  var padB = parseFloat(getComputedStyle(v).paddingBottom) || 0;
+  var avail = Math.round(window.innerHeight - topDoc - padB);
   if(avail < 320){ ex.classList.remove("pane-scroll"); ex.style.removeProperty("--exam-h"); return; }
   ex.style.setProperty("--exam-h", avail+"px");
   ex.classList.add("pane-scroll");
