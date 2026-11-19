@@ -666,6 +666,9 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
 .s0tbl td.num,.s0tbl th.num{text-align:right; font-family:var(--font-num); white-space:nowrap}
 .s0tbl td:first-child,.s0tbl th:first-child{white-space:nowrap}
 .s0tbl tr.sum td{background:var(--t-paper3); font-weight:600}
+/* 排程表里不进合计的行（D9—D11）压暗，避免被当成必做 */
+.s0tbl tr.dim td{opacity:.55}
+.s0tbl td.mono{font-family:var(--font-mono); font-size:12px; color:var(--ink-2)}
 .s0tbl .mb{display:inline-block; min-width:56px; height:6px; border-radius:3px; background:var(--brand); vertical-align:middle; margin-right:8px}
 .s0tbl .mbtrack{display:inline-block; width:56px; height:6px; border-radius:3px; background:var(--line); vertical-align:middle; margin-right:8px; overflow:hidden}
 .s0tbl .mbtrack i{display:block; height:100%; background:var(--brand); border-radius:3px}
@@ -962,7 +965,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
           <h1 id="h-goal">题库分类</h1>
           <p>S0 与 P0 两块往下、从「归属总览」起，最外层是<b>学习目标</b>——与「学习计划」同一套 21 项，不是另立一套说法；点开是<b>章节</b>，即考纲的知识单元与知识点条目。每一层的题量、已练题数、正确率都按题库现算，一个数字都不写死；哪一块题库里还没题，这里会直接说没有，不拿空卡片糊弄。</p>
           <p>每个目标与每条知识点都标出<b>考纲要求档位</b>，取值逐字来自考纲表格，不是我们自己分级的：<span class="ok-chip">掌握</span> 要会做、要能写出代码；<span class="need-chip">理解</span> 概念＋与相邻概念的区别，不要求推导；<span class="know-chip">知道</span> 就是平时说的<b>了解级</b>——认得出定义、举得出一个例子、说得出用在哪，不展开。考纲原件第三档写的是「知道」，本页不另造「了解」二字，以免和考纲转录表、筛选器、逐题坐标三处对不上。<b>「掌握」级是默认优先练习范围。</b></p>
-          <p><b>页面最上面依次是两块尺子</b>。<b>S0 冲 80 分</b>按「38A 卷面到底给了几分」排序，回答「80 分从哪来」；紧接着的 <b>P0 冲刺优先级</b>按「考纲要求掌握」×「官方卷真考过」，按官方命中次数分四档，再把落在理解／知道条目上的官方题单独捞出来，回答「先背哪一条」。两块都与下面 21 项目标<b>共用同一批题</b>，题量必然重叠，所以各自单列计数、不计入下面那张归属总览；判据全部由题库与作答记录现算，没有一条写死的题号、条目名或分值。</p>
+          <p><b>页面最上面依次是两块尺子</b>。<b>S0 冲 127 分（150 分制）</b>按「38A 卷面到底给了几分」排序，回答「127 分从哪来、十天怎么排」；紧接着的 <b>P0 冲刺优先级</b>按「考纲要求掌握」×「官方卷真考过」，按官方命中次数分四档，再把落在理解／知道条目上的官方题单独捞出来，回答「先背哪一条」。两块都与下面 21 项目标<b>共用同一批题</b>，题量必然重叠，所以各自单列计数、不计入下面那张归属总览；判据全部由题库与作答记录现算，没有一条写死的题号、条目名或分值。</p>
         </div>
         <span class="chip" id="goal-cov">—</span>
       </div>
@@ -2697,6 +2700,7 @@ function goalMatch(q, sc){
   if(sc.item && String(s.知识点||"")!==sc.item) return false;
   if(sc.type && typeOf(q)!==sc.type) return false;
   if(sc.typeIn && list(sc.typeIn).indexOf(typeOf(q))<0) return false;
+  if(sc.pack && String(q.pack||"")!==sc.pack) return false;
   if(sc.req && reqOf(q)!==sc.req) return false;
   if(sc.src && String(q.source||"")!==sc.src) return false;
   /* 以下四项专供 P0 分档，学习计划的 scope 不用它们，行为完全不变 */
@@ -2790,6 +2794,7 @@ function scopeLabel(scope){
     if(sc.item) seg.push("知识点「"+sc.item+"」");
     if(sc.type) seg.push("题型「"+sc.type+"」");
     if(sc.typeIn) seg.push("题型 "+list(sc.typeIn).map(function(x){ return "「"+x+"」"; }).join("／"));
+    if(sc.pack) seg.push("题包「"+sc.pack+"」");
     if(sc.req) seg.push("考纲要求「"+sc.req+"」");
     /* P0 专用判据的说明，保证卡片上写得清「这堆题是按什么挑出来的」 */
     if(sc.lvIn) seg.push("考纲要求 "+list(sc.lvIn).map(function(x){ return "「"+x+"」"; }).join("／"));
@@ -2850,10 +2855,10 @@ function goalCardHtml(ph, it){
     (String(it.id).indexOf("s0-")===0?" s0card":"")+'" id="gcard-'+esc(it.id)+'">'+
     head+sub+bar+body+'</div>';
 }
-/* ---------- S0 冲 80 分：按分值排序的题库分类（题库分类页最上面那一块，排在 P0 之前） ----------
+/* ---------- S0 冲 127 分：按分值排序的题库分类＋十天排程（题库分类页最上面那一块，排在 P0 之前） ----------
    为什么单开一级、为什么在 P0 前面：
      P0 按「考纲要求掌握 × 官方卷命中次数」切，回答的是「先背哪一条」；
-     S0 按「38A 卷面到底给了几分」切，回答的是「80 分从哪来、按什么顺序刷」。
+     S0 按「38A 卷面到底给了几分」切，回答的是「127 分（150 分制）从哪来、十天怎么排」。
    分值一律从题库现算，不写死分数，题库补录后自动跟着变：
      程序填空题  score 字段原文是「每空 2 分，共 6 分」→ 取「共 N 分」（3 空 × 2 分）
      客观题      score 字段「1 分」
@@ -2864,8 +2869,12 @@ var S0_MERGE={
   "机器学习":"机器学习基础", "深度学习":"深度学习基础", "计算机视觉":"计算机视觉基础",
   "语音处理":"语音处理基础", "自然语言处理":"自然语言处理基础", "人工智能应用":"人工智能应用基础"
 };
-/* 目标盘：每块按卷面分的 75% 设目标（不是承诺，是给自己留 25% 容错的下限口径） */
-var S0_RATE=0.75;
+/* 目标盘：以 150 分制卷面 127 分为目标（= 84.7%），按同一比例摊到每一块。
+   为什么不写死每块的分：题库补录后卷面分变了，目标要跟着变，否则目标会自己漂。
+   127 而不是 120：120 才是百分制 80 分的严格换算（150×0.8），
+   127 是「80 分以上」多留 7 分容错的口径——考场上少错 7 个单选也就掉回来。 */
+var S0_PAPER=150, S0_TARGET150=127;
+var S0_RATE=S0_TARGET150/S0_PAPER;
 function qScoreOf(q){
   var s=String((q&&q.score)||""), m=s.match(/共\s*([0-9.]+)\s*分/);
   if(m) return parseFloat(m[1]);
@@ -2899,58 +2908,117 @@ function s0Rows(){
   S0_TOTAL=0; rows.forEach(function(r){ S0_TOTAL+=r.score; });
   S0_ROWS=rows; return rows;
 }
-/* 三大块（客观题／程序填空／操作题）是 S0 的三条主线，按题型切，不按领域切 */
+/* 三大块（客观题／程序填空／操作题）是 S0 的三条主线，按题型切，不按领域切。
+   操作题这里只算<b>一块</b>：卷面 H／I 二选一，题库里两块各 16 分都在，
+   逐题结算会把 32 分都算进去，那是「题库有的全算」，不是考生能拿的上限。
+   所以 scopes 给两个候选、取分值高的那块作代表，目标也只按 16 分算。 */
 function s0Blocks(){
   var spec=[
-    {t:"客观题（单选＋多选）", scope:{src:"38A", typeIn:["单选题","多选题"]}, how:"每题 1 分，认得出概念就能选，不需要推导"},
-    {t:"七个程序填空（A—G 各 1 题）", scope:{src:"38A", type:"程序填空题"}, how:"每题 3 空、每空 2 分，会写就整题拿 6 分"},
-    {t:"H／I 操作题（二选一）", scope:{src:"38A", typeIn:["编程题","论述题","方案设计题","程序阅读题","程序选择题"]}, how:"编程 3 题 + 论述 1 题，四块均摊 4 分"}
+    {t:"客观题（单选＋多选）", scopes:[{src:"38A", typeIn:["单选题","多选题"]}], how:"每题 1 分，认得出概念就能选，不需要推导"},
+    {t:"七个程序填空（A—G 各 1 题）", scopes:[{src:"38A", type:"程序填空题"}], how:"每题 3 空、每空 2 分，会写就整题拿 6 分"},
+    {t:"H／I 操作题（二选一，只做一块）", scopes:[{src:"38A", pack:"H"},{src:"38A", pack:"I"}], how:"编程 3 题 + 论述 1 题，四块均摊 4 分"}
   ];
   return spec.map(function(x){
-    var idxs=goalHits(x.scope), s=scoreOfIdxs(idxs);
-    return {t:x.t, how:x.how, n:idxs.length, s:s, goal:Math.round(s*S0_RATE)};
+    var best=null;
+    x.scopes.forEach(function(sc){
+      var idxs=goalHits(sc), s=scoreOfIdxs(idxs);
+      if(!best || s>best.s) best={n:idxs.length, s:s};
+    });
+    return {t:x.t, how:x.how, n:best.n, s:best.s, goal:Math.round(best.s*S0_RATE)};
   });
 }
 /* S0 三条主线卡：按题型切，与上面两张表同一批题，只是换一种入口 */
-var S0_GROUP={ph:"S0", name:"冲 80 分 · 按分值排序", when:"距考试 10 天 ─ 每一分都写明来源",
+var S0_GROUP={ph:"S0", name:"冲 127 分 · 按分值排序", when:"距考试 10 天 ─ 每一分都写明来源",
   items:[
     {id:"s0-1", t:"① 客观题：单选＋多选",
-     s:"每题 1 分，不考推导，只考「认不认得出」。目标七成五。做法：看到题干能指出它问的是哪个概念，错的当场回该考纲条目看一句定义——不要在客观题上抄笔记，抄了也不会考。",
+     s:"每题 1 分，不考推导，只考「认不认得出」。150 分制要 127，这里得拿 68／80（八成五），是全卷最硬的一块——因为每题只有 1 分，错 12 道就掉出 127。做法：看到题干能指出它问的是哪个概念，错的当场回该考纲条目看一句定义，不抄笔记。",
      scope:{src:"38A", typeIn:["单选题","多选题"]}},
     {id:"s0-2", t:"② 七个程序填空：A—G 各 1 题",
-     s:"每题 3 空、每空 2 分，是唯一「会写就整题拿、不会就整题丢」的分。目标拿五个包。性价比排序：A 前向传播（3 空、20 分钟）＞ B 集合（3 个符号）＞ C BFS（deque／popleft／邻居入队）＞ D 贪心累加＞ E 逻辑回归模板＞ F 遗传轮盘赌（步骤最长，放最后）。",
+     s:"每题 3 空、每空 2 分，是唯一「会写就整题拿、不会就整题丢」的分。目标 36／42 ＝ 六个包全对，剩一个包放弃。性价比排序：A 前向传播（3 空、20 分钟）＞ B 集合（3 个符号）＞ C BFS（deque／popleft／邻居入队）＞ D 贪心累加＞ E 逻辑回归模板＞ G KMeans；F 遗传轮盘赌步骤最长，作为弃子。",
      scope:{src:"38A", type:"程序填空题"}},
     {id:"s0-3", t:"③ H／I 操作题：编程 3 题＋论述 1 题",
-     s:"两句话题包里二选一，各 16 分。目标七成五。KNN、线性回归、KMeans 图像压缩三段代码要能默写；论述只背 SVM 与逻辑回归那张四行表（只有「目标」一行填「是」，其余三行都是「否」）。",
+     s:"两个话题包二选一，各 16 分，考场上只做一块。目标 14／16：编程三题 12 分里丢 1 分、论述 4 分里丢 1 分。KNN、线性回归、KMeans 图像压缩三段代码要能默写；论述只背 SVM 与逻辑回归那张四行表（只有「目标」一行填「是」，其余三行都是「否」）。",
      scope:{src:"38A", typeIn:["编程题","论述题","方案设计题","程序阅读题","程序选择题"]}}
   ]};
+/* 十天排程：目标（goal）是策略设的，题量与卷面分由题库现算。
+   goal 不按比例机械折算，因为填空是「整包拿或整包丢」：D7 的 F 包是弃子，目标写 0；
+   D1—D3 的客观题加起来 68，正好是 80 分的八成五——全卷最硬的一块，一天都不能松。
+   cnt=false 的项不进合计：D9 是备选块（二选一没选它）、D10 是全卷复盘、D11 只背模板。 */
+var S0_DAYS=[
+  {d:"D1", day:"11/18", t:"机器学习基础 · 客观题", goal:15, pick:"objArea:机器学习基础"},
+  {d:"D2", day:"11/19", t:"深度学习基础 · 客观题", goal:20, pick:"objArea:深度学习基础"},
+  {d:"D3", day:"11/20", t:"其余 12 个领域 · 客观题", goal:33, pick:"restObj"},
+  {d:"D4", day:"11/21", t:"A 前向传播＋B 集合 · 程序填空", goal:12,
+   scope:[{src:"38A", pack:"A", type:"程序填空题"},{src:"38A", pack:"B", type:"程序填空题"}]},
+  {d:"D5", day:"11/22", t:"C BFS＋D 贪心 · 程序填空", goal:12,
+   scope:[{src:"38A", pack:"C", type:"程序填空题"},{src:"38A", pack:"D", type:"程序填空题"}]},
+  {d:"D6", day:"11/23", t:"E 逻辑回归＋G KMeans · 程序填空", goal:12,
+   scope:[{src:"38A", pack:"E", type:"程序填空题"},{src:"38A", pack:"G", type:"程序填空题"}]},
+  {d:"D7", day:"11/24", t:"F 遗传轮盘赌 · 弃子，只走读不背", goal:0, scope:{src:"38A", pack:"F", type:"程序填空题"}},
+  {d:"D8", day:"11/25", t:"H 全套：编程 3 题＋SVM 论述", goal:14, scope:{src:"38A", pack:"H"}},
+  {d:"D9", day:"11/26", t:"I 全套：备选块，练但不设目标", goal:0, cnt:false, scope:{src:"38A", pack:"I"}},
+  {d:"D10", day:"11/27", t:"38A 全卷限时 150 分钟＋错题回炉", goal:0, cnt:false, scope:null},
+  {d:"D11", day:"11/28", t:"只背七个填空模板＋三张对比表", goal:0, cnt:false, scope:null}
+];
+/* 领域要按 S0_MERGE 归并后再比：题库里「机器学习基础」与「机器学习」是两个写法，
+   直接拿 sc.area 精确匹配只能捞到一半题（9 题而不是 17 题）。 */
+function s0ObjAreas(a){
+  var out=[];
+  goalHits({src:"38A", typeIn:["单选题","多选题"]}).forEach(function(i){
+    var ar=String(((QB[i].q.syllabus)||{}).知识领域||"");
+    if((S0_MERGE[ar]||ar)===a) out.push(i);
+  });
+  return out;
+}
+function s0DayHits(x){
+  if(x.pick==="restObj"){
+    var all=goalHits({src:"38A", typeIn:["单选题","多选题"]});
+    var skip={};
+    s0ObjAreas("机器学习基础").concat(s0ObjAreas("深度学习基础"))
+      .forEach(function(i){ skip[i]=1; });
+    return all.filter(function(i){ return !skip[i]; });
+  }
+  if(x.pick && x.pick.indexOf("objArea:")===0) return s0ObjAreas(x.pick.slice(8));
+  if(!x.scope) return [];
+  return goalHits(x.scope);
+}
 function s0Why(tot, bl){
   var o=bl[0], f=bl[1], h=bl[2];
-  function pc(v){ return Math.round(v*1000/tot)/10+'%'; }
-  return '80 分从哪来，先看卷面怎么给分。38A 官方卷<b>逐题结算合计 '+tot+' 分</b>：'+
-    'A 包必做 26 分（单选 10＋多选 10＋程序填空 3 空×2 分）、B—G 六个客观题包各 16 分、'+
-    'H／I 操作题各 16 分（卷面无逐题分值，按四块均摊 4 分）。'+
-    '考纲「卷面结构」写的是 <b>150 分 / 150 分钟</b>，与逐题结算差 '+Math.abs(150-tot)+' 分'+
-    (tot>=150?'（结算偏高）':'（结算偏低）')+'，差异未定位——'+
-    '本页一律按<b>逐题结算</b>出的分值算，不按 150 分倒推，这样每一分都能指回哪道题。'+
-    '于是 <b>80 分 = 卷面 '+Math.round(80*100/tot)+'%</b>，不是 89%：'+
-    '客观题 '+o.s+' 分（占 '+pc(o.s)+'）、七个程序填空 '+f.s+' 分（占 '+pc(f.s)+'）、'+
-    '操作题 '+h.s+' 分（占 '+pc(h.s)+'）三块顶起全部。'+
-    '表按领域分值降序：同样的时间先换分值大的块。H／I 二选一，两块都列在表里，别把 '+h.s+' 分当成必须全拿。';
+  var cap=o.s+f.s+h.s;                 /* 可作答上限 = 客观 + 填空 + 一块操作题 */
+  var goal=o.goal+f.goal+h.goal;
+  var eq=Math.round(goal*S0_PAPER/cap*10)/10;
+  function pc(v,b){ return Math.round(v*1000/b)/10+'%'; }
+  return '127 分不是拍出来的，先把三本账分清。'+
+    '<b>① 题库逐题结算 '+tot+' 分</b>：38A 95 道题的 score 相加，其中 H／I 两块各 16 分都算进去了。'+
+    '<b>② 实际可作答上限 '+cap+' 分</b>：H／I 卷面二选一，只能做一块，多出的 16 分谁也拿不到——'+
+    '所以「'+tot+' 分」永远不等于你的上限，拿它当分母算比例会把自己算松。'+
+    '<b>③ 考纲卷面 150 分 / 150 分钟</b>（「卷面结构」原文）。'+
+    '三个数不一样，本页的估分一律按 <b>'+cap+' 分</b>算，这是唯一能指回每一道题的分母。'+
+    '于是 <b>127 ÷ 150 = '+pc(S0_TARGET150,S0_PAPER)+'</b>，同一比例落到 '+cap+' 分就是 '+
+    Math.round(S0_TARGET150*cap/S0_PAPER)+' 分；表里按块四舍五入，合计 '+goal+' 分（= 150 制 '+eq+'），多留 1 分余量。'+
+    '拆开看：客观题 '+o.goal+'／'+o.s+'（'+pc(o.goal,o.s)+'）、七个填空 '+f.goal+'／'+f.s+'（'+pc(f.goal,f.s)+'）、'+
+    '操作题 '+h.goal+'／'+h.s+'（'+pc(h.goal,h.s)+'）。'+
+    '<b>最硬的是客观题</b>：80 道题每题 1 分，错 12 道就到线，没有整题丢分的缓冲；'+
+    '填空和操作题按整包丢，容错反而更大——所以别把时间匀给「看起来难」的编程题。';
 }
 function s0BlockHtml(){
   var rows=s0Rows(), tot=S0_TOTAL||1;
-  var bl=s0Blocks(), btot=0, bgoal=0;
-  bl.forEach(function(b){ btot+=b.s; bgoal+=b.goal; });
+  var bl=s0Blocks(), btot=0, bgoal=0, bn=0;
+  bl.forEach(function(b){ btot+=b.s; bgoal+=b.goal; bn+=b.n; });
+  var cap=btot;                                   /* 可作答上限：客观 + 填空 + 一块操作题 */
   /* 三张主线卡的命中集在渲染时现算（goalCardHtml 只认 it._hits） */
   S0_GROUP.items.forEach(function(it){ it._hits=goalHits(it.scope); });
   var sumTb=bl.map(function(b){
     return '<tr><td>'+esc(b.t)+'</td><td class="num">'+b.s+' 分</td><td class="num">'+b.n+' 题</td>'+
-      '<td class="num">'+b.goal+' 分</td><td class="tiny muted sm-hide">'+esc(b.how)+'</td></tr>';
+      '<td class="num"><b>'+b.goal+'</b> 分</td>'+
+      '<td class="num sm-hide">'+Math.round(b.goal*1000/b.s)/10+'%</td>'+
+      '<td class="tiny muted sm-hide">'+esc(b.how)+'</td></tr>';
   }).join("");
-  sumTb+='<tr class="sum"><td>合计</td><td class="num">'+btot+' 分</td><td class="num">'+
-    bl.reduce(function(a,b){ return a+b.n; },0)+' 题</td><td class="num">'+bgoal+' 分</td>'+
-    '<td class="tiny muted sm-hide">80 分只需拿到目标的 '+Math.round(80*100/bgoal)+'%，每块留下 25% 容错</td></tr>';
+  sumTb+='<tr class="sum"><td>合计（可作答上限）</td><td class="num">'+cap+' 分</td><td class="num">'+bn+' 题</td>'+
+    '<td class="num">'+bgoal+' 分</td>'+
+    '<td class="num sm-hide">'+Math.round(bgoal*1000/cap)/10+'%</td>'+
+    '<td class="tiny muted sm-hide">= 150 制 '+Math.round(bgoal*S0_PAPER/cap*10)/10+
+    ' 分，比 127 多留 '+Math.round((bgoal*S0_PAPER/cap-S0_TARGET150)*10)/10+' 分</td></tr>';
   var cum=0;
   var areaTb=rows.map(function(r,ri){
     cum+=r.score;
@@ -2963,21 +3031,49 @@ function s0BlockHtml(){
       '<td class="num">'+cum+' 分</td>'+
       '<td class="num"><button class="btn sm ghost" type="button" data-s0="'+ri+'">练这块</button></td></tr>';
   }).join("");
-  var intro='';
-  rows.forEach(function(r,i){ if(i===0) intro=r.name; });
+  /* 累计线：把 150 制的 127 按比例折回题库结算口径（154 分），约 130 分 */
+  var cumLine=Math.round(S0_TARGET150*tot/S0_PAPER);
+  var cumRow=(function(){ var c=0,i; for(i=0;i<rows.length;i++){ c+=rows[i].score; if(c>=cumLine) return i+1; } return rows.length; })();
+  /* 十天排程表：题量与卷面分现算，目标分是策略 */
+  var dN=0, dS=0, dG=0;
+  var dayTb=S0_DAYS.map(function(x){
+    var idxs=s0DayHits(x), s=scoreOfIdxs(idxs), n=idxs.length;
+    var inc=x.cnt!==false;
+    if(inc){ dN+=n; dS+=s; dG+=x.goal; }
+    var qn = (!inc && !n) ? (x.d==="D10" ? "全卷 95 题" : "—") : n+" 题";
+    var qs = (!inc && !n) ? (x.d==="D10" ? tot+" 分" : "—") : s+" 分";
+    return '<tr'+(inc?'':' class="dim"')+'><td class="mono">'+x.d+'</td>'+
+      '<td class="mono tiny sm-hide">'+x.day+'</td>'+
+      '<td>'+esc(x.t)+'</td><td class="num">'+qn+'</td><td class="num">'+qs+'</td>'+
+      '<td class="num">'+(x.goal?('<b>'+x.goal+'</b>'):'0')+'</td>'+
+      '<td class="num sm-hide">'+(inc?"":"不计")+'</td></tr>';
+  }).join("");
+  /* 合计行按 7 个 td 排（不用 colspan，否则窄屏隐藏列后错位） */
+  dayTb+='<tr class="sum"><td class="mono">合计</td><td class="sm-hide"></td>'+
+    '<td>D1—D8 累计</td><td class="num">'+dN+' 题</td>'+
+    '<td class="num">'+dS+' 分</td><td class="num">'+dG+' 分</td>'+
+    '<td class="num sm-hide">'+Math.round(dG*S0_PAPER/cap*10)/10+'／150</td></tr>';
   return '<div class="planph s0ph" id="s0-block">'+
     '<div class="planph-h"><h2>'+esc(S0_GROUP.ph+" "+S0_GROUP.name)+'</h2>'+
-    '<span class="when">'+esc(S0_GROUP.when)+' · 卷面合计 '+tot+' 分</span></div>'+
+    '<span class="when">'+esc(S0_GROUP.when)+' · 题库结算 '+tot+' 分 / 可作答 '+cap+' 分</span></div>'+
     '<p class="why">'+s0Why(tot, bl)+'</p>'+
-    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">80 分怎么拆</h3>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">127 分怎么拆（150 分制）</h3>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>块</th><th class="num">卷面分</th>'+
-      '<th class="num">题量</th><th class="num">目标分</th><th class="sm-hide">怎么拿</th></tr></thead><tbody>'+
+      '<th class="num">题量</th><th class="num">目标分</th><th class="num sm-hide">达成率</th>'+
+      '<th class="sm-hide">怎么拿</th></tr></thead><tbody>'+
       sumTb+'</tbody></table></div>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">十天排程（D1—D8 拿满 127 的路径）</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">每天 2.5 小时：60 分钟看书＋40 分钟默写＋40 分钟做题＋10 分钟记账。'+
+      '题量与卷面分由题库现算，目标分是按「哪块值得押」定的策略——填空整包拿或整包丢，所以 F 包直接当弃子、目标写 0；'+
+      'D9 是备选操作块、D10 是全卷复盘、D11 只背模板，都不计入合计。</p>'+
+    '<div class="s0tbl wrap"><table><thead><tr><th>天</th><th class="sm-hide">日期</th><th>干什么</th>'+
+      '<th class="num">题量</th><th class="num">卷面分</th><th class="num">目标</th><th class="num sm-hide">计入</th>'+
+      '</tr></thead><tbody>'+
+      dayTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">按分值排序的题库分类</h3>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算（题库改动后自动更新）。'+
-      '「累计」是从上往下刷到这一行时已覆盖的卷面分——80 分线落在第 '+
-      (function(){ var c=0,i; for(i=0;i<rows.length;i++){ c+=rows[i].score; if(c>=80) return i+1; } return rows.length; })()+
-      ' 行附近，再往下是性价比递减的边角。</p>'+
+      '「累计」是从上往下刷到这一行时已覆盖的卷面分（题库全量口径，含 H／I 双算）——'+
+      '127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近，再往下是性价比递减的边角。</p>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>知识领域（按卷面分值降序）</th><th class="num">分值</th>'+
       '<th class="num sm-hide">占比</th><th class="num">题数</th><th class="sm-hide">题包</th>'+
       '<th class="num">累计</th><th></th></tr></thead><tbody>'+
@@ -3066,7 +3162,7 @@ function renderGoals(){
   if(sum) sum.innerHTML="学习目标 <b>"+targets+"</b> 项：<b>"+withQs+"</b> 项挂到了题库，<b>"+pend+"</b> 项是策略项（题库里没有对应题目，不假装有）。"+
     "题库 <b>"+K(QB.length)+"</b> 题中 <b>"+K(covN)+"</b> 题至少归属一个目标，另有 <b>"+K(orphan.length)+"</b> 题没挂到任何目标，单列在页尾。"+
     "所有数字随题库与作答记录实时计算，题库补录后自动更新。"+
-    "页首 <b>S0</b> 回答「每分从哪来」（按 38A 卷面分值排序），紧接着的 <b>P0</b> 回答「先背哪一条」（按考纲要求×官方命中次数），"+
+    "页首 <b>S0</b> 回答「127 分从哪来、十天怎么排」（按 38A 卷面分值排序），紧接着的 <b>P0</b> 回答「先背哪一条」（按考纲要求×官方命中次数），"+
     "两者与下面各项共用同一批题，只是三种切法，因此都不计入上面的归属覆盖统计。";
   var bar=$("#goal-bar");
   if(bar){
