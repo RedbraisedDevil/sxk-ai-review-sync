@@ -666,6 +666,13 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
 .s0tbl td.num,.s0tbl th.num{text-align:right; font-family:var(--font-num); white-space:nowrap}
 .s0tbl td:first-child,.s0tbl th:first-child{white-space:nowrap}
 .s0tbl tr.sum td{background:var(--t-paper3); font-weight:600}
+.s0tbl tr.sum.over td{background:var(--err-soft); color:var(--t-err-fg)}
+.s0tbl .red{color:var(--err); font-weight:600}
+.s0tbl tr.gapgrp td{background:var(--brand-soft); font-size:12.5px; font-weight:600; color:var(--ink-2); padding:6px 10px}
+/* 缺口表第一列是长条目名，必须允许换行，否则 nowrap 会把表格撑出屏幕 */
+.s0tbl.gaptbl td:first-child,.s0tbl.gaptbl th:first-child{white-space:normal; min-width:0}
+/* 第二列是「掌握／理解／知道」，两个字被压窄会竖排成一列字（截图里踩到过） */
+.s0tbl.gaptbl td:nth-child(2),.s0tbl.gaptbl th:nth-child(2){white-space:nowrap}
 /* 排程表里不进合计的行（D9—D11）压暗，避免被当成必做 */
 .s0tbl tr.dim td{opacity:.55}
 .s0tbl td.mono{font-family:var(--font-mono); font-size:12px; color:var(--ink-2)}
@@ -2859,10 +2866,13 @@ function goalCardHtml(ph, it){
    为什么单开一级、为什么在 P0 前面：
      P0 按「考纲要求掌握 × 官方卷命中次数」切，回答的是「先背哪一条」；
      S0 按「38A 卷面到底给了几分」切，回答的是「127 分（150 分制）从哪来、十天怎么排」。
-   分值一律从题库现算，不写死分数，题库补录后自动跟着变：
-     程序填空题  score 字段原文是「每空 2 分，共 6 分」→ 取「共 N 分」（3 空 × 2 分）
-     客观题      score 字段「1 分」
-     H／I 题     卷面只有题包合计 16 分、无逐题分值，按四块均摊 16/4 = 4 分
+   分值分两种来源，必须分清（这是本块唯一容易算错的地方）：
+     ① 有据：程序填空 score 字段原文「每空 2 分，共 6 分」→ 取「共 N 分」；客观题 score「1 分」。
+        38A 里 87 道客观＋填空题每题都写了分值，合计 122 分，这部分是硬的。
+     ② 反推：H／I 八道操作题 score 字段是空的（None），题库里没有逐题分值。
+        只能拿卷面 150 − 122 = 28 分，再除以一块 4 题 = 7 分／题。
+        早先按「每块 16 分」算过，拼出 154 分，比卷面多 4 分，自己就不闭合——那个数是错的。
+        所以 qScoreOf 对 H 返回 7、对 I 返回 0：H／I 二选一，只把 H 计入，避免双算。
    领域归并只做一类：考纲把「机器学习基础」与「机器学习」分列基础／综合模块两处，
    卷面只当一块考；不并会把 57 分拆成 15 + 14，排序就错了。归并表写在下面，一眼可查。 */
 var S0_MERGE={
@@ -2878,7 +2888,10 @@ var S0_RATE=S0_TARGET150/S0_PAPER;
 function qScoreOf(q){
   var s=String((q&&q.score)||""), m=s.match(/共\s*([0-9.]+)\s*分/);
   if(m) return parseFloat(m[1]);
-  if(q && (q.pack==="H"||q.pack==="I")) return 4;
+  /* 操作题：卷面 150 −（客观 80 ＋ 填空 42）= 28 分／块，一块 4 题 = 7 分／题。
+     H／I 二选一，只把 H 计入分值（I 记 0），否则领域表会多算 28 分、合计变成 178。 */
+  if(q && q.pack==="H") return 7;
+  if(q && q.pack==="I") return 0;
   m=s.match(/([0-9.]+)/);
   return m?parseFloat(m[1]):0;
 }
@@ -2909,14 +2922,13 @@ function s0Rows(){
   S0_ROWS=rows; return rows;
 }
 /* 三大块（客观题／程序填空／操作题）是 S0 的三条主线，按题型切，不按领域切。
-   操作题这里只算<b>一块</b>：卷面 H／I 二选一，题库里两块各 16 分都在，
-   逐题结算会把 32 分都算进去，那是「题库有的全算」，不是考生能拿的上限。
-   所以 scopes 给两个候选、取分值高的那块作代表，目标也只按 16 分算。 */
+   操作题只算<b>一块 28 分</b>：卷面 H／I 二选一，qScoreOf 只给 H 记 7 分／题（I 记 0），
+   所以 H 与 I 的分值不会再被加两遍。28 = 150 − 80 − 42，是反推值，题库补录操作题分值后这条可以退役。 */
 function s0Blocks(){
   var spec=[
     {t:"客观题（单选＋多选）", scopes:[{src:"38A", typeIn:["单选题","多选题"]}], how:"每题 1 分，认得出概念就能选，不需要推导"},
     {t:"七个程序填空（A—G 各 1 题）", scopes:[{src:"38A", type:"程序填空题"}], how:"每题 3 空、每空 2 分，会写就整题拿 6 分"},
-    {t:"H／I 操作题（二选一，只做一块）", scopes:[{src:"38A", pack:"H"},{src:"38A", pack:"I"}], how:"编程 3 题 + 论述 1 题，四块均摊 4 分"}
+    {t:"H／I 操作题（二选一，只做一块）", scopes:[{src:"38A", pack:"H"},{src:"38A", pack:"I"}], how:"3 编程 + 1 论述，每题 7 分（28 ÷ 4）"}
   ];
   return spec.map(function(x){
     var best=null;
@@ -2937,7 +2949,7 @@ var S0_GROUP={ph:"S0", name:"冲 127 分 · 按分值排序", when:"距考试 10
      s:"每题 3 空、每空 2 分，是唯一「会写就整题拿、不会就整题丢」的分。目标 36／42 ＝ 六个包全对，剩一个包放弃。性价比排序：A 前向传播（3 空、20 分钟）＞ B 集合（3 个符号）＞ C BFS（deque／popleft／邻居入队）＞ D 贪心累加＞ E 逻辑回归模板＞ G KMeans；F 遗传轮盘赌步骤最长，作为弃子。",
      scope:{src:"38A", type:"程序填空题"}},
     {id:"s0-3", t:"③ H／I 操作题：编程 3 题＋论述 1 题",
-     s:"两个话题包二选一，各 16 分，考场上只做一块。目标 14／16：编程三题 12 分里丢 1 分、论述 4 分里丢 1 分。KNN、线性回归、KMeans 图像压缩三段代码要能默写；论述只背 SVM 与逻辑回归那张四行表（只有「目标」一行填「是」，其余三行都是「否」）。",
+     s:"两块二选一，每块 28 分、4 道题、每题 7 分，考场上只做一块。目标 24／28：编程三题 21 分里丢 2 分、论述 7 分里丢 2 分。这块占卷面 18.7%，不是边角料——KNN、线性回归、KMeans 图像压缩三段代码要能默写；论述只背 SVM 与逻辑回归那张四行表（只有「目标」一行填「是」，其余三行都是「否」）。",
      scope:{src:"38A", typeIn:["编程题","论述题","方案设计题","程序阅读题","程序选择题"]}}
   ]};
 /* 十天排程：目标（goal）是策略设的，题量与卷面分由题库现算。
@@ -2955,8 +2967,10 @@ var S0_DAYS=[
   {d:"D6", day:"11/23", t:"E 逻辑回归＋G KMeans · 程序填空", goal:12,
    scope:[{src:"38A", pack:"E", type:"程序填空题"},{src:"38A", pack:"G", type:"程序填空题"}]},
   {d:"D7", day:"11/24", t:"F 遗传轮盘赌 · 弃子，只走读不背", goal:0, scope:{src:"38A", pack:"F", type:"程序填空题"}},
-  {d:"D8", day:"11/25", t:"H 全套：编程 3 题＋SVM 论述", goal:14, scope:{src:"38A", pack:"H"}},
-  {d:"D9", day:"11/26", t:"I 全套：备选块，练但不设目标", goal:0, cnt:false, scope:{src:"38A", pack:"I"}},
+  {d:"D8", day:"11/25", t:"H 编程 3 题：KNN／回归／香农熵（21 分）", goal:18,
+   scope:{src:"38A", pack:"H", typeIn:["编程题","方案设计题","程序阅读题","程序选择题"]}},
+  {d:"D9", day:"11/26", t:"H 论述 1 题：SVM 对比表（7 分）＋ I 块当练手", goal:6,
+   scope:{src:"38A", pack:"H", typeIn:["论述题"]}},
   {d:"D10", day:"11/27", t:"38A 全卷限时 150 分钟＋错题回炉", goal:0, cnt:false, scope:null},
   {d:"D11", day:"11/28", t:"只背七个填空模板＋三张对比表", goal:0, cnt:false, scope:null}
 ];
@@ -2982,30 +2996,144 @@ function s0DayHits(x){
   if(!x.scope) return [];
   return goalHits(x.scope);
 }
+/* ---------- 样卷没考、考纲却要求的条目 ----------
+   比法：38A 已覆盖的「知识点」名 vs 考纲 106 条条目名，做「同名 / 互相包含」两级判断（norm 去标点空白）。
+   不做编辑距离：宁可多报几条（多看一眼不吃亏），也不能把考过的判成没考（那样白花时间）。
+   全库题数决定有没有「补练」入口——条目在 38A 没出现，但教材补题里往往有。
+   注意：这些条目不计入 127 分目标。样卷 80 道客观题覆盖不了 106 条，缺口是必然的，
+   列出来是保险，不是新增任务。 */
+var S0_GAPS=null;
+function s0GapRows(){
+  if(S0_GAPS) return S0_GAPS;
+  var cov={}, knCount={};
+  QB.forEach(function(o){
+    var sy=o.q.syllabus||{}, k=norm(String(sy.知识点||""));
+    if(!k) return;
+    knCount[k]=(knCount[k]||0)+1;
+    if(String(o.q.source||"")==="38A") cov[k]=1;
+  });
+  var keys=Object.keys(cov), out=[];
+  list(TREE).forEach(function(m){ list(m.areas).forEach(function(a){ list(a.units).forEach(function(u){
+    list(u.items).forEach(function(it){
+      var nm=String(it[0]), req=String(it[1]), k=norm(nm);
+      if(!k) return;
+      for(var i=0;i<keys.length;i++){
+        var c=keys[i];
+        if(c===k || (c.length>=4 && k.indexOf(c)>=0) || (k.length>=4 && c.indexOf(k)>=0)) return;
+      }
+      var areas=[String(a.a)];
+      Object.keys(S0_MERGE).forEach(function(x){ if(S0_MERGE[x]===String(a.a)) areas.push(x); });
+      var scope=uniq(areas).map(function(ar){ return {area:ar, item:nm}; });
+      out.push({area:String(a.a), unit:String(u.u), name:nm, req:req, n:knCount[k]||0, scope:scope});
+    });
+  }); }); });
+  var rank={"掌握":0,"理解":1,"知道":2};
+  out.sort(function(x,y){
+    return (rank[x.req]-rank[y.req]) || (y.n-x.n) || (x.name<y.name?-1:1);
+  });
+  S0_GAPS=out; return out;
+}
+/* ---------- 押题：样卷没考、我判断正式卷会考的部分 ----------
+   这是本页唯一「没有题库证据」的内容，所以三条约束卡死它：
+     ① 条目名必须原样存在于 s0GapRows()（即考纲原件条目），不许我临时编一个考点；
+        对不上就整行标 miss、不参与计分——宁可不押，也不许凭空造。
+     ② 练的还是题库真题（点「练」进 s0GapRows 里那条目的真实题集），我编的只有
+        「押不押」这个判断和分值，没编题目内容。
+     ③ 合计分值写死上限 S0_GUESS_MAX=50（150 分制的三分之一）。超了页面直接红字报警，
+        验收脚本也会判失败——这样「我自己编的不超过 50 分」是可验证的，不是一句承诺。
+   为什么是 50 分：150 分里若超过三分之一换了出题角度，那这份样卷就不该叫样卷了；
+   反过来低于 30 分又等于认为缺口不存在。50 ≈ 33%，是「换掉一部分、主体不变」的判断。 */
+var S0_GUESS_MAX=50;
+var S0_GUESS=[
+  {it:"分支与循环结构（break、continue）", s:7,
+   why:"42 分程序填空的每一道都在循环里写；28 分操作题的 KNN、回归、KMeans 也全靠 for。样卷一道没考，但它是所有代码题的地基。"},
+  {it:"函数定义、参数与 lambda", s:5,
+   why:"编程题要写 def、要传参；lambda 在 KMeans 与排序题里出现过。客观题问「输出是什么」也常挂在这上面。"},
+  {it:"数字、字符串与类型转换", s:3,
+   why:"「下列代码输出什么」型客观题的标准素材：int()/float()/str() 与 // 、% 的组合。送分挡，丢了太亏。"},
+  {it:"变量、命名规则与注释", s:1,
+   why:"纯送分，看一眼定义就够，只押 1 分。"},
+  {it:"数据预处理（含特征工程）", s:4,
+   why:"标准化／归一化是操作题的第一步，不写就扣分；客观题常问「为什么要标准化」。"},
+  {it:"Matplotlib 绘图基础", s:4,
+   why:"考纲另附了绘图题型示例（GUIDE-OPS-05），正式卷出画图题的概率不低。"},
+  {it:"序贯模型（Sequential）", s:3,
+   why:"Keras 建模型的第一句 model=Sequential()，深度学习编程题绕不开；也是「下列哪句正确」的常客。"},
+  {it:"minimax 与 alpha-beta 剪枝", s:5,
+   why:"搜索与博弈整块只考了 MCTS、BFS／DFS、贪心、遗传，剪枝是这一块最经典的掌握级条目，空着的可能性最小。"},
+  {it:"谓词逻辑表示法", s:3,
+   why:"「逻辑推理与知识图谱」这个领域名摆着逻辑，样卷却只考了图谱。"},
+  {it:"推理规则", s:2,
+   why:"与上一条同源，常一起出；给 2 分，认得规则名即可。"},
+  {it:"有监督学习（分类、回归）概念", s:2,
+   why:"样卷只在选项里沾到边。这是机器学习整章的第一句，出题人很难完全避开。"},
+  {it:"PCA", s:2,
+   why:"降维只考了概念题；PCA 的「主成分」三个字是标准送分点。"},
+  {it:"博弈分类与纳什均衡", s:2,
+   why:"领域名叫「搜索与博弈」，博弈一道没考，纳什均衡是最可能补上的那一个。"},
+  {it:"价值函数与 Q 学习", s:2,
+   why:"强化学习只考了定义；价值函数与 Q 学习是这一块唯一的定量概念。"},
+  {it:"智能创意概念", s:2,
+   why:"「下列属于智能创意的是」型客观题，考纲里有现成表述，背一句就能拿。"},
+  {it:"智能制造概念", s:1,
+   why:"同上，给 1 分够用，不展开。"}
+];
+/* 按条目名回挂到缺口表：拿到领域、等级、真实题号。查不到就标 miss（说明我写错了条目名）。 */
+var S0_GUESS_ROWS=null;
+function s0GuessRows(){
+  if(S0_GUESS_ROWS) return S0_GUESS_ROWS;
+  var gaps=s0GapRows(), byName={};
+  gaps.forEach(function(g){ byName[g.name]=g; });
+  var out=S0_GUESS.map(function(x){
+    var g=byName[x.it]||null;
+    var idxs=g?goalHits(g.scope):[];
+    return {it:x.it, s:x.s, why:x.why, g:g, n:idxs.length, idxs:idxs, miss:!g};
+  });
+  S0_GUESS_ROWS=out; return out;
+}
+function s0GuessSum(){
+  var t=0; s0GuessRows().forEach(function(r){ t+=r.s; }); return t;
+}
+/* 混排：样卷 102 道官方题 ＋ 押题 16 条各取 2 题，去重后打乱。
+   这是「把样卷和考纲揉在一起」的练习口径——同一份里既有真考过的，也有没考但要求掌握的。
+   规模必须像一份卷子：48 条缺口对应的题加起来 400 多道，全倒进来是刷库不是模考，
+   所以每条只取前 2 题（按题号序，确定不随机），总量落在 130～140，和 150 分卷的题量同量级。 */
+function s0MixHits(){
+  var set={}, out=[];
+  function add(i){ if(!set[i]){ set[i]=1; out.push(i); } }
+  goalHits({src:"38A"}).forEach(add);
+  s0GuessRows().forEach(function(r){
+    r.idxs.slice().sort(function(a,b){ return a-b; }).slice(0,2).forEach(add);
+  });
+  for(var k=out.length-1;k>0;k--){
+    var j=Math.floor(Math.random()*(k+1)), tmp=out[k]; out[k]=out[j]; out[j]=tmp;
+  }
+  return out;
+}
 function s0Why(tot, bl){
   var o=bl[0], f=bl[1], h=bl[2];
-  var cap=o.s+f.s+h.s;                 /* 可作答上限 = 客观 + 填空 + 一块操作题 */
+  var sure=o.s+f.s;                    /* 题库每题都写了分值的那部分：客观 + 填空 */
   var goal=o.goal+f.goal+h.goal;
-  var eq=Math.round(goal*S0_PAPER/cap*10)/10;
+  var perOp=h.n?Math.round(h.s*10/h.n)/10:h.s;
   function pc(v,b){ return Math.round(v*1000/b)/10+'%'; }
-  return '127 分不是拍出来的，先把三本账分清。'+
-    '<b>① 题库逐题结算 '+tot+' 分</b>：38A 95 道题的 score 相加，其中 H／I 两块各 16 分都算进去了。'+
-    '<b>② 实际可作答上限 '+cap+' 分</b>：H／I 卷面二选一，只能做一块，多出的 16 分谁也拿不到——'+
-    '所以「'+tot+' 分」永远不等于你的上限，拿它当分母算比例会把自己算松。'+
-    '<b>③ 考纲卷面 150 分 / 150 分钟</b>（「卷面结构」原文）。'+
-    '三个数不一样，本页的估分一律按 <b>'+cap+' 分</b>算，这是唯一能指回每一道题的分母。'+
-    '于是 <b>127 ÷ 150 = '+pc(S0_TARGET150,S0_PAPER)+'</b>，同一比例落到 '+cap+' 分就是 '+
-    Math.round(S0_TARGET150*cap/S0_PAPER)+' 分；表里按块四舍五入，合计 '+goal+' 分（= 150 制 '+eq+'），多留 1 分余量。'+
-    '拆开看：客观题 '+o.goal+'／'+o.s+'（'+pc(o.goal,o.s)+'）、七个填空 '+f.goal+'／'+f.s+'（'+pc(f.goal,f.s)+'）、'+
-    '操作题 '+h.goal+'／'+h.s+'（'+pc(h.goal,h.s)+'）。'+
-    '<b>最硬的是客观题</b>：80 道题每题 1 分，错 12 道就到线，没有整题丢分的缓冲；'+
-    '填空和操作题按整包丢，容错反而更大——所以别把时间匀给「看起来难」的编程题。';
+  return '卷面 150 分是三条腿撑起来的：<b>客观题 '+o.s+' ＋ 七个程序填空 '+f.s+' ＋ 操作题 '+h.s+' = '+S0_PAPER+'</b>。'+
+    '前两块有硬证据——38A 里 '+(o.n+f.n)+' 道客观＋填空题每题都写着分值（单选／多选 1 分，填空「每空 2 分、共 6 分」），'+
+    '加起来 '+sure+' 分。'+
+    '操作题 H／I 那八道题在题库里 score 是空的，只能反推：'+S0_PAPER+' − '+sure+' = <b>'+h.s+' 分</b>，'+
+    '一块 '+h.n+' 题就是 '+h.s+' ÷ '+h.n+' = '+perOp+' 分／题。'+
+    '早先按「每块 16 分」算过，拼出来 154 分，比卷面多 4 分，自己就不闭合——那个数作废。'+
+    '于是 <b>127 ÷ 150 = '+pc(S0_TARGET150,S0_PAPER)+'</b>：客观 '+o.goal+'／'+o.s+'（'+pc(o.goal,o.s)+'）、'+
+    '填空 '+f.goal+'／'+f.s+'（'+pc(f.goal,f.s)+'）、操作 '+h.goal+'／'+h.s+'（'+pc(h.goal,h.s)+'），'+
+    '合计 '+goal+' 分，多留 '+(goal-S0_TARGET150)+' 分余量。'+
+    '<b>最硬的是客观题</b>：80 道每题 1 分，错 12 道就掉出 127，没有整题丢分的缓冲。'+
+    '操作题 '+h.s+' 分占 '+pc(h.s,S0_PAPER)+'，四道题每题 '+perOp+' 分——一道不做就少 '+perOp+' 分，不是顺带的边角。';
 }
+
 function s0BlockHtml(){
   var rows=s0Rows(), tot=S0_TOTAL||1;
   var bl=s0Blocks(), btot=0, bgoal=0, bn=0;
   bl.forEach(function(b){ btot+=b.s; bgoal+=b.goal; bn+=b.n; });
-  var cap=btot;                                   /* 可作答上限：客观 + 填空 + 一块操作题 */
+  var cap=btot;                                   /* 卷面合计：客观 80 + 填空 42 + 一块操作题 28 = 150 */
   /* 三张主线卡的命中集在渲染时现算（goalCardHtml 只认 it._hits） */
   S0_GROUP.items.forEach(function(it){ it._hits=goalHits(it.scope); });
   var sumTb=bl.map(function(b){
@@ -3014,11 +3142,10 @@ function s0BlockHtml(){
       '<td class="num sm-hide">'+Math.round(b.goal*1000/b.s)/10+'%</td>'+
       '<td class="tiny muted sm-hide">'+esc(b.how)+'</td></tr>';
   }).join("");
-  sumTb+='<tr class="sum"><td>合计（可作答上限）</td><td class="num">'+cap+' 分</td><td class="num">'+bn+' 题</td>'+
+  sumTb+='<tr class="sum"><td>合计（卷面 150）</td><td class="num">'+cap+' 分</td><td class="num">'+bn+' 题</td>'+
     '<td class="num">'+bgoal+' 分</td>'+
     '<td class="num sm-hide">'+Math.round(bgoal*1000/cap)/10+'%</td>'+
-    '<td class="tiny muted sm-hide">= 150 制 '+Math.round(bgoal*S0_PAPER/cap*10)/10+
-    ' 分，比 127 多留 '+Math.round((bgoal*S0_PAPER/cap-S0_TARGET150)*10)/10+' 分</td></tr>';
+    '<td class="tiny muted sm-hide">比 127 多留 '+Math.round((bgoal-S0_TARGET150)*10)/10+' 分</td></tr>';
   var cum=0;
   var areaTb=rows.map(function(r,ri){
     cum+=r.score;
@@ -3031,9 +3158,47 @@ function s0BlockHtml(){
       '<td class="num">'+cum+' 分</td>'+
       '<td class="num"><button class="btn sm ghost" type="button" data-s0="'+ri+'">练这块</button></td></tr>';
   }).join("");
-  /* 累计线：把 150 制的 127 按比例折回题库结算口径（154 分），约 130 分 */
+  /* 累计线：tot 现在就是卷面的 150（客观 80 + 填空 42 + 操作 28），127 直接可比 */
   var cumLine=Math.round(S0_TARGET150*tot/S0_PAPER);
   var cumRow=(function(){ var c=0,i; for(i=0;i<rows.length;i++){ c+=rows[i].score; if(c>=cumLine) return i+1; } return rows.length; })();
+  /* 缺口表：样卷没考、考纲却要求的条目，按等级分组 */
+  var gaps=s0GapRows(), reqCnt={};
+  gaps.forEach(function(g){ reqCnt[g.req]=(reqCnt[g.req]||0)+1; });
+  var lastReq=null;
+  var gapTb=gaps.map(function(g,gi){
+    var head="";
+    if(g.req!==lastReq){
+      lastReq=g.req;
+      head='<tr class="gapgrp"><td colspan="4">考纲要求「'+esc(g.req)+'」· '+reqCnt[g.req]+' 条</td></tr>';
+    }
+    return head+'<tr><td><span class="tiny muted">'+esc(g.area)+' › </span>'+esc(g.name)+'</td>'+
+      '<td>'+esc(g.req)+'</td>'+
+      '<td class="num">'+(g.n?g.n+' 题':'<span class="muted">0</span>')+'</td>'+
+      '<td class="num">'+(g.n?'<button class="btn sm ghost" type="button" data-gap="'+gi+'">补练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
+  }).join("");
+  /* 押题表：样卷没考、我判断会考的部分。分值是我定的，条目名必须来自考纲缺口。 */
+  var gs=s0GuessRows(), gsum=s0GuessSum(), gmiss=gs.filter(function(r){ return r.miss; }).length;
+  var mixN=s0MixHits().length;
+  var guessTb=gs.map(function(r,gi){
+    var area=r.g?r.g.area:"条目名未对上";
+    var req=r.g?r.g.req:"—";
+    return '<tr'+(r.miss?' class="dim"':'')+'><td>'+
+      '<span class="tiny muted">'+esc(area)+' › </span>'+esc(r.it)+'</td>'+
+      '<td>'+esc(req)+'</td>'+
+      '<td class="num"><b>'+r.s+'</b> 分</td>'+
+      '<td class="num">'+(r.n?r.n+' 题':'<span class="tiny muted">0</span>')+'</td>'+
+      '<td class="tiny">'+esc(r.why)+'</td>'+
+      '<td class="num">'+(r.n?'<button class="btn sm ghost" type="button" data-guess="'+gi+'">练</button>':'<span class="tiny muted">背要点</span>')+'</td></tr>';
+  }).join("");
+  /* 不用 colspan：窄屏隐藏列后 colspan 会错位（排程表踩过一次），写满 6 个 td */
+  guessTb+='<tr class="sum'+(gsum>S0_GUESS_MAX||gmiss?' over':'')+'">'+
+    '<td>押题合计（上限 '+S0_GUESS_MAX+' 分）</td><td></td>'+
+    '<td class="num"><b>'+gsum+'</b> 分</td>'+
+    '<td class="num sm-hide">占卷面 '+Math.round(gsum*1000/S0_PAPER)/10+'%</td>'+
+    '<td class="sm-hide">'+
+      (gsum>S0_GUESS_MAX?'<b class="red">超出上限 '+(gsum-S0_GUESS_MAX)+' 分</b>':'余 '+(S0_GUESS_MAX-gsum)+' 分额度')+
+      (gmiss?'　<b class="red">'+gmiss+' 条条目名未对上</b>':'')+'</td>'+
+    '<td class="sm-hide"></td></tr>';
   /* 十天排程表：题量与卷面分现算，目标分是策略 */
   var dN=0, dS=0, dG=0;
   var dayTb=S0_DAYS.map(function(x){
@@ -3050,34 +3215,56 @@ function s0BlockHtml(){
   }).join("");
   /* 合计行按 7 个 td 排（不用 colspan，否则窄屏隐藏列后错位） */
   dayTb+='<tr class="sum"><td class="mono">合计</td><td class="sm-hide"></td>'+
-    '<td>D1—D8 累计</td><td class="num">'+dN+' 题</td>'+
+    '<td>D1—D9 累计</td><td class="num">'+dN+' 题</td>'+
     '<td class="num">'+dS+' 分</td><td class="num">'+dG+' 分</td>'+
-    '<td class="num sm-hide">'+Math.round(dG*S0_PAPER/cap*10)/10+'／150</td></tr>';
+    '<td class="num sm-hide">'+Math.round(dG*10)/10+'／150</td></tr>';
   return '<div class="planph s0ph" id="s0-block">'+
     '<div class="planph-h"><h2>'+esc(S0_GROUP.ph+" "+S0_GROUP.name)+'</h2>'+
-    '<span class="when">'+esc(S0_GROUP.when)+' · 题库结算 '+tot+' 分 / 可作答 '+cap+' 分</span></div>'+
+    '<span class="when">'+esc(S0_GROUP.when)+' · 卷面 '+S0_PAPER+' 分 ＝ 客观 '+bl[0].s+'＋填空 '+bl[1].s+'＋操作 '+bl[2].s+'</span></div>'+
     '<p class="why">'+s0Why(tot, bl)+'</p>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">127 分怎么拆（150 分制）</h3>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>块</th><th class="num">卷面分</th>'+
       '<th class="num">题量</th><th class="num">目标分</th><th class="num sm-hide">达成率</th>'+
       '<th class="sm-hide">怎么拿</th></tr></thead><tbody>'+
       sumTb+'</tbody></table></div>'+
-    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">十天排程（D1—D8 拿满 127 的路径）</h3>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">十天排程（D1—D9 拿满 127 的路径）</h3>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">每天 2.5 小时：60 分钟看书＋40 分钟默写＋40 分钟做题＋10 分钟记账。'+
       '题量与卷面分由题库现算，目标分是按「哪块值得押」定的策略——填空整包拿或整包丢，所以 F 包直接当弃子、目标写 0；'+
-      'D9 是备选操作块、D10 是全卷复盘、D11 只背模板，都不计入合计。</p>'+
+      'D8／D9 把一块操作题拆成两天（编程 21 分＋论述 7 分），另一块 I 只当练手、不设目标；D10 全卷复盘、D11 背模板，都不计入合计。</p>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>天</th><th class="sm-hide">日期</th><th>干什么</th>'+
       '<th class="num">题量</th><th class="num">卷面分</th><th class="num">目标</th><th class="num sm-hide">计入</th>'+
       '</tr></thead><tbody>'+
       dayTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">按分值排序的题库分类</h3>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算（题库改动后自动更新）。'+
-      '「累计」是从上往下刷到这一行时已覆盖的卷面分（题库全量口径，含 H／I 双算）——'+
+      '「累计」是从上往下刷到这一行时已覆盖的卷面分（H 计入、I 不计，避免二选一双算）——'+
       '127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近，再往下是性价比递减的边角。</p>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>知识领域（按卷面分值降序）</th><th class="num">分值</th>'+
       '<th class="num sm-hide">占比</th><th class="num">题数</th><th class="sm-hide">题包</th>'+
       '<th class="num">累计</th><th></th></tr></thead><tbody>'+
       areaTb+'</tbody></table></div>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">样卷没考、考纲却要求的条目（'+gaps.length+' 条）</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">38A 只有 80 道客观题，覆盖不了考纲 106 条，缺口是必然的。'+
+      '下表按等级排——掌握级优先；「全库题」是该条目在题库里的题量（多数来自教材补题），有题就能直接补练。'+
+      '这些<b>不计入 127 分目标</b>，属于保险：正式卷不一定只考样卷考过的那些。</p>'+
+    '<div class="s0tbl gaptbl wrap"><table><thead><tr><th>考纲条目</th><th>等级</th>'+
+      '<th class="num">全库题</th><th></th></tr></thead><tbody>'+
+      gapTb+'</tbody></table></div>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">押题：样卷没考、我判断会考的 '+gsum+' 分</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">'+
+      '这张表是全页唯一<b>没有题库证据</b>的部分，所以把规矩写明：<b>条目名一律取自上面的考纲缺口表</b>（考纲原件条目），'+
+      '我不另编考点；点「练」进的是题库里该条目的真题，我编的只有「押不押」和分值，<b>没有编任何题目内容</b>；'+
+      '合计分值硬上限 <b>'+S0_GUESS_MAX+' 分 = 卷面三分之一</b>，超了这行会变红。'+
+      '逻辑是：150 分里至多三分之一的出题角度会与样卷不同，剩下 '+Math.max(0,S0_PAPER-gsum)+' 分仍按样卷分布准备——'+
+      '所以下面这块是<b>保险</b>，不是新增任务，127 分目标依旧是前三张表那三块。</p>'+
+    '<div class="s0tbl gaptbl wrap"><table><thead><tr><th>押题考点（考纲条目）</th><th>等级</th>'+
+      '<th class="num">押分</th><th class="num">题库题</th><th>为什么押</th><th></th>'+
+      '</tr></thead><tbody>'+
+      guessTb+'</tbody></table></div>'+
+    '<p class="tiny muted" style="margin:var(--sp-2) 0 var(--sp-3)">'+
+      '<button class="btn sm" type="button" data-mix="1">把样卷和考纲混排练一遍（'+mixN+' 题，乱序）</button>　'+
+      '样卷 102 道官方题（全部）＋ 押题 16 条各取 2 道真题，去重打乱——规模按一份卷子来，不做全库倒灌。'+
+      '练完再看错题：错在样卷原题上说明是熟练度问题，错在缺口题上说明是我押中了、这次是白赚。</p>'+
     S0_GROUP.items.map(function(it){ return goalCardHtml(S0_GROUP, it); }).join("")+
   '</div>';
 }
@@ -3195,6 +3382,28 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     var r0=s0Rows()[ri];
     if(!r0 || !r0.idxs.length){ toast("这一块在题库里没有题"); return; }
     startPractice(r0.idxs.slice(), "S0："+r0.name+"（卷面 "+r0.score+" 分）");
+    return;
+  }
+  var bmx=t.closest ? t.closest("[data-mix]") : null;
+  if(bmx){
+    var mset=s0MixHits();
+    if(!mset.length){ toast("没有可混排的题"); return; }
+    startPractice(mset, "S0 混排：样卷真题 ＋ 考纲缺口（"+mset.length+" 题）");
+    return;
+  }
+  var bgu=t.closest ? t.closest("[data-guess]") : null;
+  if(bgu){
+    var gi2=parseInt(bgu.getAttribute("data-guess"),10), gr2=s0GuessRows()[gi2];
+    if(!gr2 || !gr2.idxs.length){ toast("这条押题在题库里没有题，只能背要点"); return; }
+    startPractice(gr2.idxs.slice(), "S0 押题："+gr2.it+"（押 "+gr2.s+" 分）");
+    return;
+  }
+  var bg=t.closest ? t.closest("[data-gap]") : null;
+  if(bg){
+    var gi=parseInt(bg.getAttribute("data-gap"),10), gr=s0GapRows()[gi];
+    var gidx=gr ? goalHits(gr.scope) : [];
+    if(!gidx.length){ toast("这道条目在题库里没有题"); return; }
+    startPractice(gidx.slice(), "S0 补练："+gr.area+"·"+gr.name);
     return;
   }
   var b=t.closest ? t.closest("[data-gtog]") : null;
