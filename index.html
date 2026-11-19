@@ -521,6 +521,14 @@ pre.sample .eof{display:block; height:0}
 .bchip:hover{border-color:var(--brand); background:var(--brand-soft)}
 .bchip .ck{font-family:var(--font-num); font-weight:700; color:var(--brand-text)}
 .bchip.used{border-color:var(--brand); background:var(--brand-soft)}
+/* 旧文字作答的折叠区：改判分方式后仍能翻出原来写的东西，但不占版面 */
+details.kept-text{margin:0 0 var(--sp-2); font-size:14px; color:var(--ink-2)}
+details.kept-text summary{cursor:pointer; color:var(--brand-text); padding:2px 0}
+details.kept-text pre{
+  margin:6px 0 0; padding:10px; white-space:pre-wrap; word-break:break-word;
+  background:var(--surface-2,var(--surface)); border:1px solid var(--line); border-radius:var(--r-s);
+  font-family:var(--font-cjk); font-size:14px; line-height:1.6;
+}
 .ansbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px}
 .answer-box{
   width:100%; min-height:132px; font-size:18px; font-family:var(--font-cjk); line-height:1.6;
@@ -2196,6 +2204,27 @@ function isOpenQ(q){
   if(String(q.answer||"").indexOf("见评分要点")>=0) return true;
   return blankCount(q)>12;
 }
+/* H／I 四道编程填空：answer 字段写的是「见评分要点」（官方模拟卷卷内不含答案），
+   逐空的标准字母只存在于 rubric 里。不把这张表补上，这四题在页面上就退化成一块
+   只读的「备选答案（原卷选项）」清单——八个字母一个都点不了，而它们恰好撑起
+   主观题 76 分里的四分之三。表里每条都抄自 data/qbank.json 同一题的 rubric 逐空原文，
+   改题时与 rubric 一起对。
+   只收「逐空都是字母选项」的题：H-04（12 格填表）、I-03（流程图连线）、
+   I-04（数值与选项混填）没有唯一线性字母序列，仍走开放作答。 */
+var FILL_CANON={
+  "38A-H-01":{seq:["A","C","E","H"], note:"KNN：标签 A、参数名 C、fit(x,y) E、predict([[38,1,2]]) H"},
+  "38A-H-02":{seq:["A","D","F","D"], note:"线性回归：import numpy A、new_X D、fit(x,y) F、predict 再传 new_X D"},
+  "38A-I-01":{seq:["B","C","F","G"], note:"K-Means 图像压缩：reshape(-1,4) B、cluster_centers_ C、imshow(pic) F、imshow(new_image) G"},
+  "38A-I-02":{seq:["A","C","E","H"], note:"SVM：SVC() A、fit(X,Y) C、predict(New_X) E、pre_Y[0]==1 H"}
+};
+function fillCanon(q){
+  var e=FILL_CANON[String((q&&q.id)||"")];
+  return (e && e.seq && e.seq.length) ? e.seq : null;
+}
+/* 能逐空点选的判断：有 rubric 字母序列，且原卷确实给了 A~H 候选块 */
+function canPickFill(q){
+  return !!fillCanon(q) && list(q.options).length>0;
+}
 /* 空位计数（数据驱动）：
    ① 答案里的 (1)(2)(3) 编号数 → 最可靠（程序填空/程序选择/程序阅读）；
    ② 题干里的 (1)（2）编号数（去重）；
@@ -2266,7 +2295,9 @@ function slotExpect(q, n){
 /* 返回 {ok:true|false|null, exp:[期望值]|null, per:[逐空对错]} */
 function judgeFill(q, vals){
   var n=Math.max(1, blankCount(q));
-  var exp=slotExpect(q, n);
+  /* answer 是「见评分要点」时 slotExpect 解析不出东西，退回 rubric 抄来的逐空字母序列 */
+  var cseq=fillCanon(q);
+  var exp=(cseq && cseq.length>=n) ? cseq.slice(0,n) : slotExpect(q, n);
   if(!exp) return {ok:null, exp:null, per:[]};
   var isBank=list(q.options).length>0, ok=true, per=[];
   for(var i=0;i<n;i++){
@@ -4350,7 +4381,7 @@ function renderQBody(q){
   var r=S.rec[q.id], done=S.answered;
   var bc=blankCount(q);
   var html = stemBlockHtml(q);
-  if(bc>0 && isOpenQ(q)===false && isChoiceQ(q)===false && isJudgeQ(q)===false) html+='<p class="tiny muted">本题题干含 <span class="num">'+bc+'</span> 个空位（原文以 ________ 或 (1)(2) 标出）。</p>';
+  if(bc>0 && (isOpenQ(q)===false || canPickFill(q)) && isChoiceQ(q)===false && isJudgeQ(q)===false) html+='<p class="tiny muted">本题题干含 <span class="num">'+bc+'</span> 个空位（原文以 ________ 或 (1)(2) 标出）。</p>';
   /* code：题干要引用的程序骨架／算式／字面量清单，33 题有。必须放在选项之前，
      否则「下列填空正确的是」这类题无法作答。只转义不解析，避免代码里的 ** 被当强调。 */
   if(q.code) html+='<pre class="code">'+esc(String(q.code))+'</pre>';
@@ -4388,11 +4419,19 @@ function renderQBody(q){
         '><span class="key">'+esc(k)+'</span><span>'+esc(k==="对"?"题干说法正确":"题干说法错误")+'</span>'+
         (done&&q.why&&(q.why[k]||q.why["答案"])?'<span class="why">'+esc(q.why[k]||q.why["答案"])+'</span>':'')+'</button></li>';
     }).join("")+'</ul>'+'<p class="tiny muted" style="margin-top:8px">判断题按官方/教材答案即时判分；依据见右侧「解析」页签。</p>';
-  } else if(isOpenQ(q)){
+  } else if(isOpenQ(q) && !canPickFill(q)){
     var prevText=(done && r.text) ? r.text : "";
+    /* 原卷给了 A~H 候选、却不是「逐空填字母」的题（H-04 填表 12 格、I-03 流程连线、
+       I-04 数值与选项混填）：候选块放在这里是「填进哪一格」的素材，不是单选按钮。
+       不说明白，学生就会去点那块清单——所以这里直说。 */
+    var cand=list(q.options);
+    var candHint=cand.length
+      ? '本题给的是 <b>'+cand.length+' 个候选</b>（'+cand.map(function(o){return esc(String(o[0]));}).join("／")+'），要按题目要求填进<b>表格的对应格子／流程图的对应位置</b>，不是单选题。先把字母写在下面，再对照右侧「解析」逐格核对。'
+      : '';
     area.innerHTML=ref+'<div class="note info">'+
-      (isSubjective(q) ? '主观题<b>没有标准答案</b>：本程序给出评分要点与作答框架，请按要点自评。'
+      (isSubjective(q) ? '主观题<b>没有官方标准答案</b>：本程序给出评分要点与作答框架，请按要点自评。'
                        : '本题为<b>开放性作答</b>（逐空作答不适用）：请写下自己的结论，再对照右侧参考答案与评分要点自评。')+
+      (candHint ? ' '+candHint : '')+
       '</div>'+
       '<label class="sr" for="q-text">作答区</label>'+
       /* 不能加 readonly：一旦本机有记录，题就永久锁死，连改一个字都做不到 */
@@ -4417,12 +4456,19 @@ function renderQBody(q){
           (v?'<span class="bval">'+esc(v)+'</span><span class="btxt">'+esc(txtOf[v]||"")+'</span>':'')+'</button></li>';
       }
       /* 候选项已经在下面做成可点的块，就不再重复一遍静态「备选答案」清单 */
-      area.innerHTML='<ul class="blanks pick">'+rows+'</ul>'+
+      var canon=fillCanon(q);
+      var kept=(done && r && r.text && String(r.text).trim())
+        ? '<details class="kept-text"><summary>你此前在这题上用文字写过的作答（已保留，不参与本次判分）</summary><pre>'+esc(String(r.text))+'</pre></details>'
+        : '';
+      area.innerHTML=kept+'<ul class="blanks pick">'+rows+'</ul>'+
         '<div class="bchip-list">'+bank.map(function(o){
           var k=String(o[0]).toUpperCase(), used=String(draft.join("")).toUpperCase().indexOf(k)>=0;
           return '<button type="button" class="bchip'+(used?" used":"")+'" data-chip="'+esc(k)+'"><span class="ck">'+esc(k)+'</span><span>'+esc(o[1])+'</span></button>';
         }).join("")+'</div>'+
-        '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)">先点一个空位再点候选块；点已填的空位可以清空重选。</p>';
+        '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)">先点一个空位再点候选块；点已填的空位可以清空重选。</p>'+
+        /* 官方模拟卷卷内不含答案，这四题的逐空判定用的是题库 rubric 的推导答案，
+           必须写在作答处，不能让人以为点出来的「正确」是官方的。 */
+        (canon?'<p class="tiny muted" style="margin:0 0 var(--sp-3)">判分依据：<b>非官方</b>——官方卷卷内不含答案，逐空答案由题库依据教材/考纲推导（'+esc(canon.note)+'）。四空全对才计对。</p>':'');
     } else {
       for(var j=1;j<=n;j++){
         rows+='<li><span>空 '+j+'</span><label class="sr" for="blank-'+j+'">第 '+j+' 空</label>'+
@@ -4939,7 +4985,9 @@ function submitAnswer(q){
     judgeChoice(q, S.multiSel.slice().sort().join(""));
     return;
   }
-  if(isSubjective(q) || isOpenQ(q)){
+  /* 有 rubric 逐空字母序列的题（H-01/H-02/I-01/I-02）走逐空判分，
+     不能因为 answer 写「见评分要点」就掉进文字框分支 */
+  if((isSubjective(q) || isOpenQ(q)) && !canPickFill(q)){
     var t=$("#q-text");
     delete S.redo[q.id];
     S.rec[q.id]={ok:null, text:(t?t.value:""), ts:Date.now()};
@@ -4960,7 +5008,11 @@ function submitAnswer(q){
   var res=judgeFill(q, arr);
   delete S.redo[q.id];
   S.fillDraft[q.id]=arr;
+  /* 这四题早先走文字框分支，记录里存的是 text。改成逐空判分后不能把那段话丢掉——
+     否则换个界面就等于抹了旧作答。text 留着，只是不参与本次判分。 */
+  var oldRec=S.rec[q.id]||{};
   S.rec[q.id]={ok:res.ok, fill:arr, ts:Date.now()};
+  if(oldRec.text) S.rec[q.id].text=oldRec.text;
   saveRec(); captureExamAnswer(q.id);
   if(res.ok===false){
     var bad=[];
