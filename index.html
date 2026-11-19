@@ -2839,7 +2839,7 @@ function goalCardHtml(ph, it){
   var sub='';
   if(hits.length){
     /* 「未归属」那张卡没有 scope（它就是所有目标之外剩下的题），别把 undefined 丢进 scopeLabel */
-    var lab = it.scope ? scopeLabel(it.scope) : "不属于任何学习目标（题库中剩下的题）";
+    var lab = it.slab ? it.slab : (it.scope ? scopeLabel(it.scope) : "不属于任何学习目标（题库中剩下的题）");
     sub='<p class="gscope"><b>归属范围</b>　'+esc(lab)+'　·　章节 <b>'+chs.length+'</b> 个，题量按题库现算</p>';
   }else{
     sub='<p class="gscope"><b>归属范围</b>　'+(it.scope?esc(scopeLabel(it.scope)):"策略项，不指向具体题目（题库里没有对应条目）")+
@@ -2862,38 +2862,46 @@ function goalCardHtml(ph, it){
     (String(it.id).indexOf("s0-")===0?" s0card":"")+'" id="gcard-'+esc(it.id)+'">'+
     head+sub+bar+body+'</div>';
 }
-/* ---------- S0 冲 127 分：按分值排序的题库分类＋十天排程（题库分类页最上面那一块，排在 P0 之前） ----------
+/* ---------- S0 冲 127 分：按卷面结构切＋七天路径（题库分类页最上面那一块，排在 P0 之前） ----------
    为什么单开一级、为什么在 P0 前面：
      P0 按「考纲要求掌握 × 官方卷命中次数」切，回答的是「先背哪一条」；
-     S0 按「38A 卷面到底给了几分」切，回答的是「127 分（150 分制）从哪来、十天怎么排」。
-   分值分两种来源，必须分清（这是本块唯一容易算错的地方）：
-     ① 有据：程序填空 score 字段原文「每空 2 分，共 6 分」→ 取「共 N 分」；客观题 score「1 分」。
-        38A 里 87 道客观＋填空题每题都写了分值，合计 122 分，这部分是硬的。
-     ② 反推：H／I 八道操作题 score 字段是空的（None），题库里没有逐题分值。
-        只能拿卷面 150 − 122 = 28 分，再除以一块 4 题 = 7 分／题。
-        早先按「每块 16 分」算过，拼出 154 分，比卷面多 4 分，自己就不闭合——那个数是错的。
-        所以 qScoreOf 对 H 返回 7、对 I 返回 0：H／I 二选一，只把 H 计入，避免双算。
+     S0 按「38A 卷面到底怎么构成」切，回答的是「127 分从哪来、七天怎么排、什么该放弃」。
+   卷面结构不是估的，是抄的：38A 首页「A 必做，B~G 六选二或三，H 与 I 二选一」，
+   38 考纲 p.6「做 3-4 个客观题包＋1 个主观包」。所以一张卷＝A ＋ 三个（或两个）选做包 ＋ 一个主观包。
+   【作废口径】早先按「客观 80 ＋ 填空 42 ＋ 操作 28」算过，那是把 38A 全部 9 个包当一张卷，
+   由它派生的 154 分、138 分一并作废。改动时先看这条，别再把 9 个包加一遍。
    领域归并只做一类：考纲把「机器学习基础」与「机器学习」分列基础／综合模块两处，
-   卷面只当一块考；不并会把 57 分拆成 15 + 14，排序就错了。归并表写在下面，一眼可查。 */
+   卷面只当一块考；不并会把同一批题拆到两行，排序和累计线都会错。归并表写在下面，一眼可查。 */
 var S0_MERGE={
   "机器学习":"机器学习基础", "深度学习":"深度学习基础", "计算机视觉":"计算机视觉基础",
   "语音处理":"语音处理基础", "自然语言处理":"自然语言处理基础", "人工智能应用":"人工智能应用基础"
 };
-/* 目标盘：以 150 分制卷面 127 分为目标（= 84.7%），按同一比例摊到每一块。
-   为什么不写死每块的分：题库补录后卷面分变了，目标要跟着变，否则目标会自己漂。
-   127 而不是 120：120 才是百分制 80 分的严格换算（150×0.8），
-   127 是「80 分以上」多留 7 分容错的口径——考场上少错 7 个单选也就掉回来。 */
+/* 目标盘：150 分制卷面冲 127 分（= 84.7%）。
+   ---- 卷面结构（2026-11-19 据 38A.pdf 首页原文 + 38.pdf p.6 重立）----
+   38A 首页原文：「题包A 必做，题包B~G 是 6 选 2 或 3 个，题包H 和I 是 2 选 1」；
+   38 考纲 p.6：「每个考生根据答题情况做 3-4 个客观题包……主观题包做 1 个，共 4 道题」。
+   由此只有两种自洽解（主观分官方未公布，由 150 反推）：
+     甲 A＋B~G 选 3 个（本页取 E/G/F，ML-DL 密度 75%/62%/44%）＝客观 74 ＋ 主观 76
+     乙 A＋B~G 选 2 个＝客观 58 ＋ 主观 92
+   qScoreOf 按甲情形记分：A/E/G/F 按包内标注，B/C/D 记 0（不进这套卷面），
+   H 每题 76/4 = 19 分，I 记 0（二选一，防双算）。
+   【作废口径】「150 ＝ 客观 80 ＋ 填空 42 ＋ 操作 28」——那是把 38A 全部 9 个包
+   当成一张卷，考生实际只做 3-4 个客观包＋1 个主观包。 */
 var S0_PAPER=150, S0_TARGET150=127;
 var S0_RATE=S0_TARGET150/S0_PAPER;
+var S0_OBJ_PACKS=["A","E","G","F"];   /* 甲情形的四个客观包 */
+var S0_SUBJ_PACK="H";                  /* 主观二选一取 H：四题全在机器学习，比 I 的 CNN 方案设计稳 */
+var S0_SUBJ_SCORE=76;                  /* 150 − 74，反推值 */
 function qScoreOf(q){
+  var pk=String((q&&q.pack)||"");
+  if(pk===S0_SUBJ_PACK) return S0_SUBJ_SCORE/4;
+  if(pk==="I") return 0;
+  if(S0_OBJ_PACKS.indexOf(pk)<0) return 0;
   var s=String((q&&q.score)||""), m=s.match(/共\s*([0-9.]+)\s*分/);
   if(m) return parseFloat(m[1]);
-  /* 操作题：卷面 150 −（客观 80 ＋ 填空 42）= 28 分／块，一块 4 题 = 7 分／题。
-     H／I 二选一，只把 H 计入分值（I 记 0），否则领域表会多算 28 分、合计变成 178。 */
-  if(q && q.pack==="H") return 7;
-  if(q && q.pack==="I") return 0;
+  if(q && q.type==="程序填空题") return 6;   /* 3 空 × 每空 2 分 */
   m=s.match(/([0-9.]+)/);
-  return m?parseFloat(m[1]):0;
+  return m?parseFloat(m[1]):1;
 }
 function scoreOfIdxs(idxs){
   var t=0;
@@ -2903,10 +2911,15 @@ function scoreOfIdxs(idxs){
 var S0_ROWS=null, S0_TOTAL=0;
 function s0Rows(){
   if(S0_ROWS) return S0_ROWS;
-  var g={}, order=[];
+  var keep={}, g={}, order=[];
+  /* 只收「这套卷面」里的题：A ＋ E/G/F ＋ H。B/C/D 三个包不进甲情形，
+     否则题数会比卷面多出一倍，点「练这块」还会做到不在本卷的题。 */
+  S0_OBJ_PACKS.forEach(function(p){ keep[p]=1; });
+  keep[S0_SUBJ_PACK]=1;
   for(var i=0;i<QB.length;i++){
     var q=QB[i].q;
     if(String(q.source||"")!=="38A") continue;
+    if(!keep[String(q.pack||"")]) continue;
     var a=String((q.syllabus||{}).知识领域||"");
     if(!a) a="考纲未列";
     a=S0_MERGE[a]||a;
@@ -2921,58 +2934,104 @@ function s0Rows(){
   S0_TOTAL=0; rows.forEach(function(r){ S0_TOTAL+=r.score; });
   S0_ROWS=rows; return rows;
 }
-/* 三大块（客观题／程序填空／操作题）是 S0 的三条主线，按题型切，不按领域切。
-   操作题只算<b>一块 28 分</b>：卷面 H／I 二选一，qScoreOf 只给 H 记 7 分／题（I 记 0），
-   所以 H 与 I 的分值不会再被加两遍。28 = 150 − 80 − 42，是反推值，题库补录操作题分值后这条可以退役。 */
+/* 三块主线按「卷面真实结构」切：必做客观包 A、选做客观包（E/G/F）、主观包 H。
+   合计必须是 150：26 ＋ 16×3 ＋ 76。任何一块的口径变了，合计行会立刻对不上——
+   这是这张表的自检，比写死数字可靠。 */
 function s0Blocks(){
   var spec=[
-    {t:"客观题（单选＋多选）", scopes:[{src:"38A", typeIn:["单选题","多选题"]}], how:"每题 1 分，认得出概念就能选，不需要推导"},
-    {t:"七个程序填空（A—G 各 1 题）", scopes:[{src:"38A", type:"程序填空题"}], how:"每题 3 空、每空 2 分，会写就整题拿 6 分"},
-    {t:"H／I 操作题（二选一，只做一块）", scopes:[{src:"38A", pack:"H"},{src:"38A", pack:"I"}], how:"3 编程 + 1 论述，每题 7 分（28 ÷ 4）"}
+    {t:"客观题 A（必做）", scopes:[{src:"38A", pack:"A"}],
+     how:"单选 10＋多选 10 各 1 分＋填空 3 空×2 分 ＝ 26 分，21 题"},
+    {t:"客观题 B~G（六选三）", scopes:[{src:"38A", pack:"E"},{src:"38A", pack:"G"},{src:"38A", pack:"F"}],
+     how:"每包 16 分（10 道选择＋3 空×2 分）；本页取 E/G/F，ML-DL 密度 75%／62%／44%，B/C/D 只有 31%"},
+    {t:"主观题 H（二选一）", scopes:[{src:"38A", pack:"H"}],
+     how:"3 编程＋1 论述，八道主观题全在机器学习领域；76 ÷ 4 ＝ 19 分／题（反推）"}
   ];
   return spec.map(function(x){
-    var best=null;
+    var idxs=[], seen={};
     x.scopes.forEach(function(sc){
-      var idxs=goalHits(sc), s=scoreOfIdxs(idxs);
-      if(!best || s>best.s) best={n:idxs.length, s:s};
+      goalHits(sc).forEach(function(i){ if(!seen[i]){ seen[i]=1; idxs.push(i); } });
     });
-    return {t:x.t, how:x.how, n:best.n, s:best.s, goal:Math.round(best.s*S0_RATE)};
+    var s=scoreOfIdxs(idxs);
+    return {t:x.t, how:x.how, n:idxs.length, s:s, goal:Math.round(s*S0_RATE)};
   });
 }
-/* S0 三条主线卡：按题型切，与上面两张表同一批题，只是换一种入口 */
-var S0_GROUP={ph:"S0", name:"冲 127 分 · 按分值排序", when:"距考试 10 天 ─ 每一分都写明来源",
+/* S0 三条主线卡：按卷面真实结构切（必做客观包／选做客观包／主观包），与上面的表同一批题 */
+var S0_GROUP={ph:"S0", name:"冲 127 分 · 按卷面结构重切", when:"卷面 150 ＝ 74 客观 ＋ 76 主观",
   items:[
-    {id:"s0-1", t:"① 客观题：单选＋多选",
-     s:"每题 1 分，不考推导，只考「认不认得出」。150 分制要 127，这里得拿 68／80（八成五），是全卷最硬的一块——因为每题只有 1 分，错 12 道就掉出 127。做法：看到题干能指出它问的是哪个概念，错的当场回该考纲条目看一句定义，不抄笔记。",
-     scope:{src:"38A", typeIn:["单选题","多选题"]}},
-    {id:"s0-2", t:"② 七个程序填空：A—G 各 1 题",
-     s:"每题 3 空、每空 2 分，是唯一「会写就整题拿、不会就整题丢」的分。目标 36／42 ＝ 六个包全对，剩一个包放弃。性价比排序：A 前向传播（3 空、20 分钟）＞ B 集合（3 个符号）＞ C BFS（deque／popleft／邻居入队）＞ D 贪心累加＞ E 逻辑回归模板＞ G KMeans；F 遗传轮盘赌步骤最长，作为弃子。",
-     scope:{src:"38A", type:"程序填空题"}},
-    {id:"s0-3", t:"③ H／I 操作题：编程 3 题＋论述 1 题",
-     s:"两块二选一，每块 28 分、4 道题、每题 7 分，考场上只做一块。目标 24／28：编程三题 21 分里丢 2 分、论述 7 分里丢 2 分。这块占卷面 18.7%，不是边角料——KNN、线性回归、KMeans 图像压缩三段代码要能默写；论述只背 SVM 与逻辑回归那张四行表（只有「目标」一行填「是」，其余三行都是「否」）。",
-     scope:{src:"38A", typeIn:["编程题","论述题","方案设计题","程序阅读题","程序选择题"]}}
+    {id:"s0-1", t:"① 主观 H 四题（76 分，占全卷一半）",
+     s:"八道主观题全在机器学习领域，且全是「固定代码骨架＋选项填空」，没有一行要自己写。H 四题：KNN 分类、线性回归、香农熵、SVM 与逻辑回归对比表。这块是 127 分的地基——只学机器学习＋深度学习、其余全靠蒙，实测只能到 105～117 分；主观题从 80% 提到 92%，就能加 9～11 分。「目标」行填「是」，其余三行填「否」，四行十二格必须全对。",
+     scope:{src:"38A", pack:"H"}},
+    {id:"s0-2", t:"② S 档 9 个知识点（主观 76 ＋ 客观 18）",
+     s:"按「是否进主观题／样卷命中几次／全库题量」把 34 个 ML-DL 知识点分四档。S 档 9 个：CNN、决策树、SVM、线性回归、K-Means、KNN、朴素贝叶斯、模型训练基本概念、过拟合与欠拟合，全库 117 题。这 9 个既撑起主观 76 分，又覆盖客观 ML-DL 里的 18 分，是全卷性价比最高的一块。",
+     slab:"38A 客观题里属于 S 档的 9 个知识点（CNN／决策树／SVM／线性回归／K-Means／KNN／朴素贝叶斯／模型训练／过拟合）",
+     scope:{src:"38A", typeIn:["单选题","多选题","程序填空题"], item:"CNN 特点及经典模型（LeNet、ResNet）"}},
+    {id:"s0-3", t:"③ 客观非 ML-DL 的 30 分（背诵为主）",
+     s:"这 30 分是「只学 ML-DL 拿不到 127」的全部原因：人工智能概述 3 ＋ 前沿技术 3 ＋ 应用基础 5 ＝ 11 分纯背诵，看一眼定义就能选；视觉 4、语音 2、逻辑推理 2、NLP 2、搜索 1、数据处理 1 是概念题；F 包遗传算法填空 6 分背轮盘赌三行就够。这块投入 8 小时能拿 19 分。",
+     pick:"recite", slab:"38A 客观四包（A 必做 ＋ E/G/F）里不属于 ML-DL 的题"}
   ]};
-/* 十天排程：目标（goal）是策略设的，题量与卷面分由题库现算。
-   goal 不按比例机械折算，因为填空是「整包拿或整包丢」：D7 的 F 包是弃子，目标写 0；
-   D1—D3 的客观题加起来 68，正好是 80 分的八成五——全卷最硬的一块，一天都不能松。
-   cnt=false 的项不进合计：D9 是备选块（二选一没选它）、D10 是全卷复盘、D11 只背模板。 */
+/* ---------- ML-DL 34 个知识点分四档 ----------
+   判据全部可复算，没有一条手填的题号：
+     S = 在 38A 的 H／I 主观题里出现过（撑主观 76 分）
+     A = 客观题里样卷命中 2 次及以上
+     B = 客观题里样卷命中 1 次
+     C = 样卷零命中（全库有题、正式卷不考的概率最高）
+   档位只决定「先学谁」，不改变分值——分值由 qScoreOf 现算。 */
+var S0_KS={
+  S:["CNN 特点及经典模型（LeNet、ResNet）","决策树","支持向量机","线性回归","K-Means 聚类",
+     "K 近邻算法","朴素贝叶斯","模型训练基本概念","过拟合与欠拟合"],
+  A:["人工神经网络基础","激活函数","逻辑回归","梯度下降法","强化学习定义及原理",
+     "RNN 特点及经典模型等（LSTM，GRU）","损失函数","生成对抗网络（GAN）基础"],
+  B:["无监督学习（聚类、特征降维）概念","性能评估","反向传播","前向传播",
+     "集成模型（如 Boosting、随机森林）","机器学习定义及原理","扩散模型基础",
+     "多模态基础（感知、数据）","Transformer 基础"],
+  C:["有监督学习（分类、回归）概念","序贯模型（Sequential）","数据预处理（含特征工程）",
+     "PCA","层次聚类","价值函数与 Q 学习","LDA","Transformer"]
+};
+var S0_KDESC={
+  S:"进主观题 · 必拿",
+  A:"样卷命中 ≥2 次 · 必背",
+  B:"样卷命中 1 次 · 过后扫一遍",
+  C:"样卷零命中 · 直接放弃"
+};
+/* ② 号卡的 scope 由 S 档知识点现生成，避免手抄 9 个对象 */
+S0_GROUP.items[1].scope=S0_KS.S.map(function(k){
+  return {src:"38A", typeIn:["单选题","多选题","程序填空题"], item:k};
+});
+/* ---------- H 包四题模板（主观 76 分的全部内容）----------
+   四题都是原卷「选项填空」，这里把每空该填什么摊平，便于默写自检。
+   选项字母来自 38A 原卷，代码内容取自题库 rubric；不是我的改写。 */
+var S0_HTPL=[
+  {id:"38A-H-01", t:"KNN 分类（4 空）",
+   a:"① A　② C　③ E　④ H",
+   c:"① y=np.array([1,1,2,1,2,2,1])　② n_neighbors=5　③ knn.fit(x,y)　④ p=knn.predict([[38,1,2]])",
+   p:"标签顺序必须与 x 的 7 行严格对齐；参数名带 s；predict 要传二维数组；8 号样本行业＝2 不是 1"},
+  {id:"38A-H-02", t:"线性回归（4 空）",
+   a:"① A　② D　③ F　④ D",
+   c:"① import numpy as np　② new_X　③ fit(x,y)　④ predict(new_X)",
+   p:"fit 先特征后标签；predict 不能传 y 或训练数据 x；变量名靠后文引用反推"},
+  {id:"38A-H-03", t:"香农熵（3 空）",
+   a:"填空 1、2、3 手写代码",
+   c:"① labelCounts = {}　② labelCounts[currentLabel] += 1　③ prob*math.log(prob,2)",
+   p:"漏建空字典 → NameError；写成 =1 会清零计数；底数必须是 2 且带 prob 因子"},
+  {id:"38A-H-04", t:"SVM 与逻辑回归对比表（4 行 12 格）",
+   a:"是/F/F　否/C/D　否/E/G　否/A/B",
+   c:"目标：是／F 分类结果／F 分类结果　　优化目标：否／C 间隔最大化／D 极大似然",
+   p:"输出结果：否／E 最佳分割平面／G 概率值　　适合场景：否／A 非线性／B 线性"}
+];
+/* 七天路径：目标（goal）是策略设的，题量与卷面分由题库现算。
+   D1／D2 全给主观 76 分（这是最大杠杆，也是唯一能在两天内加 10 分以上的地方）；
+   D3—D5 按知识点档位吃客观 ML-DL；D6 扫非 ML-DL 的 30 分；D7 整卷限时。
+   cnt=false 的项不进合计（D7 是复盘，不产出新分）。 */
 var S0_DAYS=[
-  {d:"D1", day:"11/18", t:"机器学习基础 · 客观题", goal:15, pick:"objArea:机器学习基础"},
-  {d:"D2", day:"11/19", t:"深度学习基础 · 客观题", goal:20, pick:"objArea:深度学习基础"},
-  {d:"D3", day:"11/20", t:"其余 12 个领域 · 客观题", goal:33, pick:"restObj"},
-  {d:"D4", day:"11/21", t:"A 前向传播＋B 集合 · 程序填空", goal:12,
-   scope:[{src:"38A", pack:"A", type:"程序填空题"},{src:"38A", pack:"B", type:"程序填空题"}]},
-  {d:"D5", day:"11/22", t:"C BFS＋D 贪心 · 程序填空", goal:12,
-   scope:[{src:"38A", pack:"C", type:"程序填空题"},{src:"38A", pack:"D", type:"程序填空题"}]},
-  {d:"D6", day:"11/23", t:"E 逻辑回归＋G KMeans · 程序填空", goal:12,
-   scope:[{src:"38A", pack:"E", type:"程序填空题"},{src:"38A", pack:"G", type:"程序填空题"}]},
-  {d:"D7", day:"11/24", t:"F 遗传轮盘赌 · 弃子，只走读不背", goal:0, scope:{src:"38A", pack:"F", type:"程序填空题"}},
-  {d:"D8", day:"11/25", t:"H 编程 3 题：KNN／回归／香农熵（21 分）", goal:18,
-   scope:{src:"38A", pack:"H", typeIn:["编程题","方案设计题","程序阅读题","程序选择题"]}},
-  {d:"D9", day:"11/26", t:"H 论述 1 题：SVM 对比表（7 分）＋ I 块当练手", goal:6,
+  {d:"D1", t:"H 三编程：KNN／线性回归／香农熵，练到能默写", goal:53,
+   scope:{src:"38A", pack:"H", typeIn:["编程题"]}},
+  {d:"D2", t:"H 论述：SVM 对比表 12 格＋四题连做", goal:17,
    scope:{src:"38A", pack:"H", typeIn:["论述题"]}},
-  {d:"D10", day:"11/27", t:"38A 全卷限时 150 分钟＋错题回炉", goal:0, cnt:false, scope:null},
-  {d:"D11", day:"11/28", t:"只背七个填空模板＋三张对比表", goal:0, cnt:false, scope:null}
+  {d:"D3", t:"S 档 9 个知识点 · 客观题（117 题里挑客观部分）", goal:16, pick:"ks:S"},
+  {d:"D4", t:"A 档 8 个知识点 · 客观题", goal:12, pick:"ks:A"},
+  {d:"D5", t:"B 档 9 个知识点 · 扫一遍不求全对", goal:6, pick:"ks:B"},
+  {d:"D6", t:"非 ML-DL 的 30 分：背诵项＋遗传算法填空", goal:23, pick:"recite"},
+  {d:"D7", t:"整卷限时 150 分钟＋错题回炉", goal:0, cnt:false, scope:null}
 ];
 /* 领域要按 S0_MERGE 归并后再比：题库里「机器学习基础」与「机器学习」是两个写法，
    直接拿 sc.area 精确匹配只能捞到一半题（9 题而不是 17 题）。 */
@@ -2984,6 +3043,35 @@ function s0ObjAreas(a){
   });
   return out;
 }
+/* 按知识点档位捞「客观题」：主观题另由 D1／D2 单独吃，避免同一题被两处计分 */
+var S0_OBJ_TYPES={单选题:1,多选题:1,程序填空题:1};
+function s0KsHits(tier){
+  var names=S0_KS[tier]||[], out=[];
+  for(var i=0;i<QB.length;i++){
+    var q=QB[i].q;
+    if(String(q.source||"")!=="38A") continue;
+    if(!S0_OBJ_TYPES[String(q.type||"")]) continue;
+    if(names.indexOf(String((q.syllabus||{}).知识点||""))>=0) out.push(QB[i].i);
+  }
+  return out;
+}
+/* 非 ML-DL 领域的 30 分：整块列出来，多半是背诵题与概念题 */
+var S0_RECITE_AREAS={"人工智能概述":1,"人工智能前沿技术":1,"人工智能应用基础":1,"人工智能安全与伦理":1,
+  "人工智能应用":1,"计算机视觉":1,"计算机视觉基础":1,"语音处理基础":1,"逻辑推理与知识图谱":1,
+  "自然语言处理":1,"自然语言处理基础":1,"人工智能数据处理基础":1,"搜索与博弈":1,"Python 编程基础":1};
+function s0ReciteHits(){
+  var out=[];
+  for(var i=0;i<QB.length;i++){
+    var q=QB[i].q;
+    if(String(q.source||"")!=="38A") continue;
+    var ar=String((q.syllabus||{}).知识领域||"");
+    /* 领域为空的题（38A 里只有 F 包遗传算法那 1 题 6 分）也算非 ML-DL：
+       它考的是轮盘赌选择的三行代码，跟机器学习无关，归进背诵区比悬空好。 */
+    if(!ar){ out.push(QB[i].i); continue; }
+    if(S0_RECITE_AREAS[S0_MERGE[ar]||ar]) out.push(QB[i].i);
+  }
+  return out;
+}
 function s0DayHits(x){
   if(x.pick==="restObj"){
     var all=goalHits({src:"38A", typeIn:["单选题","多选题"]});
@@ -2992,6 +3080,8 @@ function s0DayHits(x){
       .forEach(function(i){ skip[i]=1; });
     return all.filter(function(i){ return !skip[i]; });
   }
+  if(x.pick==="recite") return s0ReciteHits();
+  if(x.pick && x.pick.indexOf("ks:")===0) return s0KsHits(x.pick.slice(3));
   if(x.pick && x.pick.indexOf("objArea:")===0) return s0ObjAreas(x.pick.slice(8));
   if(!x.scope) return [];
   return goalHits(x.scope);
@@ -3046,7 +3136,7 @@ function s0GapRows(){
 var S0_GUESS_MAX=50;
 var S0_GUESS=[
   {it:"分支与循环结构（break、continue）", s:7,
-   why:"42 分程序填空的每一道都在循环里写；28 分操作题的 KNN、回归、KMeans 也全靠 for。样卷一道没考，但它是所有代码题的地基。"},
+   why:"A/E/G/F 四个客观包的程序填空各 6 分，主观 76 分里的 KNN、回归、KMeans 也全靠 for。样卷一道没考，但它是所有代码题的地基。"},
   {it:"函数定义、参数与 lambda", s:5,
    why:"编程题要写 def、要传参；lambda 在 KMeans 与排序题里出现过。客观题问「输出是什么」也常挂在这上面。"},
   {it:"数字、字符串与类型转换", s:3,
@@ -3111,31 +3201,34 @@ function s0MixHits(){
   return out;
 }
 function s0Why(tot, bl){
-  var o=bl[0], f=bl[1], h=bl[2];
-  var sure=o.s+f.s;                    /* 题库每题都写了分值的那部分：客观 + 填空 */
-  var goal=o.goal+f.goal+h.goal;
+  var a=bl[0], b=bl[1], h=bl[2];
+  var obj=a.s+b.s;
+  var goal=a.goal+b.goal+h.goal;
   var perOp=h.n?Math.round(h.s*10/h.n)/10:h.s;
-  function pc(v,b){ return Math.round(v*1000/b)/10+'%'; }
-  return '卷面 150 分是三条腿撑起来的：<b>客观题 '+o.s+' ＋ 七个程序填空 '+f.s+' ＋ 操作题 '+h.s+' = '+S0_PAPER+'</b>。'+
-    '前两块有硬证据——38A 里 '+(o.n+f.n)+' 道客观＋填空题每题都写着分值（单选／多选 1 分，填空「每空 2 分、共 6 分」），'+
-    '加起来 '+sure+' 分。'+
-    '操作题 H／I 那八道题在题库里 score 是空的，只能反推：'+S0_PAPER+' − '+sure+' = <b>'+h.s+' 分</b>，'+
-    '一块 '+h.n+' 题就是 '+h.s+' ÷ '+h.n+' = '+perOp+' 分／题。'+
-    '早先按「每块 16 分」算过，拼出来 154 分，比卷面多 4 分，自己就不闭合——那个数作废。'+
-    '于是 <b>127 ÷ 150 = '+pc(S0_TARGET150,S0_PAPER)+'</b>：客观 '+o.goal+'／'+o.s+'（'+pc(o.goal,o.s)+'）、'+
-    '填空 '+f.goal+'／'+f.s+'（'+pc(f.goal,f.s)+'）、操作 '+h.goal+'／'+h.s+'（'+pc(h.goal,h.s)+'），'+
-    '合计 '+goal+' 分，多留 '+(goal-S0_TARGET150)+' 分余量。'+
-    '<b>最硬的是客观题</b>：80 道每题 1 分，错 12 道就掉出 127，没有整题丢分的缓冲。'+
-    '操作题 '+h.s+' 分占 '+pc(h.s,S0_PAPER)+'，四道题每题 '+perOp+' 分——一道不做就少 '+perOp+' 分，不是顺带的边角。';
+  function pc(v,bs){ return Math.round(v*1000/bs)/10+'%'; }
+  return '<b>这份卷子的结构不是估出来的，是抄来的。</b>38A 首页原文写「题包A 必做，题包B~G 是 6 选 2 或 3 个，题包H 和I 是 2 选 1」，'+
+    '38 考纲 p.6 写「每个考生根据答题情况做 3-4 个客观题包……主观题包做 1 个，共 4 道题」。'+
+    '所以一张卷＝必做包 A（'+a.s+' 分）＋ 三或两个选做包（各 16 分）＋ 一个主观包。'+
+    '本页按<b>甲情形</b>记：A 26 ＋ E/G/F 各 16 ＝ <b>客观 '+obj+' 分</b>，主观 H 由 150 反推 ＝ <b>'+h.s+' 分</b>（'+h.n+' 题，'+perOp+' 分／题），合计 '+S0_PAPER+'。'+
+    '乙情形（只选两个包）是客观 58 ＋ 主观 92，主观权重更大、客观更没得丢分。'+
+    '<b>关键结论：七成以上的分在主观题和 ML-DL 上。</b>ML-DL 两个领域在甲情形卷面占 120／150，'+
+    '而主观 76 分<b>八道题全部落在机器学习领域</b>，且全是「固定代码骨架＋选项填空」，没有一行要自己写。'+
+    '反过来，<b>只学机器学习＋深度学习并不够</b>：客观题里有 30 分不在这两个领域内，'+
+    '按 ML-DL 掌握度 85%、其余靠蒙估算，总分只能到 105～117，主观题就算满分也摸不到 127。'+
+    '要跨过这条线，得靠<b>主观题熟练度（80%→92%，+9～11 分）＋ 那 30 分里的背诵项（+13 分）</b>。'+
+    '<b>【作废口径】</b>「150 ＝ 客观 80 ＋ 填空 42 ＋ 操作 28」和由它派生的「154 分」「138 分」全部作废——'+
+    '那是把 38A 全部 9 个题包当成一张卷，考生实际只做 3-4 个客观包加 1 个主观包。';
 }
 
 function s0BlockHtml(){
   var rows=s0Rows(), tot=S0_TOTAL||1;
   var bl=s0Blocks(), btot=0, bgoal=0, bn=0;
   bl.forEach(function(b){ btot+=b.s; bgoal+=b.goal; bn+=b.n; });
-  var cap=btot;                                   /* 卷面合计：客观 80 + 填空 42 + 一块操作题 28 = 150 */
+  var cap=btot;                                   /* 卷面合计：A 26 ＋ E/G/F 各 16 ＋ 主观 H 76 = 150 */
   /* 三张主线卡的命中集在渲染时现算（goalCardHtml 只认 it._hits） */
-  S0_GROUP.items.forEach(function(it){ it._hits=goalHits(it.scope); });
+  S0_GROUP.items.forEach(function(it){
+    it._hits = it.pick ? s0DayHits({pick:it.pick}) : goalHits(it.scope);
+  });
   var sumTb=bl.map(function(b){
     return '<tr><td>'+esc(b.t)+'</td><td class="num">'+b.s+' 分</td><td class="num">'+b.n+' 题</td>'+
       '<td class="num"><b>'+b.goal+'</b> 分</td>'+
@@ -3150,7 +3243,7 @@ function s0BlockHtml(){
   var areaTb=rows.map(function(r,ri){
     cum+=r.score;
     var pk=Object.keys(r.packs).sort().join("／");
-    return '<tr><td>'+esc(r.name)+'</td>'+
+    return '<tr><td>'+(r.name==="考纲未列"?"考纲未列（F 包遗传算法填空）":esc(r.name))+'</td>'+
       '<td class="num"><b>'+r.score+'</b> 分</td>'+
       '<td class="num sm-hide">'+Math.round(r.score*1000/tot)/10+'%</td>'+
       '<td class="num">'+r.idxs.length+' 题</td>'+
@@ -3158,9 +3251,31 @@ function s0BlockHtml(){
       '<td class="num">'+cum+' 分</td>'+
       '<td class="num"><button class="btn sm ghost" type="button" data-s0="'+ri+'">练这块</button></td></tr>';
   }).join("");
-  /* 累计线：tot 现在就是卷面的 150（客观 80 + 填空 42 + 操作 28），127 直接可比 */
+  /* 累计线：tot 就是卷面的 150（A 26 ＋ E/G/F 48 ＋ 主观 H 76），127 直接可比 */
   var cumLine=Math.round(S0_TARGET150*tot/S0_PAPER);
   var cumRow=(function(){ var c=0,i; for(i=0;i<rows.length;i++){ c+=rows[i].score; if(c>=cumLine) return i+1; } return rows.length; })();
+  /* 34 个 ML-DL 知识点按档位排：样卷分现算，全库题量给「练」的入口 */
+  var ksTb="", ksSum=0, ksCnt=0;
+  ["S","A","B","C"].forEach(function(tier){
+    var names=S0_KS[tier]||[];
+    ksTb+='<tr class="gapgrp"><td colspan="4">'+tier+' 档 · '+esc(S0_KDESC[tier])+' · '+names.length+' 个知识点</td></tr>';
+    names.forEach(function(nm,ni){
+      var idxs=goalHits({item:nm}), sc=scoreOfIdxs(idxs);
+      if(tier!=="C"){ ksSum+=sc; ksCnt++; }
+      ksTb+='<tr'+(tier==="C"?' class="dim"':'')+'>'+
+        '<td>'+(tier==="C"?'<span class="tiny muted">弃</span> ':'')+esc(nm)+'</td>'+
+        '<td class="num">'+(sc?'<b>'+sc+'</b> 分':'<span class="muted">0</span>')+'</td>'+
+        '<td class="num">'+(idxs.length?idxs.length+' 题':'<span class="muted">0</span>')+'</td>'+
+        '<td class="num">'+(idxs.length?'<button class="btn sm ghost" type="button" data-kn="'+esc(nm)+'">练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
+    });
+  });
+  /* H 四题模板：主观 76 分的全部内容，逐空摊平便于默写自检 */
+  var htplTb=S0_HTPL.map(function(x){
+    return '<tr><td><b>'+esc(x.t)+'</b><div class="tiny muted mono" style="margin-top:2px">'+esc(x.id)+'</div></td>'+
+      '<td class="mono tiny">'+esc(x.c)+'</td>'+
+      '<td class="tiny">'+esc(x.p)+'</td>'+
+      '<td class="num">'+esc(x.a)+'</td></tr>';
+  }).join("");
   /* 缺口表：样卷没考、考纲却要求的条目，按等级分组 */
   var gaps=s0GapRows(), reqCnt={};
   gaps.forEach(function(g){ reqCnt[g.req]=(reqCnt[g.req]||0)+1; });
@@ -3199,46 +3314,63 @@ function s0BlockHtml(){
       (gsum>S0_GUESS_MAX?'<b class="red">超出上限 '+(gsum-S0_GUESS_MAX)+' 分</b>':'余 '+(S0_GUESS_MAX-gsum)+' 分额度')+
       (gmiss?'　<b class="red">'+gmiss+' 条条目名未对上</b>':'')+'</td>'+
     '<td class="sm-hide"></td></tr>';
-  /* 十天排程表：题量与卷面分现算，目标分是策略 */
+  /* 七天路径表：题量与卷面分现算，目标分是策略 */
   var dN=0, dS=0, dG=0;
   var dayTb=S0_DAYS.map(function(x){
     var idxs=s0DayHits(x), s=scoreOfIdxs(idxs), n=idxs.length;
     var inc=x.cnt!==false;
     if(inc){ dN+=n; dS+=s; dG+=x.goal; }
-    var qn = (!inc && !n) ? (x.d==="D10" ? "全卷 95 题" : "—") : n+" 题";
-    var qs = (!inc && !n) ? (x.d==="D10" ? tot+" 分" : "—") : s+" 分";
+    var qn = (!inc && !n) ? (x.d==="D7" ? "整卷" : "—") : n+" 题";
+    var qs = (!inc && !n) ? (x.d==="D7" ? tot+" 分" : "—") : s+" 分";
     return '<tr'+(inc?'':' class="dim"')+'><td class="mono">'+x.d+'</td>'+
-      '<td class="mono tiny sm-hide">'+x.day+'</td>'+
       '<td>'+esc(x.t)+'</td><td class="num">'+qn+'</td><td class="num">'+qs+'</td>'+
       '<td class="num">'+(x.goal?('<b>'+x.goal+'</b>'):'0')+'</td>'+
       '<td class="num sm-hide">'+(inc?"":"不计")+'</td></tr>';
   }).join("");
-  /* 合计行按 7 个 td 排（不用 colspan，否则窄屏隐藏列后错位） */
-  dayTb+='<tr class="sum"><td class="mono">合计</td><td class="sm-hide"></td>'+
-    '<td>D1—D9 累计</td><td class="num">'+dN+' 题</td>'+
+  /* 合计行按 6 个 td 排（不用 colspan，否则窄屏隐藏列后错位） */
+  dayTb+='<tr class="sum"><td class="mono">合计</td>'+
+    '<td>D1—D6 累计</td><td class="num">'+dN+' 题</td>'+
     '<td class="num">'+dS+' 分</td><td class="num">'+dG+' 分</td>'+
     '<td class="num sm-hide">'+Math.round(dG*10)/10+'／150</td></tr>';
   return '<div class="planph s0ph" id="s0-block">'+
     '<div class="planph-h"><h2>'+esc(S0_GROUP.ph+" "+S0_GROUP.name)+'</h2>'+
-    '<span class="when">'+esc(S0_GROUP.when)+' · 卷面 '+S0_PAPER+' 分 ＝ 客观 '+bl[0].s+'＋填空 '+bl[1].s+'＋操作 '+bl[2].s+'</span></div>'+
+    '<span class="when">'+esc(S0_GROUP.when)+' · 卷面 '+S0_PAPER+' 分 ＝ 客观 '+ (bl[0].s+bl[1].s) +'（A 必做＋六选三）＋ 主观 '+bl[2].s+'</span></div>'+
     '<p class="why">'+s0Why(tot, bl)+'</p>'+
-    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">127 分怎么拆（150 分制）</h3>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">127 分怎么拆（客观 '+ (bl[0].s+bl[1].s) +' ＋ 主观 '+bl[2].s+'）</h3>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>块</th><th class="num">卷面分</th>'+
       '<th class="num">题量</th><th class="num">目标分</th><th class="num sm-hide">达成率</th>'+
       '<th class="sm-hide">怎么拿</th></tr></thead><tbody>'+
       sumTb+'</tbody></table></div>'+
-    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">十天排程（D1—D9 拿满 127 的路径）</h3>'+
-    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">每天 2.5 小时：60 分钟看书＋40 分钟默写＋40 分钟做题＋10 分钟记账。'+
-      '题量与卷面分由题库现算，目标分是按「哪块值得押」定的策略——填空整包拿或整包丢，所以 F 包直接当弃子、目标写 0；'+
-      'D8／D9 把一块操作题拆成两天（编程 21 分＋论述 7 分），另一块 I 只当练手、不设目标；D10 全卷复盘、D11 背模板，都不计入合计。</p>'+
-    '<div class="s0tbl wrap"><table><thead><tr><th>天</th><th class="sm-hide">日期</th><th>干什么</th>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">七天路径（D1—D6 拿满 127，D7 整卷）</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">顺序按「每小时能加多少分」排，不按教材章节排：'+
+      '<b>D1—D2 全给主观 76 分</b>，因为这是唯一能在两天内加 10 分以上的地方；'+
+      '<b>D3—D5</b> 按知识点档位吃客观 ML-DL（S→A→B）；<b>D6</b> 扫非 ML-DL 那 30 分；D7 整卷限时。'+
+      '每天 3 小时：50 分钟看＋60 分钟默写＋50 分钟做题＋20 分钟记账。题量与卷面分由题库现算，目标分是策略。</p>'+
+    '<div class="s0tbl wrap"><table><thead><tr><th>天</th><th>干什么</th>'+
       '<th class="num">题量</th><th class="num">卷面分</th><th class="num">目标</th><th class="num sm-hide">计入</th>'+
       '</tr></thead><tbody>'+
       dayTb+'</tbody></table></div>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">H 四题模板：主观 '+bl[2].s+' 分的全部内容</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">八道主观题（H 四＋I 四）<b>全部落在机器学习领域</b>，且全是「固定代码骨架＋选项填空」，'+
+      '没有一行要自己写。考场上 H 与 I 二选一，<b>选 H</b>——I 的第三题是 CNN 舆情系统方案设计，是唯一没有固定答案的一道。'+
+      '下表逐空摊平：右列是原卷选项字母，中列是要能默写的代码，末列是最容易错的地方。'+
+      '四题十二格全对，主观题就拿满；错一空格只扣 19 分之一。</p>'+
+    '<div class="s0tbl wrap"><table><thead><tr><th>题</th><th>要默写的代码／内容</th>'+
+      '<th class="sm-hide">易错点</th><th class="num">选项字母</th></tr></thead><tbody>'+
+      htplTb+'</tbody></table></div>'+
+    '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">ML-DL 的 '+ (ksCnt+S0_KS.C.length) +' 个知识点分四档（'+ksSum+' 分在卷面上）</h3>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">档位判据可复算：<b>S</b>＝在 38A 主观题里出现过；<b>A</b>＝客观题样卷命中 ≥2 次；'+
+      '<b>B</b>＝命中 1 次；<b>C</b>＝样卷零命中。S 档 9 个撑起主观 '+bl[2].s+' 分加客观 18 分，是全卷性价比最高的一块；'+
+      '<b>C 档 8 个知识点（PCA、层次聚类、LDA、Q 学习、Sequential、数据预处理、有监督概念、Transformer）直接放弃</b>，'+
+      '样卷一次都没考，省下的时间够把 S 档刷两遍。分值列是这套卷面（甲情形）里的实际分。</p>'+
+    '<div class="s0tbl gaptbl wrap"><table><thead><tr><th>知识点</th>'+
+      '<th class="num">卷面分</th><th class="num">全库题</th><th></th></tr></thead><tbody>'+
+      ksTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">按分值排序的题库分类</h3>'+
-    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算（题库改动后自动更新）。'+
-      '「累计」是从上往下刷到这一行时已覆盖的卷面分（H 计入、I 不计，避免二选一双算）——'+
-      '127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近，再往下是性价比递减的边角。</p>'+
+    '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算，口径固定为「甲情形」：'+
+      'A 必做 26 ＋ E/G/F 各 16 ＋ 主观 H 76 ＝ 150；<b>B/C/D 三个包记 0 且不进这张表</b>——它们不进这套卷面，'+
+      '若考场上分到那三个包，对应领域的分值会跟着变（但 ML-DL 仍然是大头）；要练那三个包的题走上面的学习计划。'+
+      '「累计」是从上往下刷到这一行时已覆盖的卷面分，127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近。</p>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>知识领域（按卷面分值降序）</th><th class="num">分值</th>'+
       '<th class="num sm-hide">占比</th><th class="num">题数</th><th class="sm-hide">题包</th>'+
       '<th class="num">累计</th><th></th></tr></thead><tbody>'+
@@ -3382,6 +3514,14 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     var r0=s0Rows()[ri];
     if(!r0 || !r0.idxs.length){ toast("这一块在题库里没有题"); return; }
     startPractice(r0.idxs.slice(), "S0："+r0.name+"（卷面 "+r0.score+" 分）");
+    return;
+  }
+  var bkn=t.closest ? t.closest("[data-kn]") : null;
+  if(bkn){
+    var kn=bkn.getAttribute("data-kn");
+    var kidx=goalHits({item:kn});
+    if(!kidx.length){ toast("这个知识点在题库里没有题"); return; }
+    startPractice(kidx.slice(), "S0 知识点："+kn);
     return;
   }
   var bmx=t.closest ? t.closest("[data-mix]") : null;
