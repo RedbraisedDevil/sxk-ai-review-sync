@@ -577,16 +577,40 @@ pre.sample .eof{display:block; height:0}
 .pslot.filled::before{content:""}
 .pslot.active{box-shadow:0 0 0 2px var(--brand-soft); border-color:var(--brand); background:var(--brand-soft)}
 .pslot:hover{background:var(--brand-soft)}
-/* 直接看答案态：槽位换成与选择题「正确项」同一套绿底绿边，一眼区分「我填的」和「答案」 */
-.pslot.ans,.bslot.ans{border:1px solid var(--t-ok-strong); background:var(--ok-soft); color:var(--ink); cursor:default}
+/* 直接看答案态：槽位换成**实体绿底**，不是只换边框色。
+   深色主题里 --brand(#2DD4BF 青) 与 --t-ok-strong(#34D399 绿) 肉眼几乎分不出，
+   只改边线会产生「点了没反应」的错觉（用户实际就是这么反馈的）。 */
+.pslot.ans,.bslot.ans{
+  border:2px solid var(--t-ok-strong); background:var(--ok-soft); color:var(--t-ok-fg);
+  font-weight:800; cursor:default; box-shadow:0 0 0 3px var(--ok-soft)}
 .pslot.ans::before,.bslot.ans::before{content:""}
 .pslot.ans:hover{background:var(--ok-soft)}
-/* 揭示答案时候选块只作对照，不能再点（否则「答案」又变回「我的作答」） */
-.bchip-list.lock{opacity:.62}
-.bchip-list.lock .bchip{pointer-events:none}
-.ans-line{margin:-2px 0 var(--sp-3); padding:8px 10px; border-radius:var(--r-s);
-  border:1px solid var(--t-ok-strong); background:var(--ok-soft); color:var(--ink); font-size:14.5px}
-.ans-line b{font-family:var(--font-num); color:var(--brand-text)}
+/* 揭示态标红：你自己选的那个字母（与正确答案不一致时才标红）。
+   和选择题的错误项同一套色（--err / --err-soft），一眼就知道「这空是我填错的」 */
+.pslot.wrong,.bslot.wrong{
+  border:2px solid var(--err); background:var(--err-soft); color:var(--t-err-fg);
+  font-weight:800; text-decoration:line-through; text-decoration-thickness:2px; cursor:default}
+.pslot.wrong::before,.bslot.wrong::before{content:""}
+.pslot.wrong:hover{background:var(--err-soft)}
+/* 揭示答案时候选块只作对照，不能再点（否则「答案」又变回「我的作答」）；
+   压暗到 0.45 而不是 0.62——原来的透明度看起来和正常态没差。
+   注意：正确答案标绿、你选错的标红必须**不受**这层压暗影响，否则红绿被洗成灰。 */
+.bchip-list.lock .bchip{opacity:.4; pointer-events:none}
+.bchip-list.lock .bchip.ok,.bchip-list.lock .bchip.bad{opacity:1}
+.bchip.ok{border-color:var(--t-ok-strong); background:var(--ok-soft); color:var(--t-ok-fg); font-weight:700}
+.bchip.bad{border-color:var(--err); background:var(--err-soft); color:var(--t-err-fg); font-weight:700;
+  text-decoration:line-through; text-decoration-thickness:2px}
+.bchip.bad .ck{background:var(--err); border-color:var(--err); color:var(--t-err-on)}
+.ans-line{margin:0 0 var(--sp-3); padding:9px 12px; border-radius:var(--r-s);
+  border:1px solid var(--t-ok-strong); border-left-width:4px; background:var(--ok-soft);
+  color:var(--ink); font-size:14.5px; font-weight:600}
+.ans-line .al-cap{color:var(--t-ok-fg); font-weight:800; margin-right:6px}
+.ans-line b{font-family:var(--font-num); color:var(--t-ok-fg); font-size:15.5px}
+/* 骨架标题栏：看答案/收起按钮贴在标题右侧，鼠标看代码时就在手边，
+   不用滚到页面底部的作答条去找（原来按钮在底部，等于藏起来了） */
+.pickcode .pc-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.pickcode .pc-rev{color:var(--t-ok-fg); font-weight:800}
+.pickcode .pc-btn{font-size:13px; padding:3px 10px; border-radius:999px}
 /* 旧文字作答的折叠区：改判分方式后仍能翻出原来写的东西，但不占版面 */
 details.kept-text{margin:0 0 var(--sp-2); font-size:14px; color:var(--ink-2)}
 details.kept-text summary{cursor:pointer; color:var(--brand-text); padding:2px 0}
@@ -4850,7 +4874,7 @@ var REVEAL={};
 /* 样卷式程序骨架：把 code 里的全角 （1）（2） 挖成可点空位。
    只认全角括号——代码里的 Dense(500)、Conv2D(200, (3,3)) 都是半角，
    若把半角也当空标记，Dense(10) 会被误挖成空位。 */
-function pickCodeHtml(q, draft, revealed){
+function pickCodeHtml(q, draft, revealed, ansSeq){
   var p=pickOf(q), code=String(p.code||"");
   var txtOf={};
   list(p.options).forEach(function(o){ txtOf[String(o[0]).toUpperCase()]=String(o[1]); });
@@ -4860,11 +4884,34 @@ function pickCodeHtml(q, draft, revealed){
     if(i%2===0){ out+=segs[i]; continue; }
     var n=parseInt(segs[i],10)||1;
     var v=String((draft||[])[n-1]||"").toUpperCase();
-    out+='<button type="button" class="pslot'+(v?" filled":"")+(revealed?" ans":"")+(n===BLANK_ACTIVE&&!revealed?" active":"")+'" data-slot="'+n+'"'+
+    /* 揭示态：**你填错的标红、正确答案标绿**两个并排；
+       填对或没填就只出绿的答案。draft 在这里是「你原本填的」，不是答案。 */
+    if(revealed){
+      var a=String((ansSeq||[])[n-1]||"").toUpperCase();
+      if(!a){
+        out+='<button type="button" class="pslot" data-slot="'+n+'" title="第 '+n+' 空（题库未给该空的答案）">（'+n+'）</button>';
+        continue;
+      }
+      if(v && v!==a){
+        out+='<button type="button" class="pslot wrong" data-slot="'+n+'" title="你填的 '+esc(v)+'：'+esc(txtOf[v]||"")+'（错）">'+esc(v)+'</button>'+
+          '<button type="button" class="pslot ans" data-slot="'+n+'" title="正确答案 '+esc(a)+'：'+esc(txtOf[a]||"")+'">'+esc(a)+'</button>';
+      } else {
+        out+='<button type="button" class="pslot ans" data-slot="'+n+'" title="正确答案 '+esc(a)+'：'+esc(txtOf[a]||"")+'">'+esc(a)+'</button>';
+      }
+      continue;
+    }
+    out+='<button type="button" class="pslot'+(v?" filled":"")+(n===BLANK_ACTIVE?" active":"")+'" data-slot="'+n+'"'+
       ' title="'+esc(v ? ("第 "+n+" 空： "+v+" · "+(txtOf[v]||"")) : ("第 "+n+" 空，点这里选中再点候选块"))+'">'+
       esc(v||("（"+n+"）"))+'</button>';
   }
-  return '<div class="pickcode"><span class="pc-cap">程序骨架 · 空位可直接点选（点空位定槽，再点下方候选块填入）</span>'+out+'</div>';
+  /* 「看答案 / 自己再做一次」贴在骨架标题栏右侧——眼睛正在读代码，按钮就在手边；
+     放在页面底部作答条里等于藏起来（用户反馈「没显示正确答案」实为此因之一）。 */
+  var head = revealed
+    ? '<span class="pc-cap"><span class="pc-rev">参考答案已展开</span> · 未计入任何记录</span>'+
+      '<button class="btn ghost pc-btn" type="button" id="q-reveal-reset">自己再做一次</button>'
+    : '<span class="pc-cap">程序骨架 · 空位可直接点选（点空位定槽，再点下方候选块填入）</span>'+
+      '<button class="btn ghost pc-btn" type="button" id="q-reveal">直接看答案</button>';
+  return '<div class="pickcode"><div class="pc-head">'+head+'</div>'+out+'</div>';
 }
 function firstEmptySlot(draft, n){
   for(var i=1;i<=n;i++){ if(!String((draft||[])[i-1]||"").trim()) return i; }
@@ -4950,9 +4997,14 @@ function renderQBody(q){
     var bank=list(q.options);
     var ansSeq=fillCanon(q);
     /* 「直接看答案」只对字母候选题开放：这类题的逐空答案在题库里有确定序列。
-       揭示态下 draft 换成答案，且**不写回 S.fillDraft**——看答案不算作答。 */
+       揭示态下 draft 仍是**你自己填的那份**——要拿它跟答案逐空比对才能标红标绿；
+       看答案绝不写回 S.fillDraft（看答案不算作答）。 */
     var reveal=!!REVEAL[q.id] && !!ansSeq && bank.length>0;
-    var draft=reveal ? ansSeq.slice(0,n) : (S.fillDraft[q.id] || (saved ? saved.slice() : []));
+    /* 有骨架的题把「看答案」按钮放进骨架标题栏，底部作答条不再重复（同名 id 只许出现一处） */
+    var pkAll=pickOf(q), hasCode=!!(pkAll && pkAll.code);
+    var draft=S.fillDraft[q.id] || (saved ? saved.slice() : []);
+    /* 揭示态用来判红绿：答案解析成大写字母序列，逐空比 */
+    var ansUp=(ansSeq||[]).slice(0,n).map(function(x){ return String(x||"").toUpperCase(); });
     var rows="";
     if(bank.length){
       /* 带候选项的填空（原卷给 A~H 的候选答案集合）：空位与候选块都能点，
@@ -4963,7 +5015,18 @@ function renderQBody(q){
       if(!reveal && (!BLANK_ACTIVE || BLANK_ACTIVE>n || String(draft[BLANK_ACTIVE-1]||""))) BLANK_ACTIVE=firstEmptySlot(draft,n);
       for(var i=1;i<=n;i++){
         var v=String(draft[i-1]||"").toUpperCase();
-        rows+='<li><span>空 '+i+'</span><button type="button" class="bslot'+(v?" filled":" empty")+(reveal?" ans":(i===BLANK_ACTIVE?" active":""))+'" data-slot="'+i+'">'+
+        /* 揭示态：填错的空先红后绿并排；填对或没填只出绿 */
+        if(reveal){
+          var av=ansUp[i-1]||"";
+          rows+='<li><span>空 '+i+'</span>'+
+            (av && v && v!==av
+              ? '<button type="button" class="bslot wrong" data-slot="'+i+'" title="你填的 '+esc(v)+'（错）"><span class="bval">'+esc(v)+'</span><span class="btxt">'+esc(txtOf[v]||"")+'</span></button>'
+              : '')+
+            '<button type="button" class="bslot ans" data-slot="'+i+'" title="正确答案 '+esc(av)+'：'+esc(txtOf[av]||"")+'">'+
+              '<span class="bval">'+esc(av)+'</span><span class="btxt">'+esc(txtOf[av]||"")+'</span></button></li>';
+          continue;
+        }
+        rows+='<li><span>空 '+i+'</span><button type="button" class="bslot'+(v?" filled":" empty")+(i===BLANK_ACTIVE?" active":"")+'" data-slot="'+i+'">'+
           (v?'<span class="bval">'+esc(v)+'</span><span class="btxt">'+esc(txtOf[v]||"")+'</span>':'')+'</button></li>';
       }
       /* 候选项已经在下面做成可点的块，就不再重复一遍静态「备选答案」清单 */
@@ -4976,21 +5039,26 @@ function renderQBody(q){
         : '';
       /* 有骨架的题（教材编程题）：直接让人在代码里点空，与 38A 原卷的填空形态一致；
          没骨架的题（官方 H-01 等题干本身不含代码）仍旧用「空 n」列表。 */
-      var slotView = (pk && pk.code) ? pickCodeHtml(q, draft, reveal) : ('<ul class="blanks pick">'+rows+'</ul>');
+      var slotView = (pk && pk.code) ? pickCodeHtml(q, draft, reveal, ansUp) : ('<ul class="blanks pick">'+rows+'</ul>');
       /* 答案对照：光给字母看不出是什么意思（A=20 还是 A=read_csv），逐空带出候选文字 */
+      /* 答案对照行紧跟骨架，放在候选块**之前**：答案和它对应的空位在同一屏，
+         滚到候选块下方才看到的话，等于没看见。 */
       var ansLine = reveal
-        ? '<p class="ans-line">参考答案（未计入记录）：'+ansSeq.slice(0,n).map(function(k,i){
+        ? '<p class="ans-line"><span class="al-cap">参考答案</span>'+ansSeq.slice(0,n).map(function(k,i){
             return '（'+(i+1)+'）<b>'+esc(k)+'</b> '+esc(txtOf[String(k).toUpperCase()]||"");
-          }).join("　·　")+'</p>'
+          }).join("　·　")+'<span class="tiny muted" style="font-weight:400">　未计入记录</span></p>'
         : '';
-      area.innerHTML=kept+slotView+
+      area.innerHTML=kept+slotView+ansLine+
         '<div class="bchip-list'+(reveal?" lock":"")+'">'+bank.map(function(o){
           var k=String(o[0]).toUpperCase(), used=String(draft.join("")).toUpperCase().indexOf(k)>=0;
-          return '<button type="button" class="bchip'+(used?" used":"")+'" data-chip="'+esc(k)+'"'+(reveal?' disabled aria-disabled="true"':'')+'><span class="ck">'+esc(k)+'</span><span>'+esc(o[1])+'</span></button>';
+          /* 揭示态：正确的候选块标绿，你选错的那个标红划掉，其余压暗——三种状态一眼分清 */
+          var isAns=ansUp.indexOf(k)>=0;
+          var mark=reveal ? (isAns?" ok":(used?" bad":"")) : (used?" used":"");
+          return '<button type="button" class="bchip'+mark+'" data-chip="'+esc(k)+'"'+(reveal?' disabled aria-disabled="true"':'')+'><span class="ck">'+esc(k)+'</span><span>'+esc(o[1])+'</span></button>';
         }).join("")+'</div>'+
-        ansLine+
         (reveal
-          ? '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)">答案已摊开，候选块只作对照、不能再点。想自己再试一遍就点下面的「自己再做一次」。</p>'
+          ? '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)"><b style="color:var(--t-ok-fg)">绿色＝正确答案</b>，'+
+            '<b style="color:var(--t-err-fg)">红色划线＝你填错的</b>；候选块只作对照、不能再点。想自己再试一遍就点「自己再做一次」。</p>'
           : '<p class="tiny muted" style="margin:-4px 0 var(--sp-3)">先点一个空位再点候选块；点已填的空位可以清空重选。</p>')+
         /* 判分依据分两种，不能混为一谈：
            ① 官方模拟卷（FILL_CANON）——卷内不含答案，逐空答案是题库依据教材推导的；
@@ -5011,11 +5079,14 @@ function renderQBody(q){
        记录立刻失真。要判分必须先「自己再做一次」把答案清掉。 */
     area.innerHTML+=reveal
       ? '<div class="ansbar">'+
-          '<button class="btn primary" type="button" id="q-reveal-reset">自己再做一次</button>'+
-          '<span class="tiny muted">上面是参考答案，未写入任何记录。点左边清掉答案，回到自己填。</span></div>'
+          (hasCode
+            ? '<span class="tiny muted">上面是参考答案，未写入任何记录。想自己再填一遍，点骨架右上角「自己再做一次」。</span>'
+            : '<button class="btn primary" type="button" id="q-reveal-reset">自己再做一次</button>'+
+              '<span class="tiny muted">上面是参考答案，未写入任何记录。点左边清掉答案，回到自己填。</span>')+
+        '</div>'
       : '<div class="ansbar">'+
           '<button class="btn primary" type="button" id="q-submit">'+(done?"重新判定":"提交判定")+'</button>'+
-          (bank.length && fillCanon(q)
+          (bank.length && fillCanon(q) && !hasCode
             ? '<button class="btn sm" type="button" id="q-reveal">直接看答案</button>'
             : '')+
           '<span class="tiny muted">'+(bank.length?"字母题按字母判分，全部对上才算对。":"短答案自动比对；整句答案没有客观判分依据，提交后按参考答案自核。")+'</span>'+
