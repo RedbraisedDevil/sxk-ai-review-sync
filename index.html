@@ -817,6 +817,13 @@ th{background:var(--brand-soft); color:var(--ink); font-weight:600; font-size:15
 /* ===== 错题本 ===== */
 .mistake{display:grid; grid-template-columns:1fr; gap:var(--sp-2); align-items:center; border:1px solid var(--line); border-radius:var(--r-s); padding:12px 14px; background:var(--surface)}
 .mistake .acts{display:flex; gap:6px; flex-wrap:wrap}
+/* 错题按来源分区归堆：分组头与「题库分类」的分区名同源（CAT_DEF），
+   计数写在组头上，一眼看出哪一类错得最多。 */
+.misgrp{display:grid; gap:var(--sp-2); min-width:0}
+.misgrp-h{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; padding-bottom:6px; border-bottom:1px solid var(--line)}
+.misgrp-h h2{font-size:15.5px; margin:0}
+.misgrp-h .cnt{font-size:14.5px; color:var(--ink-2)}
+.misgrp-h .pct{font-size:14.5px; color:var(--ink-3)}
 
 /* ===== 浮层 ===== */
 .toast{position:fixed; left:50%; bottom:26px; transform:translate(-50%,14px); opacity:0; pointer-events:none;
@@ -1207,15 +1214,16 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       <div class="vhead">
         <div>
           <h1 id="h-mistakes">错题本</h1>
-          <p>错因由作答判定写入，重做直接回到该题。仅记录在本机浏览器，不做学情统计。</p>
+          <p>错因由作答判定写入，重做直接回到该题。按<b>题库分类的同一套来源分区</b>归堆，分区名字与「题库分类」页一致，不另造一套叫法。仅记录在本机浏览器，不做学情统计。</p>
         </div>
         <span class="demo">本机记录 · 可导出/导入同步</span>
       </div>
+      <div class="filters" id="mis-f-cat" role="group" aria-label="按来源分区筛选错题"></div>
       <div class="row" style="margin-bottom:var(--sp-3)">
         <button class="btn" id="mis-redo-all" type="button">按错题顺序重做全部</button>
         <button class="btn danger" id="mis-clear" type="button">清空错题本</button>
       </div>
-      <div class="grid" id="mistake-list"></div>
+      <div class="stack" id="mistake-list"></div>
       <p class="tiny muted" style="margin-top:var(--sp-3)">清空的只是本机记录，不影响题库数据。</p>
     </section>
 
@@ -1654,6 +1662,9 @@ var S={
   fillDraft: {},
   parseAlways: (Store.get(KEY_PREF)||{}).parseAlways!==false,
   bank: {cat:"all", pack:"all", type:"all", req:"all", kw:"", syl:null},
+  /* 错题本的来源分区筛选：只活在本页内存，不落 Store、不进同步、不新增存储键，
+     避免动到既有学习记录的键域。刷新回「全部」。 */
+  misCat: "all",
   mapFilter: "all",
   plan: Store.get(KEY_PLAN)||{},            /* 学习计划勾选：{itemId:ts}，刷新与关机都不丢 */
   planDel: Store.get(KEY_PLAN_DEL)||{}      /* 计划取消勾选墓碑：{itemId:ts}。没有它，取消会在下次云同步时被远端旧勾选复活 */
@@ -5894,25 +5905,87 @@ function renderMapStats(){
 }
 /* ---------- 错题本 ---------- */
 function fmtTs(ts){ var d=new Date(ts); return ymd(d)+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+/* 错题的分区直接取题库里这道题的分区键（catOf），与「题库分类」页用的是同一个字段、
+   同一份 CAT_DEF；不按题号前缀猜、不按 sourceLabel 二次判断。
+   题库更新后题已不在库里的，单独归到 __gone__ 一档——不能混进任何真实分区，
+   否则「官方模拟卷」里会冒出几道查无此题的记录。 */
+var MIS_GONE="__gone__";
+function misCatOf(m){ var q=BY_ID[m.id]; return q ? catOf(q) : MIS_GONE; }
+function misGroups(){
+  var g={}, seq=[];
+  S.mis.forEach(function(m){
+    var k=misCatOf(m);
+    if(!g[k]){ g[k]=[]; seq.push(k); }
+    g[k].push(m);
+  });
+  var order=CAT_DEF.map(function(c){ return c.k; });
+  seq.sort(function(a,b){
+    var ia=order.indexOf(a), ib=order.indexOf(b);
+    if(ia<0) ia=order.length; if(ib<0) ib=order.length;
+    return ia-ib;
+  });
+  return seq.map(function(k){ return {k:k, list:g[k]}; });
+}
+function misItemHtml(m){
+  var q=BY_ID[m.id];
+  return '<div class="mistake"><div><div class="row" style="gap:6px;margin-bottom:4px">'+
+      (q ? srcTag(q)+'<span class="tag sm2">'+esc(typeOf(q))+'</span>' : '<span class="tag">题库中已无此题</span>')+
+      '<span class="num tiny muted">'+esc(m.id)+'</span></div>'+
+    '<p class="tiny" style="margin:0">错因：'+esc(m.why||"—")+(m.tip?('　·　'+esc(m.tip)):'')+'</p>'+
+    (q ? '<p class="tiny muted" style="margin:4px 0 0">'+esc(String(q.stem||"").slice(0,90))+'</p>' : '<p class="tiny muted" style="margin:4px 0 0">该题已不在当前题库中，可能题库已更新。</p>')+
+    '<p class="tiny muted" style="margin:4px 0 0">记录时间 '+esc(fmtTs(m.ts||Date.now()))+'</p>'+
+    '</div><div class="acts">'+
+    '<button class="btn sm" type="button" data-redo="'+esc(m.id)+'">重做这题</button>'+
+    '<button class="btn sm danger" type="button" data-rm="'+esc(m.id)+'">移除</button></div></div>';
+}
 function renderMistakes(){
   var host=$("#mistake-list"); if(!host) return;
+  var bar=$("#mis-f-cat");
+  var redoBtn=$("#mis-redo-all");
   if(!S.mis.length){
+    if(bar) bar.innerHTML='';
+    if(redoBtn) redoBtn.textContent="按错题顺序重做全部";
     host.innerHTML='<div class="empty">本机暂无错题记录。答错时会自动记入，也可以在任意题目上点「标记为错题（看答案）」。<div class="row" style="margin-top:10px"><button class="btn sm primary" data-go="#/bank">去题库挑题</button><button class="btn sm" data-go="#/exam">去模拟考场</button></div></div>';
     return;
   }
-  host.innerHTML=S.mis.map(function(m){
-    var q=BY_ID[m.id];
-    return '<div class="mistake"><div><div class="row" style="gap:6px;margin-bottom:4px">'+
-        (q ? srcTag(q)+'<span class="tag sm2">'+esc(typeOf(q))+'</span>' : '<span class="tag">题库中已无此题</span>')+
-        '<span class="num tiny muted">'+esc(m.id)+'</span></div>'+
-      '<p class="tiny" style="margin:0">错因：'+esc(m.why||"—")+(m.tip?('　·　'+esc(m.tip)):'')+'</p>'+
-      (q ? '<p class="tiny muted" style="margin:4px 0 0">'+esc(String(q.stem||"").slice(0,90))+'</p>' : '<p class="tiny muted" style="margin:4px 0 0">该题已不在当前题库中，可能题库已更新。</p>')+
-      '<p class="tiny muted" style="margin:4px 0 0">记录时间 '+esc(fmtTs(m.ts||Date.now()))+'</p>'+
-      '</div><div class="acts">'+
-      '<button class="btn sm" type="button" data-redo="'+esc(m.id)+'">重做这题</button>'+
-      '<button class="btn sm danger" type="button" data-rm="'+esc(m.id)+'">移除</button></div></div>';
+  var groups=misGroups();
+  var cntOf={}; groups.forEach(function(g){ cntOf[g.k]=g.list.length; });
+  /* 分类条：与「题库分类」同一套七分区，计数是错题数（不是题量） */
+  if(bar){
+    bar.innerHTML='<span class="flabel">来源分区</span>'+
+      chipBtn("全部 "+S.mis.length, S.misCat==="all", 'data-mfc="all"')+
+      CAT_DEF.map(function(c){
+        /* 分区名沿用「题库分类」页的短名（38A 模拟卷／考纲样题／教材例题…），计数是错题数 */
+        var nm=String(c.short||c.label);
+        return chipBtn(nm+" "+(cntOf[c.k]||0), S.misCat===c.k, 'data-mfc="'+esc(c.k)+'"');
+      }).join("")+
+      (cntOf[MIS_GONE]?chipBtn("题库已无 "+cntOf[MIS_GONE], S.misCat===MIS_GONE, 'data-mfc="'+MIS_GONE+'"'):'');
+  }
+  var show=(S.misCat==="all") ? groups : groups.filter(function(g){ return g.k===S.misCat; });
+  if(!show.length){
+    var lb=(S.misCat===MIS_GONE)?"「题库已无」":("「"+catLabel(S.misCat)+"」");
+    host.innerHTML='<div class="empty">'+esc(lb)+'这一类里没有错题。点上面的「全部」看其他分区。</div>';
+    if(redoBtn) redoBtn.textContent="按错题顺序重做全部";
+    return;
+  }
+  host.innerHTML=show.map(function(g){
+    var label=(g.k===MIS_GONE)?"题库中已无此题":catLabel(g.k);
+    var pct=Math.round(g.list.length/S.mis.length*100);
+    return '<div class="misgrp"><div class="misgrp-h"><h2>'+esc(label)+'</h2>'+
+      '<span class="cnt num">'+g.list.length+' 题</span>'+
+      '<span class="pct num">占错题本 '+pct+'%</span></div>'+
+      '<div class="grid">'+g.list.map(misItemHtml).join("")+'</div></div>';
   }).join("");
+  if(redoBtn){
+    redoBtn.textContent=(S.misCat==="all")
+      ? "按错题顺序重做全部（"+S.mis.length+" 题）"
+      : "重做「"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"」这 "+show[0].list.length+" 题";
+  }
 }
+$("#mis-f-cat") && $("#mis-f-cat").addEventListener("click", function(e){
+  var b=e.target.closest ? e.target.closest("[data-mfc]") : null; if(!b) return;
+  S.misCat=b.getAttribute("data-mfc"); renderMistakes();
+});
 $("#mistake-list") && $("#mistake-list").addEventListener("click", function(e){
   var redo=e.target.closest ? e.target.closest("[data-redo]") : null;
   if(redo){ openQuestion(redo.getAttribute("data-redo"), null, "错题本", true); return; }
@@ -5929,10 +6002,14 @@ $("#mis-clear") && $("#mis-clear").addEventListener("click", function(){
   clearMis(); renderMistakes(); toast("已清空本机错题记录（共 "+n+" 题）");
 });
 $("#mis-redo-all") && $("#mis-redo-all").addEventListener("click", function(){
+  /* 按当前分区取题：选了「教材例题」就只重做那一类，别把整本错题糊上来 */
+  var bag=S.mis.filter(function(m){ return S.misCat==="all" || misCatOf(m)===S.misCat; });
+  if(!bag.length){ toast("当前分区里没有错题"); return; }
   var idxs=[];
-  S.mis.forEach(function(m){ if(IDX[m.id]!==undefined) idxs.push(IDX[m.id]); });
-  if(!idxs.length){ toast("错题本里没有仍在题库中的题目"); return; }
-  startPractice(idxs, "错题重做（"+idxs.length+" 题）", true);
+  bag.forEach(function(m){ if(IDX[m.id]!==undefined) idxs.push(IDX[m.id]); });
+  if(!idxs.length){ toast("这些错题已不在题库中，无法重做"); return; }
+  var scope=(S.misCat==="all")?"错题重做":("错题重做（"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"）");
+  startPractice(idxs, scope+"（"+idxs.length+" 题）", true);
 });
 /* ---------- 来源与口径 ---------- */
 function renderSources(){
