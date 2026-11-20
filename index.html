@@ -753,6 +753,10 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
 .s0tbl .mb{display:inline-block; min-width:56px; height:6px; border-radius:3px; background:var(--brand); vertical-align:middle; margin-right:8px}
 .s0tbl .mbtrack{display:inline-block; width:56px; height:6px; border-radius:3px; background:var(--line); vertical-align:middle; margin-right:8px; overflow:hidden}
 .s0tbl .mbtrack i{display:block; height:100%; background:var(--brand); border-radius:3px}
+/* 知识点表的「进度」列：条宽比通用 56px 略宽，数字紧跟其后，不换行 */
+.s0tbl td.knpg{white-space:nowrap}
+.s0tbl td.knpg .mbtrack{width:72px; margin-right:6px}
+.s0tbl td.knpg .knpn{color:var(--ink-2); font-family:var(--font-num)}
 .s0tbl .pk{font-family:var(--font-num); color:var(--ink-2)}
 .gcard.s0card.pend{border-left-color:var(--line)}
 /* S0 两张分值表的窄屏取舍：藏「怎么拿」「占比」「题包」这些说明列，
@@ -3364,20 +3368,32 @@ function s0BlockHtml(){
   var cumLine=Math.round(S0_TARGET150*tot/S0_PAPER);
   var cumRow=(function(){ var c=0,i; for(i=0;i<rows.length;i++){ c+=rows[i].score; if(c>=cumLine) return i+1; } return rows.length; })();
   /* 34 个 ML-DL 知识点按档位排：样卷分现算，全库题量给「练」的入口 */
-  var ksTb="", ksSum=0, ksCnt=0;
+  /* 每行带实时进度：已练／总题＋答对率，条与数字都取自 goalStat(idxs)，
+     与目标卡、「题库分类」共用同一套记录，不另算一份。 */
+  var ksTb="", ksSum=0, ksCnt=0, ksS={n:0,done:0,graded:0,ok:0};
   ["S","A","B","C"].forEach(function(tier){
     var names=S0_KS[tier]||[];
-    ksTb+='<tr class="gapgrp"><td colspan="4">'+tier+' 档 · '+esc(S0_KDESC[tier])+' · '+names.length+' 个知识点</td></tr>';
+    ksTb+=/* 不用 colspan：窄屏会隐藏「全库题」列，colspan=5 会跨到表外错位（排程表踩过一次） */
+    '<tr class="gapgrp"><td>'+tier+' 档 · '+esc(S0_KDESC[tier])+' · '+names.length+' 个知识点</td>'+
+      '<td></td><td class="sm-hide"></td><td></td><td></td></tr>';
     names.forEach(function(nm,ni){
-      var idxs=goalHits({item:nm}), sc=scoreOfIdxs(idxs);
+      var idxs=goalHits({item:nm}), sc=scoreOfIdxs(idxs), st=goalStat(idxs);
       if(tier!=="C"){ ksSum+=sc; ksCnt++; }
+      if(tier==="S"){ ksS.n+=st.n; ksS.done+=st.done; ksS.graded+=st.graded; ksS.ok+=st.ok; }
+      var pctv=st.n?Math.round(st.done*100/st.n):0;
+      var pg = idxs.length
+        ? '<span class="mbtrack"'+(st.done?'':' style="opacity:.4"')+'><i style="width:'+pctv+'%"></i></span>'+
+          '<span class="tiny num knpn">'+st.done+'/'+st.n+(st.graded?' · '+st.pct+'%':'')+'</span>'
+        : '<span class="tiny muted">—</span>';
       ksTb+='<tr'+(tier==="C"?' class="dim"':'')+'>'+
         '<td>'+(tier==="C"?'<span class="tiny muted">弃</span> ':'')+esc(nm)+'</td>'+
         '<td class="num">'+(sc?'<b>'+sc+'</b> 分':'<span class="muted">0</span>')+'</td>'+
-        '<td class="num">'+(idxs.length?idxs.length+' 题':'<span class="muted">0</span>')+'</td>'+
+        '<td class="num sm-hide">'+(idxs.length?idxs.length+' 题':'<span class="muted">0</span>')+'</td>'+
+        '<td class="knpg">'+pg+'</td>'+
         '<td class="num">'+(idxs.length?'<button class="btn sm ghost" type="button" data-kn="'+esc(nm)+'">练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
     });
   });
+  var ksSPct=ksS.n?Math.round(ksS.done*100/ksS.n):0, ksSRate=ksS.graded?Math.round(ksS.ok*100/ksS.graded):0;
   /* H 四题模板：主观 76 分的全部内容，逐空摊平便于默写自检 */
   var htplTb=S0_HTPL.map(function(x){
     return '<tr><td><b>'+esc(x.t)+'</b><div class="tiny muted mono" style="margin-top:2px">'+esc(x.id)+'</div></td>'+
@@ -3471,9 +3487,14 @@ function s0BlockHtml(){
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">档位判据可复算：<b>S</b>＝在 38A 主观题里出现过；<b>A</b>＝客观题样卷命中 ≥2 次；'+
       '<b>B</b>＝命中 1 次；<b>C</b>＝样卷零命中。S 档 9 个撑起主观 '+bl[2].s+' 分加客观 18 分，是全卷性价比最高的一块；'+
       '<b>C 档 8 个知识点（PCA、层次聚类、LDA、Q 学习、Sequential、数据预处理、有监督概念、Transformer）直接放弃</b>，'+
-      '样卷一次都没考，省下的时间够把 S 档刷两遍。分值列是这套卷面（甲情形）里的实际分。</p>'+
+      '样卷一次都没考，省下的时间够把 S 档刷两遍。分值列是这套卷面（甲情形）里的实际分。'+
+      '<b>「进度」列是本机作答记录实时算的</b>：条是已练／全库题，后面数字是「已练 题数／总题 · 答对率」；'+
+      'S 档 9 个合计 <b>'+ksS.done+'/'+ksS.n+' 题（'+ksSPct+'%）</b>'+
+      (ksS.graded?('，已判分 '+ksS.graded+' 题答对率 <b>'+ksSRate+'%</b>'):'，还没有判分记录')+
+      '。点「练」进题库做完再回来，这里的数字会跟着变。'+
+      'S 档 9 个刷到 <b>90% 以上</b>，客观 ML-DL 那 18 分与主观 76 分的底子就齐了。</p>'+
     '<div class="s0tbl gaptbl wrap"><table><thead><tr><th>知识点</th>'+
-      '<th class="num">卷面分</th><th class="num">全库题</th><th></th></tr></thead><tbody>'+
+      '<th class="num">卷面分</th><th class="num sm-hide">全库题</th><th>进度</th><th></th></tr></thead><tbody>'+
       ksTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">按分值排序的题库分类</h3>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算，口径固定为「甲情形」：'+
