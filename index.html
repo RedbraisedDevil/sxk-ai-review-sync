@@ -2298,7 +2298,15 @@ function kindChip(q){
 /* ---------- 题目类型与字段读取（全部做缺省保护，字段缺失不报错） ---------- */
 function typeOf(q){ return String(q.type||"未标题型"); }
 function isMulti(q){ return typeOf(q).indexOf("多选")>=0; }
-function isSubjective(q){ var t=typeOf(q); return t.indexOf("编程")>=0 || t.indexOf("方案设计")>=0 || t.indexOf("论述")>=0 || t.indexOf("简答")>=0 || t.indexOf("设计")>=0; }
+/* 「整段作答」的题型：这些题给的是论述／推导／计算过程，页面上应当出一个大文本框，不能拆成逐空。
+   原先漏了「解答／证明／计算」，于是 64 道这类题里有 25 道被当成逐空题处理——题干写「试阐述……」
+   却渲染出 12 个输入框（RAW-YL-8-07／RAW-YL-9-07）。「填空」故意不在此列：填空就是要逐空填。 */
+function isSubjective(q){
+  var t=typeOf(q);
+  return t.indexOf("编程")>=0 || t.indexOf("方案设计")>=0 || t.indexOf("论述")>=0 ||
+         t.indexOf("简答")>=0 || t.indexOf("设计")>=0 || t.indexOf("解答")>=0 ||
+         t.indexOf("证明")>=0 || t.indexOf("计算")>=0;
+}
 function isCodeLike(q){ var t=typeOf(q); return t.indexOf("程序填空")>=0 || t.indexOf("编程")>=0 || t.indexOf("程序选择")>=0 || t.indexOf("程序阅读")>=0; }
 function hasOptions(q){ return list(q.options).length>0; }
 /* 真正“从选项里选”的题型：单选、多选。其余带 options 的题（程序填空/程序选择/程序阅读/主观题）
@@ -2317,7 +2325,9 @@ function isJudgeQ(q){ return typeOf(q).indexOf("判断")>=0 && judgeKey(q)!=="";
 function isOpenQ(q){
   if(isSubjective(q)) return true;
   if(String(q.answer||"").indexOf("见评分要点")>=0) return true;
-  return blankCount(q)>12;
+  var bc=blankCount(q);
+  /* 空数推不出来（0 空）时也不能硬造一个输入框——那正是「一个题干配 1 个莫名其妙的白框」的来源 */
+  return bc>12 || bc<=0;
 }
 /* H／I 四道编程填空：answer 字段写的是「见评分要点」（官方模拟卷卷内不含答案），
    逐空的标准字母只存在于 rubric 里。不把这张表补上，这四题在页面上就退化成一块
@@ -2354,8 +2364,7 @@ function canPickFill(q){
    ① 答案里的 (1)(2)(3) 编号数 → 最可靠（程序填空/程序选择/程序阅读）；
    ② 题干里的 (1)（2）编号数（去重）；
    ③ 下划线空位，相邻两段之间夹着编号或“填空”字的（________（1）________）合并成一个；
-   ④ 纯字母答案的字母个数；
-   其余按 1 空。 */
+   ④ 纯字母答案的字母个数（答案含中文则不计，返回 0）。
 function distinctNums(s){
   var t=String(s||""), re=/[（(]\s*(\d+)\s*[）)]/g, m, set={}, n=0;
   while((m=re.exec(t))){ if(!set[m[1]]){ set[m[1]]=1; n++; } }
@@ -2372,6 +2381,12 @@ function blankCount(q){
   });
   var runs=(merged.match(/_{3,}|\u0001/g)||[]).length;
   if(runs) return runs;
+  /* 末级兜底：只有「答案本身就是一串选项字母」（A、C、E / ABCDEF）时才把字母个数当空数。
+     中文论述里的英文术语（L-BFGS、FGSM、PGD、AllReduce…）不是空位——
+     RAW-YL-8-07 的答案里正好 12 个字母，被这里错切成 12 空，又刚好卡在 isOpenQ 的 >12 阈值下，
+     于是「试阐述白盒攻击和黑盒攻击的含义」变成了 12 个文本输入框。含中文一律不据此推空位。 */
+  if(/[\u4e00-\u9fa5]/.test(an)) return 0;
+  if(!/^[A-Za-z][A-Za-z0-9、,，;；\/\s]*$/.test(an.replace(/\s+$/,""))) return 0;
   var letters=an.replace(/[^A-Za-z]/g,"").length;
   return letters || 0;
 }
@@ -4632,28 +4647,33 @@ function stemPlainHtml(q, raw){
 var DT_LAB={
   "GUIDE-ESSAY-08":{
     title:"鸟能飞 · 决策树划分实验台",
-    hint:"拖动滑块改划分条件，右侧样本表会实时显示这只鸟被判定成能飞（T）还是不能飞（F）。默认四个条件与原卷答案一致。",
+    hint:"拖动滑块改划分条件，样本表会实时显示这只鸟被判定成能飞（T）还是不能飞（F）。起点是一组中性的默认条件，不是答案——自己把四条划分拖到能分开 9 条样本为止；交卷后才显示命中几只。",
     cols:["Instance","No. of Wings","Broken Wings","Living Status","Wing Area/Weight","Fly"],
     rows:[
       [1,2,0,"alive",2.5,"T"],[2,2,1,"alive",2.5,"F"],[3,2,2,"alive",2.6,"F"],
       [4,2,0,"dead",3,"F"],[5,2,0,"dead",3.2,"F"],[6,0,0,"alive",0,"F"],
       [7,1,0,"alive",0,"F"],[8,2,0,"alive",3.4,"T"],[9,2,0,"alive",2,"F"]
     ],
-    /* 层序即树的层序：任一层不通过就直接落 F 叶子。atype 决定滑块的语义与判据 */
+    /* 层序即树的层序：任一层不通过就直接落 F 叶子。atype 决定滑块的语义与判据。
+       def 是原卷答案那四个条件（作答后才用）；seed 是中性起点，保证「一打开就是答案」不会发生。 */
     splits:[
-      {key:"wings", label:"翅膀数", en:"no.-of-wings", op:"=", atype:"eq", col:1, min:0, max:2, step:1, def:2, fmt:function(v){return v+" 只";}},
-      {key:"broken", label:"破损翅膀数", en:"broken-wings", op:"=", atype:"eq", col:2, min:0, max:2, step:1, def:0, fmt:function(v){return v+" 只";}},
-      {key:"living", label:"存活状态", en:"status", op:"=", atype:"eq", col:3, min:0, max:1, step:1, def:1, fmt:function(v){return v?"alive":"dead";}},
-      {key:"ratio", label:"翼面积/体重 ≥", en:"area/weight", op:"≥", atype:"ge", col:4, min:1.5, max:3.5, step:0.1, def:2.5, fmt:function(v){return v.toFixed(1);}}
+      {key:"wings", label:"翅膀数", en:"no.-of-wings", op:"=", atype:"eq", col:1, min:0, max:2, step:1, def:2, seed:0, fmt:function(v){return v+" 只";}},
+      {key:"broken", label:"破损翅膀数", en:"broken-wings", op:"=", atype:"eq", col:2, min:0, max:2, step:1, def:0, seed:2, fmt:function(v){return v+" 只";}},
+      {key:"living", label:"存活状态", en:"status", op:"=", atype:"eq", col:3, min:0, max:1, step:1, def:1, seed:0, fmt:function(v){return v?"alive":"dead";}},
+      {key:"ratio", label:"翼面积/体重 ≥", en:"area/weight", op:"≥", atype:"ge", col:4, min:1.5, max:3.5, step:0.1, def:2.5, seed:3.5, fmt:function(v){return v.toFixed(1);}}
     ]
   }
 };
 var DT_STATE={};
 function dtCfg(id){ return DT_LAB[id]||null; }
-function dtVals(id){
+function dtVals(id, revealed){
   var cfg=dtCfg(id); if(!cfg) return null;
   if(!DT_STATE[id]){
-    var v={}; cfg.splits.forEach(function(s){ v[s.key]=s.def; });
+    var v={};
+    cfg.splits.forEach(function(s){
+      /* 未作答：用中性起点；已作答：才回到原卷答案那一组条件 */
+      v[s.key]=(revealed ? s.def : (s.seed===undefined ? s.def : s.seed));
+    });
     DT_STATE[id]=v;
   }
   return DT_STATE[id];
@@ -4687,9 +4707,10 @@ function dtRuleText(cfg, v){
   });
   return "Fly = "+parts.join(" ∧ ");
 }
-function dtLabHtml(id){
+function dtLabHtml(id, revealed){
   var cfg=dtCfg(id); if(!cfg) return "";
-  var v=dtVals(id);
+  var rev=!!revealed;
+  var v=dtVals(id, rev);
   var sliders=cfg.splits.map(function(s){
     var val=v[s.key];
     return '<div class="dtrow">'+
@@ -4706,15 +4727,19 @@ function dtLabHtml(id){
   }).join('<span class="dtarrow">↓</span>')+'<span class="dtarrow">↓</span><div class="dtleaf">成立 → T（能飞）</div></div>';
   var body=cfg.rows.map(function(r,ri){
     var p=dtPredict(cfg, r, v), ok=p===r[5];
+    /* 未作答时预测列只写 T／F，不标红绿：标了就等于把 9 条样本的对错答案直接交出去 */
     return '<tr data-dtsample="'+ri+'"><td class="num">'+r[0]+'</td><td class="num">'+r[1]+'</td><td class="num">'+r[2]+
       '</td><td>'+r[3]+'</td><td class="num">'+r[4]+'</td><td class="num">'+r[5]+
-      '</td><td class="num dtpred '+(ok?"ok":"bad")+'">'+p+'</td></tr>';
+      '</td><td class="num dtpred'+(rev?(ok?" ok":" bad"):"")+'">'+p+'</td></tr>';
   }).join("");
   var head=cfg.cols.map(function(c,i){ return '<th'+(i===3?'':' class="num"')+'>'+esc(c)+'</th>'; }).join("");
   var right=cfg.rows.filter(function(r){ return dtPredict(cfg,r,v)===r[5]; }).length;
-  return '<div class="dtlab" data-dtlab="'+esc(id)+'">'+
+  var accTxt = rev
+    ? ('预测正确 '+right+'／'+cfg.rows.length)
+    : ('已按当前条件判完 '+cfg.rows.length+' 条样本 · 对错交卷后显示');
+  return '<div class="dtlab" data-dtlab="'+esc(id)+'" data-dtrev="'+(rev?"1":"0")+'">'+
     '<div class="dtlab-h"><b>'+esc(cfg.title)+'</b>'+
-      '<span class="dtacc" data-dtacc>预测正确 '+right+'／'+cfg.rows.length+'</span></div>'+
+      '<span class="dtacc" data-dtacc>'+esc(accTxt)+'</span></div>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">'+esc(cfg.hint)+'</p>'+
     '<div class="dtgrid"><div class="dtctl">'+sliders+'</div>'+tree+'</div>'+
     '<div class="dtrule" data-dtrule>'+esc(dtRuleText(cfg,v))+'</div>'+
@@ -4726,6 +4751,7 @@ function dtLabHtml(id){
 function dtRefresh(id){
   var cfg=dtCfg(id), v=dtVals(id); if(!cfg) return;
   var box=document.querySelector('[data-dtlab="'+id+'"]'); if(!box) return;
+  var rev=box.getAttribute("data-dtrev")==="1";
   cfg.splits.forEach(function(s){
     var out=box.querySelector('[data-dtval="'+s.key+'"]');
     if(out) out.textContent=s.fmt(v[s.key]);
@@ -4738,10 +4764,13 @@ function dtRefresh(id){
     if(ok) right++;
     var tr=box.querySelector('[data-dtsample="'+ri+'"]'); if(!tr) return;
     var cell=tr.querySelector(".dtpred");
-    if(cell){ cell.textContent=p; cell.className="num dtpred "+(ok?"ok":"bad"); }
+    /* 未作答不标红绿：那是 9 条样本的对错答案 */
+    if(cell){ cell.textContent=p; cell.className="num dtpred"+(rev?(ok?" ok":" bad"):""); }
   });
   var acc=box.querySelector("[data-dtacc]");
-  if(acc) acc.textContent="预测正确 "+right+"／"+cfg.rows.length;
+  if(acc) acc.textContent = rev
+    ? ("预测正确 "+right+"／"+cfg.rows.length)
+    : ("已按当前条件判完 "+cfg.rows.length+" 条样本 · 对错交卷后显示");
   var rule=box.querySelector("[data-dtrule]");
   if(rule) rule.textContent=dtRuleText(cfg,v);
 }
@@ -4931,9 +4960,13 @@ function renderQBody(q){
   var html = stemBlockHtml(q);
   html+=stemFigNoteHtml(q);
   /* 决策树题没有配图就等于题目残缺：数据表给了、要「画树」却没有可操作的对象。
-     这里给一个滑块实验台，学生自己把四个划分条件拖到位，看 9 条样本怎么被分开。 */
-  html+=dtLabHtml(q.id);
-  html+=dtTreeHtml(q.id);
+     这里给一个滑块实验台，学生自己把四个划分条件拖到位，看 9 条样本怎么被分开。
+     未作答时传 done=false：起点是中性的，不标样本对错、不报 9/9。 */
+  html+=dtLabHtml(q.id, done);
+  /* 图 4.3 的重画本身就是这道题的答案：未作答时画在作答区等于把答案摊在桌上。
+     作答后才给对照图，供学生比对「我画的那棵树」与教材重画版的差别。 */
+  if(done) html+=dtTreeHtml(q.id);
+  else if(DT_TREE[q.id]) html+='<p class="tiny muted">本题要求自己画出决策树：提交作答后，这里会出现按教材正文重画的对照图。</p>';
   if(bc>0 && (isOpenQ(q)===false || canPickFill(q)) && isChoiceQ(q)===false && isJudgeQ(q)===false) html+='<p class="tiny muted">本题题干含 <span class="num">'+bc+'</span> 个空位（原文以 ________ 或 (1)(2) 标出）。</p>';
   /* code：题干要引用的程序骨架／算式／字面量清单，33 题有。必须放在选项之前，
      否则「下列填空正确的是」这类题无法作答。只转义不解析，避免代码里的 ** 被当强调。 */
@@ -5783,6 +5816,15 @@ function tickTimer(){
   paintTimer();
 }
 function startPack(p){
+  /* 考试进行中换题包：必须先把上一场收干净。原先的顺序是「清题集 → T.left=150:00 → startTimer
+     （见 T.running 为真直接 return）→ saveExamNow（syncLeft 按**旧 deadline** 把 left 又覆盖回去）」，
+     于是新题包继承了上一场的时间轴：可能一进去只剩几分钟，甚至直接判超时；而原题包的已答成绩已被清掉。
+     这里改成单一入口——先问、再停旧计时（清 interval＋结清 deadline）、最后才重置题集与计时轴。 */
+  if(T.started && (T.running || T.ids.length)){
+    if(!confirm("当前这场考试还没交卷（"+(T.running?"正在计时，剩余 ":"已暂停，剩余 ")+clockOf(T.left)+"）。\n\n"
+      + "换题包会清空本场已答成绩，并从 150:00 重新计时。\n\n继续换吗？")) return;
+    stopTimer();
+  }
   var idxs=[], ids=[];
   QB.forEach(function(b){ if(packHit(p,b.q)){ idxs.push(b.i); ids.push(b.q.id); } });
   if(!idxs.length){ toast("题包 "+p.l+" 尚无题目：当前题库共 "+QB.length+" 题，还未录到该题包"); return; }
