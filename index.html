@@ -793,6 +793,12 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
 .s0tbl td.knpg .knpn{color:var(--ink-2); font-family:var(--font-num)}
 .s0tbl .pk{font-family:var(--font-num); color:var(--ink-2)}
 .gcard.s0card.pend{border-left-color:var(--line)}
+/* 分类表「考纲要求」列：这张表已有 9 列，等级小标签改用无底色的紧凑样式，
+   只保留三档配色，不吃掉分值／题数／进度的横向空间。 */
+.s0tbl td.reqd{white-space:nowrap}
+.s0tbl td.reqd .ok-chip,.s0tbl td.reqd .need-chip,.s0tbl td.reqd .know-chip{
+  padding:0; border:0; background:none; font-size:13.5px;
+}
 /* S0 两张分值表的窄屏取舍：藏「怎么拿」「占比」「题包」这些说明列，
    把分值／题数／累计／入口留在同屏——否则手机上要横拖才看得到目标分。
    必须放在 .s0tbl 规则之后，否则同权重下会被上面的 min-width 覆盖。 */
@@ -3432,6 +3438,7 @@ function s0BlockHtml(){
       '<td class="num"><b>'+r.score+'</b> 分</td>'+
       '<td class="num sm-hide">'+Math.round(r.score*1000/tot)/10+'%</td>'+
       '<td class="num">'+r.idxs.length+' 题</td>'+
+      '<td class="reqd tiny">'+(reqDistHtml(r.idxs)||'<span class="muted">—</span>')+'</td>'+
       '<td class="knpg">'+progCell(r.idxs)+'</td>'+
       '<td class="pk tiny sm-hide">'+esc(pk)+'</td>'+
       '<td class="num">'+cum+' 分</td>'+
@@ -3577,9 +3584,12 @@ function s0BlockHtml(){
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算，口径固定为「甲情形」：'+
       'A 必做 26 ＋ E/G/F 各 16 ＋ 主观 H 76 ＝ 150；<b>B/C/D 三个包记 0 且不进这张表</b>——它们不进这套卷面，'+
       '若考场上分到那三个包，对应领域的分值会跟着变（但 ML-DL 仍然是大头）；要练那三个包的题走上面的学习计划。'+
-      '「累计」是从上往下刷到这一行时已覆盖的卷面分，127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近。</p>'+
+      '「累计」是从上往下刷到这一行时已覆盖的卷面分，127 分线约在累计 '+cumLine+' 分，落在第 '+cumRow+' 行附近。'+
+      '「考纲要求」列是该领域题目在考纲里挂的等级分布（掌握／理解／知道各几题）；'+
+      '同一个领域下往往跨档并存，所以给的是分布而不是单一等级——只有一档时才省掉题数直写档位名。</p>'+
     '<div class="s0tbl wrap"><table><thead><tr><th>知识领域（按卷面分值降序）</th><th class="num">分值</th>'+
-      '<th class="num sm-hide">占比</th><th class="num">题数</th><th>进度</th><th class="sm-hide">题包</th>'+
+      '<th class="num sm-hide">占比</th><th class="num">题数</th><th>考纲要求</th><th>进度</th>'+
+      '<th class="sm-hide">题包</th>'+
       '<th class="num">累计</th><th></th></tr></thead><tbody>'+
       areaTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">样卷没考、考纲却要求的条目（'+gaps.length+' 条）</h3>'+
