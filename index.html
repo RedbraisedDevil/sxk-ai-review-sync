@@ -656,6 +656,8 @@ details.kept-text pre{
    不因转红就丢掉「这题其实答对过」这个事实 */
 .verdict.marked{border-color:var(--err); background:var(--err-soft); color:var(--t-err-fg); box-shadow:inset 3px 0 0 var(--err)}
 .pager{display:flex; gap:var(--sp-2); align-items:center; margin-top:var(--sp-4); flex-wrap:wrap}
+/* 「下一板块」跨的是另一批题，不是「下一题」：主色描边与题内翻页区分，位置仍在同一行前段。 */
+.pager .navsec{color:var(--brand-text); border-color:var(--brand)}
 .tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); margin-bottom:var(--sp-3); flex-wrap:wrap}
 .tabs button{
   min-height:44px; padding:0 12px; color:var(--ink-2); border-bottom:2px solid transparent;
@@ -1199,6 +1201,9 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
           <div class="pager">
             <button class="btn sm" id="q-prev" type="button">上一题</button>
             <button class="btn sm" id="q-next" type="button">下一题</button>
+            <!-- 跨板块跳转：紧挨「下一题」但带主色描边，和题内翻页区分开；
+                 不放行尾——行尾会掉到第二行，反而让人找不到 -->
+            <button class="btn sm navsec" id="q-navsec" type="button" hidden>下一板块 ›</button>
             <button class="btn sm ghost" id="q-toggle-parse" type="button" aria-pressed="true">详解常显</button>
             <button class="btn sm" id="q-fav" type="button" title="显示本题答案并加入错题本">标记为错题（看答案）</button>
           </div>
@@ -3777,7 +3782,10 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     var ri=parseInt(bs.getAttribute("data-s0"),10);
     var r0=s0Rows()[ri];
     if(!r0 || !r0.idxs.length){ toast("这一块在题库里没有题"); return; }
-    startPractice(r0.idxs.slice(), "S0："+r0.name+"（卷面 "+r0.score+" 分）");
+    startPractice(r0.idxs.slice(), "S0："+r0.name+"（卷面 "+r0.score+" 分）", false,
+      navList(s0Rows(), ri,
+        function(r){ return "S0："+r.name+"（卷面 "+r.score+" 分）"; },
+        function(r){ return r.idxs; }));
     return;
   }
   var bkn=t.closest ? t.closest("[data-kn]") : null;
@@ -3785,7 +3793,12 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     var kn=bkn.getAttribute("data-kn");
     var kidx=goalHits({item:kn});
     if(!kidx.length){ toast("这个知识点在题库里没有题"); return; }
-    startPractice(kidx.slice(), "S0 知识点："+kn);
+    /* 知识点表按 S→A→B→C 档位逐行排，序列照这个顺序走，跨档也顺（C 档排在最后） */
+    var kns=s0KnSeq(), kat=kns.indexOf(kn);
+    startPractice(kidx.slice(), "S0 知识点："+kn, false, kat<0 ? null :
+      navList(kns, kat,
+        function(n){ return "S0 知识点："+n; },
+        function(n){ return goalHits({item:n}); }));
     return;
   }
   var bmx=t.closest ? t.closest("[data-mix]") : null;
@@ -3799,7 +3812,10 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
   if(bgu){
     var gi2=parseInt(bgu.getAttribute("data-guess"),10), gr2=s0GuessRows()[gi2];
     if(!gr2 || !gr2.idxs.length){ toast("这条押题在题库里没有题，只能背要点"); return; }
-    startPractice(gr2.idxs.slice(), "S0 押题："+gr2.it+"（押 "+gr2.s+" 分）");
+    startPractice(gr2.idxs.slice(), "S0 押题："+gr2.it+"（押 "+gr2.s+" 分）", false,
+      navList(s0GuessRows(), gi2,
+        function(g){ return "S0 押题："+g.it+"（押 "+g.s+" 分）"; },
+        function(g){ return g.idxs; }));
     return;
   }
   var bg=t.closest ? t.closest("[data-gap]") : null;
@@ -3807,7 +3823,10 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     var gi=parseInt(bg.getAttribute("data-gap"),10), gr=s0GapRows()[gi];
     var gidx=gr ? goalHits(gr.scope) : [];
     if(!gidx.length){ toast("这道条目在题库里没有题"); return; }
-    startPractice(gidx.slice(), "S0 补练："+gr.area+"·"+gr.name);
+    startPractice(gidx.slice(), "S0 补练："+gr.area+"·"+gr.name, false,
+      navList(s0GapRows(), gi,
+        function(g){ return "S0 补练："+g.area+"·"+g.name; },
+        function(g){ return g.idxs; }));
     return;
   }
   var b=t.closest ? t.closest("[data-gtog]") : null;
@@ -3828,7 +3847,10 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
     if(gid2==="__orphan") it2={_chs:goalChapters(PLAN._orphan||[])};
     var c=it2 && it2._chs ? it2._chs[gi] : null;
     if(!c || !c.idxs.length){ toast("这一章没有题目"); return; }
-    startPractice(c.idxs.slice(), "题库分类："+(c.item||"考纲未列")+(c.unit?"（"+c.unit+"）":""));
+    startPractice(c.idxs.slice(), "题库分类："+(c.item||"考纲未列")+(c.unit?"（"+c.unit+"）":""), false,
+      it2._chs ? navList(it2._chs, gi,
+        function(cc){ return "题库分类："+(cc.item||"考纲未列")+(cc.unit?"（"+cc.unit+"）":""); },
+        function(cc){ return cc.idxs; }) : null);
     return;
   }
 });
@@ -4350,13 +4372,60 @@ $("#ch-tree") && $("#ch-tree").addEventListener("click", function(e){
   var nd=NODES[parseInt(b.getAttribute("data-node"),10)];
   if(!nd){ toast("该考点条目未在考纲树中，请到「考点地图」查看"); return; }
   if(!nd.qs.length){ toast("「"+nd.item+"」暂无题目：考纲条目已在，题库待补录"); return; }
-  startPractice(nd.qs.slice(), "章节练习："+nd.unit+" · "+nd.item);
+  /* 板块序列按「当前筛选后眼睛看到的顺序」排（CH_F 会藏掉其它档位的行）：
+     按 NODES 原始下标排的话，筛「掌握」时按钮会跳到一个被藏起来的「知道」条目上。 */
+  var seq=chapterSeq(), at=-1;
+  for(var z=0;z<seq.length;z++){ if(seq[z]===nd){ at=z; break; } }
+  startPractice(nd.qs.slice(), "章节练习："+nd.unit+" · "+nd.item, false, at<0 ? null :
+    navList(seq, at,
+      function(n){ return "章节练习："+n.unit+" · "+n.item; },
+      function(n){ return n.qs; }));
 });
+/* 章节树当前可见的节点，顺序与 renderChapters 渲染一致（模块→领域→单元→条目，再按 CH_F 过滤） */
+function chapterSeq(){
+  var out=[];
+  list(TREE).forEach(function(m){
+    list(m.areas).forEach(function(a){
+      list(a.units).forEach(function(u){
+        list(u.items).forEach(function(it){
+          if(CH_F!=="all" && String(it[1])!==CH_F) return;
+          var nd=NODEKEY[norm(m.m)+"|"+norm(a.a)+"|"+norm(u.u)+"|"+norm(it[0])];
+          if(nd) out.push(nd);
+        });
+      });
+    });
+  });
+  return out;
+}
 /* ---------- 做题 ---------- */
 function curQ(){ return QS[S.order[S.cur]]; }
-function startPractice(idxs, ctx, redo){
+/* 板块序列：做题页「下一板块」靠它跳转。
+   items 是入口页面那一整张列表（顺序就是眼睛看到的顺序），at 是点进去的那一行。
+   只收「有题」的板块——没题的板块在入口就被拦下了，留在序列里会让按钮跳到一个空题集。
+   返回 {list:[{ctx,idxs}], at:当前下标}，挂在 S.nav 上。
+   注意别把局部变量叫 list：全局有个同名工具函数 list(x) 负责归一化数组，撞名会静默出错。 */
+function navList(items, at, ctxOf, idxsOf){
+  var seq=[], pos=-1, i, ix;
+  for(i=0;i<items.length;i++){
+    ix=idxsOf(items[i]);
+    if(!ix || !ix.length) continue;
+    if(i===at) pos=seq.length;
+    seq.push({ctx:ctxOf(items[i]), idxs:ix.slice()});
+  }
+  return pos<0 ? null : {list:seq, at:pos};
+}
+/* 知识点表在页面上的顺序：S → A → B → C，档内按 S0_KS 原序 */
+function s0KnSeq(){
+  var out=[];
+  ["S","A","B","C"].forEach(function(t){
+    (S0_KS[t]||[]).forEach(function(nm){ out.push(nm); });
+  });
+  return out;
+}
+function startPractice(idxs, ctx, redo, nav){
   if(!idxs || !idxs.length){ toast("没有可练习的题目"); return; }
   S.order=idxs.slice(); S.cur=0; S.ctx=ctx||"练习"; S.redo={};
+  S.nav=nav||null;
   if(redo) idxs.forEach(function(ix){ var q=QS[ix]; if(q) S.redo[q.id]=true; });
   if(location.hash==="#/practice"){ renderPractice(); window.scrollTo(0,0); } else { location.hash="#/practice"; }
 }
@@ -4365,6 +4434,9 @@ function openQuestion(id, orderHint, ctx, redo){
   var idx=IDX[id];
   var ord=(orderHint && orderHint.length && orderHint.indexOf(idx)>=0) ? orderHint.slice() : QS.map(function(_,i){ return i; });
   S.order=ord; S.cur=ord.indexOf(idx); S.ctx=ctx||(orderHint?"上一级列表":"全部题目"); S.redo={};
+  /* 直接打开某道题没有「板块」上下文（可能是题库列表点进来的），清掉上一批的序列，
+     否则按钮会指向一套与当前题无关的板块。 */
+  S.nav=null;
   if(redo) S.redo[id]=true;
   if(location.hash==="#/practice"){ renderPractice(); window.scrollTo(0,0); } else { location.hash="#/practice"; }
 }
@@ -4442,6 +4514,7 @@ function renderPractice(){
     pt.textContent=S.answered ? (S.parseAlways?"详解常显":"详解已隐藏") : "作答后显示详解";
   }
   syncExamBox();
+  syncNavBtn();
   /* 换题才回顶：同一题判卷后重新渲染时不动滚动位置，否则刚滚到解析中段就被弹回去 */
   if(q.id!==LAST_QID){
     LAST_QID=q.id;
@@ -4451,6 +4524,27 @@ function renderPractice(){
   }
 }
 var LAST_QID=null;
+/* 「下一板块」按钮的三种状态：
+   ① 没有板块序列（题库筛选、模拟考场、直接开某题）→ 整颗藏起来，不留死按钮；
+   ② 还有下一块 → 「下一板块 ›」，悬停给出下一块的名字与题量；
+   ③ 已是最后一块 → 置灰，文案直说，别让人点了一下才发现没反应。 */
+function syncNavBtn(){
+  var b=$("#q-navsec"); if(!b) return;
+  var nav=S.nav, ok=!!(nav && nav.list && nav.list.length>1);
+  b.hidden=!ok;
+  b.style.display=ok?"":"none";
+  if(!ok) return;
+  var nx=nav.list[nav.at+1];
+  if(nx){
+    b.disabled=false;
+    b.textContent="下一板块 ›";
+    b.title="跳到下一个板块："+nx.ctx+"（"+nx.idxs.length+" 题）";
+  }else{
+    b.disabled=true;
+    b.textContent="已是最后一个板块";
+    b.title="本次进入的列表共 "+nav.list.length+" 个板块，这已经是最后一个";
+  }
+}
 /* 左右分栏各自滚动：只有宽到能并排（≥768px）才启用；窄屏保持整页滚动，避免把
    一屏高的容器塞进手机。高度必须实测——顶栏（标题＋说明）在两栏宽度下会换行，高度不固定。 */
 function syncExamBox(){
@@ -5746,6 +5840,16 @@ $("#q-grid") && $("#q-grid").addEventListener("click", function(e){
 });
 $("#q-prev") && $("#q-prev").addEventListener("click", function(){ S.cur=(S.cur-1+S.order.length)%S.order.length; renderPractice(); });
 $("#q-next") && $("#q-next").addEventListener("click", function(){ S.cur=(S.cur+1)%S.order.length; renderPractice(); });
+/* 「下一板块」：沿进来时那张列表的顺序走下一行，不是「下一题」。
+   序列只记在内存里（刷新后回到入口页重进即可），不落存储——
+   它是一次浏览的临时上下文，存下来反而会在几天后指到过期题集。 */
+$("#q-navsec") && $("#q-navsec").addEventListener("click", function(){
+  var nav=S.nav;
+  if(!nav || !nav.list || !nav.list.length){ toast("没有可跳转的板块"); return; }
+  var nx=nav.list[nav.at+1];
+  if(!nx){ toast("已经是最后一个板块了"); return; }
+  startPractice(nx.idxs.slice(), nx.ctx, false, {list:nav.list, at:nav.at+1});
+});
 $("#q-fav") && $("#q-fav").addEventListener("click", function(){
   var q=curQ(); if(!q) return;
   markWrongAndReveal(q);
@@ -5855,6 +5959,8 @@ function restoreExamSession(){
     /* 题集必须一起恢复：否则 renderPractice 会把 S.order 填成全库，
        刷新后看到的是 942 题而不是本场的那一套。 */
     S.order=idxs; S.cur=0; S.redo={};
+    /* 考试场次不是「板块」：残留的板块序列会让「下一板块」在考试中被点出来，一键跳出本场题集 */
+    S.nav=null;
     S.ctx="模拟考场 · "+T.label;
   }
   return true;
