@@ -171,6 +171,8 @@ a{color:var(--brand-text)}
 /* 窄屏保留可访问名称：视觉隐藏而非 display:none */
 .nav button span{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 .rail-foot{display:none; margin-top:auto; border-top:1px solid var(--line); padding-top:var(--sp-3)}
+/* 折叠把手：窄屏顶栏是横条、没有「侧栏宽度」这回事，默认不显示；≥768px 才出现 */
+.rail-toggle{display:none}
 .rail-foot button{min-height:44px; display:flex; gap:8px; align-items:center; color:var(--ink-2); padding:0 10px; width:100%; border-radius:var(--r-s)}
 .rail-foot button:hover{background:var(--brand-soft)}
 /* 深浅色切换按钮：放在品牌行右侧（窄屏只留图标，省一行高度；PC 显示文字）。
@@ -182,6 +184,8 @@ a{color:var(--brand-text)}
   background:var(--surface); color:var(--ink-2); font-size:14.5px; white-space:nowrap;
   transition:background-color .18s ease, color .18s ease, border-color .18s ease;
 }
+/* 主题切换与折叠把手放在同一行：窄屏靠右（margin-left:auto），桌面侧栏里撑满整列 */
+.rail-tools{display:flex; align-items:center; gap:8px; flex:0 0 auto; margin-left:auto; min-width:0}
 .theme-btn:hover{background:var(--brand-soft); color:var(--ink); border-color:var(--brand)}
 .theme-btn svg{width:18px; height:18px; flex:0 0 auto}
 .theme-btn .tlabel{display:none}
@@ -196,7 +200,7 @@ html[data-theme="dark"] .theme-btn .i-moon{display:none}
   .rail .brandtxt > span{display:none}
   .rail .brand b{font-size:15.5px; overflow:hidden; text-overflow:ellipsis}
   .rail .brand{order:1}
-  .rail .theme-btn{order:2}
+  .rail .rail-tools{order:2}
   .rail .countdown{order:3; flex:1 1 100%; justify-content:center}
   .rail .timer-chip{order:4; width:100%; justify-content:center}
   .rail .nav{order:5}
@@ -912,6 +916,41 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
   .rail .countdown .num{font-size:26px; line-height:1.25}
   .rail .timer-chip{width:100%; justify-content:center}
   .bar{grid-template-columns:150px 1fr 64px}
+  /* 侧栏折叠：品牌行右侧一个把手，点一下把 224px 收成 64px 图标条，宽度让给内容。
+     只改 .app 的列宽 + 隐藏文字，导航按钮的图标与点击热区原样保留（热区 40px 仍够点）。
+     状态存 Store("ui.rail")：本机偏好，与学习记录分开，不参与错题／作答统计。 */
+  .rail-toggle{display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; margin-left:auto; flex:0 0 auto; padding:0;
+    border:1px solid var(--line); border-radius:8px; background:var(--surface);
+    color:var(--ink-2); cursor:pointer}
+  .rail-toggle:hover{background:var(--brand-soft); color:var(--brand-text); border-color:var(--brand)}
+  .rail-toggle svg{width:16px; height:16px; transition:transform .18s ease}
+  .rail-tools{align-self:stretch; margin-left:0; gap:var(--sp-2)}
+  .rail-tools .theme-btn{flex:1 1 auto; margin-left:0; min-width:0}
+  .app.rail-min{grid-template-columns:minmax(0,64px) minmax(0,1fr)}
+  .app.rail-min .rail-tools{flex-direction:column; align-items:center; gap:6px}
+  .app.rail-min .rail{padding:var(--sp-3) 6px; align-items:center; gap:var(--sp-3)}
+  .app.rail-min .brand{flex-wrap:wrap; justify-content:center; gap:6px; padding:0}
+  .app.rail-min .brandtxt{display:none}
+  .app.rail-min .rail-toggle{margin:0}
+  .app.rail-min .rail-toggle svg{transform:rotate(180deg)}
+  .app.rail-min .countdown{align-self:stretch; flex-direction:column; flex-wrap:nowrap;
+    align-items:center; gap:0; padding:6px 2px}
+  .app.rail-min .countdown .tiny:first-child{display:none}
+  .app.rail-min .countdown .num{font-size:20px; line-height:1.2}
+  .app.rail-min .countdown .tiny:last-child{font-size:12px; line-height:1.2}
+  .app.rail-min .theme-btn{justify-content:center; padding:0; width:100%; margin-left:0}
+  .app.rail-min .theme-btn .tlabel{display:none}
+  /* 考场计时在 64px 里放不下一行「考场计时 150:00 暂停」，改竖排并省掉标题文字 */
+  .app.rail-min .timer-chip{width:100%; flex-direction:column; gap:2px; padding:5px 2px; font-size:12px}
+  .app.rail-min .timer-chip > span:first-child{display:none}
+  .app.rail-min .timer-chip .num{font-size:12px; letter-spacing:-.3px}
+  .app.rail-min .timer-chip button{width:100%; padding:0 2px; font-size:11.5px}
+  .app.rail-min .nav{width:100%; align-items:center; overflow-x:visible}
+  .app.rail-min .nav button{justify-content:center; width:40px; margin:0 auto; padding:0}
+  .app.rail-min .nav button span{display:none}
+  .app.rail-min .rail-foot button{justify-content:center; padding:0}
+  .app.rail-min .rail-foot button span{display:none}
 }
 @media (min-width:1100px){
   .grid{grid-template-columns:repeat(2,1fr)}
@@ -941,7 +980,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
 </head>
 <body>
 <div class="app">
-  <aside class="rail">
+  <aside class="rail" id="rail">
     <div class="brand">
       <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0D9488"/><path d="M9 22.5 15.8 9h4.4L27 22.5h-3.4l-1.3-2.6h-7.1l-1.3 2.6H9zm5.9-5.3h5.1l-2.5-5.1-2.6 5.1zM7.5 12.5h2.6V22H7.5z" fill="#fff"/></svg>
       <span class="brandtxt"><b>上信考 AI 备考程序</b><span>人工智能技术及应用（二三级）<br>依据 2025 年版考纲</span></span>
@@ -958,12 +997,20 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       <button id="timer-toggle" type="button">暂停</button>
     </span>
 
+    <!-- 深色切换 + 折叠把手同一行：两个都是「界面工具」，放一起不占品牌名的地方
+         （原来把手放品牌名右边，224px 里会把「上信考 AI 备考程序」挤成省略号） -->
+    <div class="rail-tools">
     <!-- 一键切换深浅色：图标随主题互换（太阳＝当前深色，月亮＝当前浅色），文字标签由脚本改写 -->
     <button class="theme-btn" id="theme-toggle" type="button" aria-pressed="false" title="切换深色 / 浅色模式">
       <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9z"/></svg>
       <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>
       <span class="tlabel">浅色模式</span>
     </button>
+    <!-- 侧栏折叠把手：点一下 224px ↔ 64px，把宽度让给题目区；窄屏不显示 -->
+    <button class="rail-toggle" id="rail-toggle" type="button" aria-controls="rail" aria-expanded="true" aria-label="收起侧栏" title="收起侧栏">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M13 6.5 7.5 12 13 17.5M19 6.5 13.5 12 19 17.5"/></svg>
+    </button>
+    </div>
 
     <nav class="nav" aria-label="主导航">
       <button data-go="#/dashboard" aria-current="page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span>工作台</span></button>
@@ -6341,6 +6388,40 @@ var Theme=(function(){
   return {init:init, toggle:toggle, apply:apply, current:cur};
 })();
 
+/* ---------- 侧栏折叠：224px ↔ 64px ---------- */
+/* 只切换 .app 上的 rail-min 类，宽度与文字的隐藏全交给 CSS（都在 ≥768px 媒体查询里），
+   所以窄屏（顶栏横条）完全不受影响——那里本就没有「侧栏宽度」这回事。
+   状态存 Store("ui.rail")：属于本机界面偏好，不进作答／错题统计。 */
+var Rail=(function(){
+  var KEY="ui.rail";
+  var app=document.querySelector(".app"), btn=document.getElementById("rail-toggle");
+  function paint(min){
+    if(app) app.classList.toggle("rail-min", !!min);
+    if(!btn) return;
+    var t=min?"展开侧栏":"收起侧栏";
+    btn.setAttribute("aria-expanded", min?"false":"true");
+    btn.setAttribute("title", t);
+    btn.setAttribute("aria-label", t);
+  }
+  function init(){
+    if(!app||!btn) return;
+    /* 折起来后导航只剩图标，补 title 做悬停提示；已有 title 的不覆盖 */
+    var bs=document.querySelectorAll(".nav button");
+    for(var i=0;i<bs.length;i++){
+      var sp=bs[i].querySelector("span");
+      if(sp && !bs[i].getAttribute("title")) bs[i].setAttribute("title", String(sp.textContent||"").trim());
+    }
+    var min=false;
+    try{ min = Store.get(KEY,null)==="min"; }catch(e){ min=false; }
+    paint(min);
+    btn.addEventListener("click", function(){
+      min=!min; paint(min);
+      try{ Store.set(KEY, min?"min":"max"); }catch(e){}
+    });
+  }
+  return {init:init, paint:paint};
+})();
+
 /* ---------- 启动 ---------- */
 (function init(){
   if(!QS.length){
@@ -6349,6 +6430,7 @@ var Theme=(function(){
   if(!Store.ok) setTimeout(function(){ toast("本机存储不可用：练习记录只保留在本次会话中"); },800);
   paintTimer();
   Theme.init();
+  Rail.init();
   var cd=$("#cd-days"); if(cd) cd.textContent=daysLeft();
   if(!S.order.length) S.order=QS.map(function(_,i){ return i; });
   /* 先接考试会话再路由：route() 到 #/practice 时，renderPractice 要用恢复后的题集，
