@@ -3641,7 +3641,8 @@ function conceptBlockHtml(){
         '<td class="knpg">'+(st.done
           ? '<span class="mbtrack"><i style="width:'+pctv+'%"></i></span><span class="tiny num knpn">'+st.done+'/'+st.n+(st.graded?' · '+st.pct+'%':'')+'</span>'
           : '<span class="tiny muted">未练</span>')+'</td>'+
-        '<td class="num"><button class="btn sm ghost" type="button" data-cpt="'+esc(kp)+'">练 3 题</button></td></tr>';
+        '<td class="num kbtnc">'+misBtn(idxs, "cpt|"+kp, "D-2 概念错题："+kp)+
+          '<button class="btn sm ghost knact" type="button" data-cpt="'+esc(kp)+'">练 3 题</button></td></tr>';
     });
     if(!body) return;
     /* 分组行只放「组名 · 条数」：第一列宽度由最长概念名决定，写长句会折成两行、看着像表格错位；
@@ -3698,7 +3699,8 @@ function s0BlockHtml(){
       '<td class="knpg">'+progCell(r.idxs)+'</td>'+
       '<td class="pk tiny sm-hide">'+esc(pk)+'</td>'+
       '<td class="num">'+cum+' 分</td>'+
-      '<td class="num"><button class="btn sm ghost" type="button" data-s0="'+ri+'">练这块</button></td></tr>';
+      '<td class="num kbtnc">'+misBtn(r.idxs, "area|"+ri, "S0 错题："+r.name)+
+        '<button class="btn sm ghost knact" type="button" data-s0="'+ri+'">练这块</button></td></tr>';
   }).join("");
   /* 累计线：tot 就是卷面的 150（A 26 ＋ E/G/F 48 ＋ 主观 H 76），127 直接可比 */
   var cumLine=Math.round(S0_TARGET150*tot/S0_PAPER);
@@ -3761,7 +3763,8 @@ function s0BlockHtml(){
       '<td>'+esc(g.req)+'</td>'+
       '<td class="num">'+(g.n?g.n+' 题':'<span class="muted">0</span>')+'</td>'+
       '<td class="knpg">'+progCell(g.idxs)+'</td>'+
-      '<td class="num">'+(g.n?'<button class="btn sm ghost" type="button" data-gap="'+gi+'">补练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
+      '<td class="num kbtnc">'+(g.n? misBtn(g.idxs, "gap|"+gi, "S0 错题："+g.area+"·"+g.name)+
+        '<button class="btn sm ghost knact" type="button" data-gap="'+gi+'">补练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
   }).join("");
   /* 押题表：样卷没考、我判断会考的部分。分值是我定的，条目名必须来自考纲缺口。 */
   var gs=s0GuessRows(), gsum=s0GuessSum(), gmiss=gs.filter(function(r){ return r.miss; }).length;
@@ -3776,7 +3779,8 @@ function s0BlockHtml(){
       '<td class="num">'+(r.n?r.n+' 题':'<span class="tiny muted">0</span>')+'</td>'+
       '<td class="knpg">'+progCell(r.idxs)+'</td>'+
       '<td class="tiny">'+esc(r.why)+'</td>'+
-      '<td class="num">'+(r.n?'<button class="btn sm ghost" type="button" data-guess="'+gi+'">练</button>':'<span class="tiny muted">背要点</span>')+'</td></tr>';
+      '<td class="num kbtnc">'+(r.n? misBtn(r.idxs, "guess|"+gi, "S0 错题："+r.it)+
+        '<button class="btn sm ghost knact" type="button" data-guess="'+gi+'">练</button>':'<span class="tiny muted">背要点</span>')+'</td></tr>';
   }).join("");
   /* 不用 colspan：窄屏隐藏列后 colspan 会错位（排程表踩过一次），写满 6 个 td */
   guessTb+='<tr class="sum'+(gsum>S0_GUESS_MAX||gmiss?' over':'')+'">'+
@@ -4025,6 +4029,21 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
       navList(kns0, kat0,
         function(n){ return "S0 知识点错题："+n+"（"+knMisHits(n).length+" 题）"; },
         function(n){ return knMisHits(n); }));
+    return;
+  }
+  /* 各表通用的「练错题」：按 data-misof 的前缀反查同一行题集，再与错题本求交。
+     redo=true 与知识点表、错题本页「重做」一致——错题已有作答记录，不置 redo
+     进去就是「已作答」态、答案摊开，等于没练。 */
+  var bmo=t.closest ? t.closest("[data-misof]") : null;
+  if(bmo){
+    var mk=String(bmo.getAttribute("data-misof")||"").split("|");
+    var kind=mk[0], key=mk[1], mset2=null;
+    if(kind==="area"){ var ar0=s0Rows()[parseInt(key,10)]; mset2=ar0?misHits(ar0.idxs):null; }
+    else if(kind==="gap"){ var gp0=s0GapRows()[parseInt(key,10)]; mset2=gp0?misHits(gp0.idxs):null; }
+    else if(kind==="guess"){ var gu0=s0GuessRows()[parseInt(key,10)]; mset2=gu0?misHits(gu0.idxs):null; }
+    else if(kind==="cpt"){ mset2=misHits(goalHits({item:key})); }
+    if(!mset2 || !mset2.length){ toast("这一行还没有错题"); return; }
+    startPractice(mset2.slice(), (bmo.getAttribute("data-misctx")||"错题")+"（"+mset2.length+" 题）", true);
     return;
   }
   var bkn=t.closest ? t.closest("[data-kn]") : null;
@@ -4522,10 +4541,22 @@ function misEntry(id){
 }
 /* 某个知识点的「错题子集」。判据与错题本页完全同源——只认 S.mis（答错自动进本 ＋ 手动标记），
    不另算「这次答错但没进本」的题，否则错题本显示 3 题、知识点行显示 2 题，两套口径最难解释。 */
-function knMisHits(kn){
-  var all=goalHits({item:kn}), out=[];
-  for(var i=0;i<all.length;i++){ if(misEntry(QS[all[i]].id)) out.push(all[i]); }
+/* 一批题索引里，哪些已经进了错题本。
+   判据只认 misEntry（＝S.mis：答错自动进本 ＋ 手动标记），与错题本页同一个来源，
+   不另算「这次答错但没进本」的题——否则两处数字对不上，最难解释。 */
+function misHits(idxs){
+  var out=[];
+  (idxs||[]).forEach(function(i){ if(misEntry(QS[i].id)) out.push(i); });
   return out;
+}
+function knMisHits(kn){ return misHits(goalHits({item:kn})); }
+/* 各表通用的「练错题」按钮。key 形如 "area|3"，写进 data-misof，
+   点击时按前缀去反查同一行的题集再求交——题索引不进属性（一行可能上百个）。 */
+function misBtn(idxs, key, ctx){
+  var n=misHits(idxs).length;
+  if(!n) return '<button class="btn sm ghost knact" type="button" disabled title="这一行还没有错题">练错题</button>';
+  return '<button class="btn sm ghost knact" type="button" data-misof="'+esc(key)+'"'+
+    ' data-misctx="'+esc(ctx)+'" title="只练这一行里进过错题本的 '+n+' 题">练错题 <b>'+n+'</b></button>';
 }
 function isMarkedWrong(id){
   var e=misEntry(id);
