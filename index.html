@@ -796,6 +796,16 @@ figure.book figcaption{font-size:14.5px; color:var(--ink-2); margin-top:8px}
 .s0tbl .mbtrack i{display:block; height:100%; background:var(--brand); border-radius:3px}
 /* 知识点表的「进度」列：条宽比通用 56px 略宽，数字紧跟其后，不换行 */
 .s0tbl td.knpg{white-space:nowrap}
+/* 知识点表末列两个入口（练错题／练）：表格里的按钮不跟 .btn.sm 的 44px 触控高度走，
+   否则每行都会撑到 60px 以上；窄屏靠外层的 .wrap 横向滚动，不折行。
+   类名用 .knact 不用 .kbtn——.kbtn 已被知识点卡占着（display:grid; width:100%），
+   撞上去两个按钮会各占一行、竖着排。 */
+.s0tbl td.kbtnc,.s0tbl th.kbtnc{white-space:nowrap; text-align:right; min-width:150px}
+.s0tbl .knact{display:inline-flex; align-items:center; justify-content:center;
+  min-height:28px; padding:0 9px; font-size:13px; line-height:1.2}
+.s0tbl .knact+.knact{margin-left:6px}
+.s0tbl .knact b{font-family:var(--font-num); font-weight:600; margin-left:2px}
+.s0tbl .knact[disabled]{opacity:.36; cursor:default}
 .s0tbl td.knpg .mbtrack{width:72px; margin-right:6px}
 .s0tbl td.knpg .knpn{color:var(--ink-2); font-family:var(--font-num)}
 .s0tbl .pk{font-family:var(--font-num); color:var(--ink-2)}
@@ -3704,6 +3714,7 @@ function s0BlockHtml(){
       '<td></td><td></td><td class="sm-hide"></td><td></td><td></td></tr>';
     names.forEach(function(nm,ni){
       var idxs=goalHits({item:nm}), sc=scoreOfIdxs(idxs), st=goalStat(idxs);
+      var misIdx=knMisHits(nm), misN=misIdx.length;
       /* 34 条全部计入卷面分合计：D 档命中 0 就显示 0 分，不靠「排除某档」把数字做好看 */
       ksSum+=sc; ksCnt++;
       if(tier==="S"){ ksS.n+=st.n; ksS.done+=st.done; ksS.graded+=st.graded; ksS.ok+=st.ok; }
@@ -3718,7 +3729,14 @@ function s0BlockHtml(){
         '<td class="num">'+(sc?'<b>'+sc+'</b> 分':'<span class="muted">0</span>')+'</td>'+
         '<td class="num sm-hide">'+(idxs.length?idxs.length+' 题':'<span class="muted">0</span>')+'</td>'+
         '<td class="knpg">'+pg+'</td>'+
-        '<td class="num">'+(idxs.length?'<button class="btn sm ghost" type="button" data-kn="'+esc(nm)+'">练</button>':'<span class="tiny muted">无题</span>')+'</td></tr>';
+        '<td class="kbtnc">'+
+          /* 「练错题」放「练」左边：先修错、再刷全量。没有错题时按钮留位但置灰——
+             消失会让整列左右跳动，也不好看出「这个点还没做错过」。 */
+          (misN
+            ? '<button class="btn sm ghost knact" type="button" data-knmis="'+esc(nm)+'" title="只练这个知识点里进过错题本的 '+misN+' 题">练错题 <b>'+misN+'</b></button>'
+            : '<button class="btn sm ghost knact" type="button" disabled title="这个知识点还没有错题">练错题</button>')+
+          (idxs.length?'<button class="btn sm ghost knact" type="button" data-kn="'+esc(nm)+'">练</button>':'<span class="tiny muted">无题</span>')+
+        '</td></tr>';
     });
   });
   var ksSPct=ksS.n?Math.round(ksS.done*100/ksS.n):0, ksSRate=ksS.graded?Math.round(ksS.ok*100/ksS.graded):0;
@@ -3832,7 +3850,7 @@ function s0BlockHtml(){
       (s0Kinvariant().length?'<b class="red">分级自检未通过：'+esc(s0Kinvariant().join("、"))+' 是「掌握」却落在 C／D 档。</b>':'')+
       '</p>'+
     '<div class="s0tbl gaptbl wrap"><table><thead><tr><th>知识点</th><th>要求</th>'+
-      '<th class="num">卷面分</th><th class="num sm-hide">全库题</th><th>进度</th><th></th></tr></thead><tbody>'+
+      '<th class="num">卷面分</th><th class="num sm-hide">全库题</th><th>进度</th><th class="kbtnc"></th></tr></thead><tbody>'+
       ksTb+'</tbody></table></div>'+
     '<h3 style="margin:var(--sp-3) 0 var(--sp-2); font-size:16px">按分值排序的题库分类</h3>'+
     '<p class="tiny muted" style="margin:0 0 var(--sp-2)">分值与题量全部由 38A 官方卷逐题现算，口径固定为「甲情形」：'+
@@ -3991,6 +4009,22 @@ $("#goal-body") && $("#goal-body").addEventListener("click", function(e){
       navList(s0Rows(), ri,
         function(r){ return "S0："+r.name+"（卷面 "+r.score+" 分）"; },
         function(r){ return r.idxs; }));
+    return;
+  }
+  var bkm=t.closest ? t.closest("[data-knmis]") : null;
+  if(bkm){
+    var knm=bkm.getAttribute("data-knmis");
+    var midx=knMisHits(knm);
+    if(!midx.length){ toast("这个知识点还没有错题"); return; }
+    /* 序列与「练」共用 s0KnSeq 的档位顺序，跳转时按「同点的错题集」走，
+       相邻知识点若一条错题都没有会被 navList 跳过，不会停在一个空题集上。 */
+    var kns0=s0KnSeq(), kat0=kns0.indexOf(knm);
+    /* redo=true：错题本来就有作答记录，不置 redo 的话进去就是「已作答」态、
+       答案直接摊开，等于没练。与错题本页「重做」同一个口径。 */
+    startPractice(midx.slice(), "S0 知识点错题："+knm+"（"+midx.length+" 题）", true, kat0<0 ? null :
+      navList(kns0, kat0,
+        function(n){ return "S0 知识点错题："+n+"（"+knMisHits(n).length+" 题）"; },
+        function(n){ return knMisHits(n); }));
     return;
   }
   var bkn=t.closest ? t.closest("[data-kn]") : null;
@@ -4485,6 +4519,13 @@ function addMis(id, why, tip){
 function misEntry(id){
   for(var i=0;i<S.mis.length;i++){ if(S.mis[i] && S.mis[i].id===id) return S.mis[i]; }
   return null;
+}
+/* 某个知识点的「错题子集」。判据与错题本页完全同源——只认 S.mis（答错自动进本 ＋ 手动标记），
+   不另算「这次答错但没进本」的题，否则错题本显示 3 题、知识点行显示 2 题，两套口径最难解释。 */
+function knMisHits(kn){
+  var all=goalHits({item:kn}), out=[];
+  for(var i=0;i<all.length;i++){ if(misEntry(QS[all[i]].id)) out.push(all[i]); }
+  return out;
 }
 function isMarkedWrong(id){
   var e=misEntry(id);
