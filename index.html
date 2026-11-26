@@ -423,6 +423,19 @@ html[data-theme="dark"] .theme-btn .i-moon{display:none}
 .numgrid button.mis{position:relative; border-color:var(--err); border-width:2px; background:var(--err-soft); color:var(--t-err-fg); font-weight:700; box-shadow:inset 0 -2px 0 var(--err)}
 .numgrid button.mis::after{content:""; position:absolute; top:-1px; right:-1px; width:0; height:0; border-top:9px solid var(--err); border-left:9px solid transparent; border-top-right-radius:3px}
 .numgrid button.mis[aria-current="true"]{outline:2px solid var(--brand); outline-offset:1px}
+/* 「标记为错题」原来整格转红，与「判错」同色同形——于是答对却被标记的题在题号条上
+   看起来就是「被判错了」，未作答就点标记的题更是凭空多出一个大红框。
+   现在拆成两件事：颜色只表达判定（绿=对、浅红=错），「你手动标记过」只加右上角青三角。
+   只有「判错＋标记」才保留红底，因为红在这里说的是判定，不是标记。 */
+.numgrid button.mk{position:relative; border-color:var(--brand); background:var(--brand-soft); color:var(--brand-text); font-weight:700}
+.numgrid button.mk::after{content:""; position:absolute; top:-1px; right:-1px; width:0; height:0; border-top:9px solid var(--brand); border-left:9px solid transparent; border-top-right-radius:3px}
+.numgrid button.ok.mk,.numgrid button.no.mk{background:var(--brand-soft)}
+.numgrid button.ok.mk{border-color:var(--t-ok-line); color:var(--t-ok-fg)}
+.numgrid button.no.mk{border-color:var(--t-err-line); background:var(--err-soft); color:var(--t-err-fg)}
+.numgrid button.mk[aria-current="true"]{outline:2px solid var(--brand); outline-offset:1px}
+/* 题号图例：三色各指什么，只在题号条里真的出现过两种以上状态时显示 */
+.numlegend{margin:6px 0 0; font-size:13px; color:var(--ink-3); display:flex; gap:12px; flex-wrap:wrap}
+.numlegend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:middle}
 /* 题干表格（管道表／空格表统一还原）：原卷的表格是排好版的，这里按同样口径给
    表头底纹 + 行分隔 + 数字列右对齐；窄屏横向滚动，不折行——列一折就失去「按列比较」的用途。 */
 .stemtbl-wrap{margin:var(--sp-2) 0 var(--sp-4); overflow-x:auto; border:1px solid var(--line); border-radius:var(--r-s); background:var(--t-paper)}
@@ -654,7 +667,15 @@ details.kept-text pre{
 .verdict.no{border-color:var(--t-err-line); background:var(--err-soft); color:var(--t-err-fg)}
 /* 手动「标记为错题」的题：判定条整条转红 + 左侧红条（形状信号），文字里写明原判定，
    不因转红就丢掉「这题其实答对过」这个事实 */
-.verdict.marked{border-color:var(--err); background:var(--err-soft); color:var(--t-err-fg); box-shadow:inset 3px 0 0 var(--err)}
+.verdict.marked{border-color:var(--brand); background:var(--brand-soft); color:var(--ink); box-shadow:inset 3px 0 0 var(--brand)}
+/* 判错时的逐空对照：每空一个小块，绿=对上、红=不同并给出标准字母 */
+.filldiff{margin:8px 0 2px; font-size:13.5px; line-height:1.9}
+.filldiff b{margin-right:8px}
+.fdiff{display:inline-block; margin:0 6px 4px 0; padding:1px 8px; border-radius:6px;
+  border:1px solid var(--line); background:var(--surface); font-family:var(--font-num); font-size:13px}
+.fdiff.hit{border-color:var(--t-ok-line); background:var(--ok-soft); color:var(--t-ok-fg)}
+.fdiff.bad{border-color:var(--t-err-line); background:var(--err-soft); color:var(--t-err-fg)}
+.filldiff .tiny{display:block; font-size:12.5px; color:var(--ink-3); line-height:1.6}
 .pager{display:flex; gap:var(--sp-2); align-items:center; margin-top:var(--sp-4); flex-wrap:wrap}
 /* 「下一板块」跨的是另一批题，不是「下一题」：主色描边与题内翻页区分，位置仍在同一行前段。 */
 .pager .navsec{color:var(--brand-text); border-color:var(--brand)}
@@ -1218,6 +1239,7 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
             <span class="tiny muted">点选项即判分</span>
           </div>
           <ul class="numgrid" id="q-grid" aria-label="题号进度"></ul>
+          <p class="numlegend" id="q-legend" hidden></p>
           <div class="qmeta" id="q-meta"></div>
           <div id="q-body"></div>
           <div id="q-answer-area"></div>
@@ -4787,12 +4809,31 @@ function renderPractice(){
   S.mis.forEach(function(m){ if(m && m.id && String(m.why||"").indexOf("手动标记")===0) mkSet[m.id]=1; });
   $("#q-grid").innerHTML=S.order.map(function(ix,i){
     var qq=QS[ix], rr=S.rec[qq.id], redoing=!!S.redo[qq.id];
+    /* 底色只说判定：绿=答对、浅红=判错、无记录=灰。重做中的题按未作答显示。 */
     var cls=(!redoing && rr)?(rr.ok===true?"ok":(rr.ok===false?"no":"")):"";
-    /* 手动标记的题压在判定色之上：答对过也要红，否则「标记了却还是绿的」会让人以为没生效 */
-    if(mkSet[qq.id]) cls=cls?cls+" mis":"mis";
+    /* 「我手动标记过」是另一回事，只加青色角标，不改底色——
+       否则答对的题看起来像被判错，未作答的题凭空多一个红框。 */
+    if(mkSet[qq.id]) cls=(cls?cls+" mk":"mk");
+    var tip=[];
+    if(cls.indexOf("ok")>=0) tip.push("答对");
+    if(cls.indexOf("no")>=0) tip.push("答错");
+    if(!cls) tip.push("未作答");
+    if(mkSet[qq.id]) tip.push("你标记为错题（不是判错）");
     return '<li><button type="button" class="'+cls+'" data-jump="'+i+'"'+(i===S.cur?' aria-current="true"':'')+
-      (mkSet[qq.id]?' title="第'+(i+1)+'题 · 已标记为错题" aria-label="第'+(i+1)+'题，已标记为错题"':'')+'>'+(i+1)+'</button></li>';
+      ' title="第'+(i+1)+'题 · '+esc(tip.join(" · "))+'" aria-label="第'+(i+1)+'题，'+esc(tip.join("，"))+'">'+(i+1)+'</button></li>';
   }).join("");
+  /* 图例：出现两种以上状态时才显示，单态时是噪音 */
+  var lg=$("#q-legend");
+  if(lg){
+    var hasOk=$("#q-grid").querySelector(".ok"), hasNo=$("#q-grid").querySelector(".no"), hasMk=$("#q-grid").querySelector(".mk");
+    var kinds=(hasOk?1:0)+(hasNo?1:0)+(hasMk?1:0);
+    if(kinds>=2){
+      lg.hidden=false;
+      lg.innerHTML=(hasOk?'<span><i style="background:var(--ok-soft);border:1px solid var(--t-ok-line)"></i>答对</span>':'')+
+        (hasNo?'<span><i style="background:var(--err-soft);border:1px solid var(--t-err-line)"></i>答错</span>':'')+
+        (hasMk?'<span><i style="background:var(--brand-soft);border:1px solid var(--brand)"></i>你标记为错题（与答错无关）</span>':'');
+    } else { lg.hidden=true; lg.innerHTML=""; }
+  }
   $("#q-meta").innerHTML='<span class="chip">'+esc(typeOf(q))+' · '+esc(scoreOf(q))+'</span>'+levelChip(q)+srcTag(q)+kindChip(q)+reqChipQ(q)+'<span class="chip num">'+esc(q.id)+'</span>';
   renderQBody(q); renderVerdict(q); renderPanes(q); renderRelated(q);
   /* 按钮自己也要跟着变红：点了没变化会让人以为没点上。
@@ -5594,6 +5635,36 @@ function renderQBody(q){
   }
   area.innerHTML+=ansBarHtml(done);
 }
+/* 判错时的逐空对照：把「你填的」和「标准答案」按空位并排，字母对但位置错也点名。
+   没有这段，学生看到「回答错误」却不知道错在哪一空，就会觉得「我填的和答案一样」。 */
+function fillDiffHtml(q, arr){
+  var n=Math.max(1, blankCount(q));
+  /* 有 canon（官方 H 题／教材 pick）用它；没有就用 answer 里 (1)… 解析出的逐空期望值。
+     两者都没有（答案写「见评分要点」）就不出对照，不能凭空造标准答案。 */
+  var seq=fillCanon(q) || slotExpect(q, n);
+  if(!seq || !arr) return "";
+  var out=[], posOnly=0;
+  for(var i=0;i<n;i++){
+    var gotRaw=String(arr[i]||""), wantRaw=String(seq[i]||"");
+    var got=gotRaw.toUpperCase(), want=wantRaw.toUpperCase();
+    var gk=got.split("").sort().join(""), wk=want.split("").sort().join("");
+    /* 字母对、位置错：这种情况最容易被误当成「我填的就是答案」，单独点名 */
+    var same = want.length<=2 ? (got===want) : (normJudge(gotRaw)===normJudge(wantRaw));
+    var mark, tail="";
+    if(same){ mark=" hit"; }
+    else if(got && gk===wk){ mark=" bad"; tail=' → 应为 '+esc(want)+'（字母对，位置错）'; posOnly++; }
+    else { mark=" bad"; tail=' → 应为 '+(want?esc(wantRaw):"—"); }
+    out.push('<span class="fdiff'+mark+'">（'+(i+1)+'）'+(gotRaw?esc(gotRaw):"未填")+tail+'</span>');
+  }
+  var allHit = out.length && out.every(function(x){ return x.indexOf("fdiff hit")>=0; });
+  var gotAll=arr.slice(0,n).map(function(x){ return String(x||"").toUpperCase(); }).join("");
+  var wantAll=seq.slice(0,n).map(function(x){ return String(x||"").toUpperCase(); }).join("");
+  var permSame = !allHit && gotAll && gotAll.split("").sort().join("")===wantAll.split("").sort().join("");
+  return '<div class="filldiff"><b>逐空对照</b>'+out.join("")+
+    '<span class="tiny muted">「→ 应为」右边是题库给的标准答案；按空位比对，位置错也算错。</span>'+
+    (permSame?'<span class="tiny muted">说明：你填的字母和标准答案<b>完全一样</b>，只是填到了不同的空位上——评分按空位比，所以判错。</span>':'')+
+    (posOnly?'<span class="tiny muted">本次有 '+posOnly+' 空是字母对、填错了位置。</span>':'')+'</div>';
+}
 function renderVerdict(q){
   var v=$("#q-verdict"); if(!v) return;
   var r=S.rec[q.id];
@@ -5604,8 +5675,10 @@ function renderVerdict(q){
   /* 未作答就点「标记为错题」时记录写成 ok:null（不进正确率分母），
      所以这条分支必须排在「不自动判分」之前，否则会被吞掉。 */
   if(r.revealed){
-    v.className="verdict no"+(mk?" marked":"");
-    v.innerHTML='<b>已标记为错题</b>：答案已展开'+(inMis?'，已加入错题本':'')+'。正确答案：'+esc(q.answer||"—")+'。'+levelChip(q)+levelNote(q)+'';
+    /* 只是「我要求看答案」，不是判错：用中性青，不用红 */
+    v.className="verdict"+(mk?" marked":"");
+    v.innerHTML='<b>答案已展开</b>：这题你还没作答，展开答案不算作答、不计入正确率'+
+      (inMis?'；已按你的标记放进错题本':'')+'。正确答案：'+esc(q.answer||"—")+'。'+levelChip(q)+levelNote(q)+'';
     return;
   }
   if(r.ok===null || r.ok===undefined){
@@ -5615,15 +5688,21 @@ function renderVerdict(q){
   }
   /* 手动标记后整条转红。但「原本答对过」是事实，不能因为标红就抹掉——
      文案里明写原判定，颜色只表达「这题现在躺在错题本里」。 */
+  /* 手动标记不改判定：颜色与首句都说判定，标记只作为补充说明。
+     原来这里整条转红、首句换成「已标记为错题」，答对的题看起来就是被判错了。 */
   if(mk){
-    v.className="verdict marked";
-    v.innerHTML='<b>已标记为错题</b>：已加入错题本，答案已展开。原判定为'+(r.ok?'「回答正确」':'「回答错误」')+
-      (r.ok?'':'，正确答案是 '+esc(q.answer||"—"))+'。'+levelChip(q)+levelNote(q)+'。右侧「解析／考纲坐标／教材页／怎么做」已同步本题内容。';
+    v.className="verdict "+(r.ok?"ok":"no");
+    v.innerHTML=(r.ok?'<b>回答正确</b>。':'<b>回答错误</b>，正确答案是 '+esc(q.answer||"—")+'。')+
+      '<span class="tiny">另外你点过「标记为错题」，所以它也在错题本里——那是你自己的标记，与上面的判定无关。</span>'+
+      levelChip(q)+levelNote(q)+'。';
     return;
   }
   v.className="verdict "+(r.ok?"ok":"no");
   v.innerHTML=(r.ok?"回答正确。":"回答错误，正确答案是 "+esc(q.answer||"—")+"。")+
+    /* 判错时把你选的也念出来：只报正确答案，学生分不清「我选的就是这个」还是「我选错了」 */
+    (!r.ok && r.pick ? '你选的是 <b>'+esc(String(r.pick).split("").join("、"))+'</b>。' : "")+
     (!r.ok ? (inMis?'<b>已加入错题本</b>，可在「错题本」页按错因重做。':'') : "")+
+    (!r.ok && r.fill ? fillDiffHtml(q, r.fill) : "")+
     /* 已作答的题点标记时记录刻意不改，判定条仍是原判定；这里补一行可见反馈 */
     (S.revealSet[q.id] ? '<b>已标记为错题</b>，答案已展开（原有判定保留）。' : "")+
     ' 答案级别：'+levelChip(q)+levelNote(q)+'。右侧「解析／考纲坐标／教材页／怎么做」已同步本题内容。';
