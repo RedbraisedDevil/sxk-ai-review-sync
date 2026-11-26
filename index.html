@@ -883,10 +883,17 @@ th{background:var(--brand-soft); color:var(--ink); font-weight:600; font-size:15
 /* 错题按来源分区归堆：分组头与「题库分类」的分区名同源（CAT_DEF），
    计数写在组头上，一眼看出哪一类错得最多。 */
 .misgrp{display:grid; gap:var(--sp-2); min-width:0}
-.misgrp-h{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; padding-bottom:6px; border-bottom:1px solid var(--line)}
-.misgrp-h h2{font-size:15.5px; margin:0}
-.misgrp-h .cnt{font-size:14.5px; color:var(--ink-2)}
-.misgrp-h .pct{font-size:14.5px; color:var(--ink-3)}
+.misgrp-h{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-bottom:6px; border-bottom:1px solid var(--line)}
+/* 条目名可能很长（「常见图表类型绘制（2D 散点图…）」），给它可换行的伸缩位，
+   档位／题数跟在名后，「练这组」永远贴右，不会被长名字挤到下一行去。 */
+.misgrp-h h2{font-size:15.5px; margin:0; flex:0 1 auto; min-width:0; max-width:100%; word-break:break-word}
+.misgrp-h .cnt{font-size:14.5px; color:var(--ink-2); flex:0 0 auto}
+.misgrp-h .pct{font-size:13.5px; color:var(--ink-3); flex:0 0 auto}
+/* 分组的「练这组」贴右，分组头仍按基线排；路径说明压到组头第二行 */
+.misgrp-h .goal{margin-left:auto; flex:0 0 auto}
+.misgrp-h .path{flex:1 1 100%; font-size:13.5px; color:var(--ink-3); margin-top:-2px}
+/* 维度切换条与筛选条分开：维度是「换一种归堆方式」，不是又一层筛选 */
+#mis-f-dim{border-bottom:1px dashed var(--line); padding-bottom:10px}
 
 /* ===== 浮层 ===== */
 .toast{position:fixed; left:50%; bottom:26px; transform:translate(-50%,14px); opacity:0; pointer-events:none;
@@ -1323,10 +1330,11 @@ footer.src{margin-top:var(--sp-5); border-top:1px solid var(--line); padding:var
       <div class="vhead">
         <div>
           <h1 id="h-mistakes">错题本</h1>
-          <p>错因由作答判定写入，重做直接回到该题。按<b>题库分类的同一套来源分区</b>归堆，分区名字与「题库分类」页一致，不另造一套叫法。仅记录在本机浏览器，不做学情统计。</p>
+          <p>错因由作答判定写入，重做直接回到该题。可<b>按考纲条目（细则条目）</b>归堆、<b>按掌握／理解／知道</b>归堆，也可继续用「题库分类」的同一套来源分区；每个分组都能一键只练这一组。仅记录在本机浏览器，不做学情统计。</p>
         </div>
         <span class="demo">本机记录 · 可导出/导入同步</span>
       </div>
+      <div class="filters" id="mis-f-dim" role="group" aria-label="错题分类维度"></div>
       <div class="filters" id="mis-f-cat" role="group" aria-label="按来源分区筛选错题"></div>
       <div class="row" style="margin-bottom:var(--sp-3)">
         <button class="btn" id="mis-redo-all" type="button">按错题顺序重做全部</button>
@@ -1774,6 +1782,10 @@ var S={
   /* 错题本的来源分区筛选：只活在本页内存，不落 Store、不进同步、不新增存储键，
      避免动到既有学习记录的键域。刷新回「全部」。 */
   misCat: "all",
+  /* 错题的归堆维度：node＝考纲条目（细则条目）／req＝掌握·理解·知道／src＝来源分区。
+     与 misCat 一样只活在本页内存；misReq 是 req 与 node 两个维度共用的档位筛选。 */
+  misDim: "node",
+  misReq: "all",
   mapFilter: "all",
   plan: Store.get(KEY_PLAN)||{},            /* 学习计划勾选：{itemId:ts}，刷新与关机都不丢 */
   planDel: Store.get(KEY_PLAN_DEL)||{}      /* 计划取消勾选墓碑：{itemId:ts}。没有它，取消会在下次云同步时被远端旧勾选复活 */
@@ -6545,21 +6557,101 @@ function fmtTs(ts){ var d=new Date(ts); return ymd(d)+" "+("0"+d.getHours()).sli
    题库更新后题已不在库里的，单独归到 __gone__ 一档——不能混进任何真实分区，
    否则「官方模拟卷」里会冒出几道查无此题的记录。 */
 var MIS_GONE="__gone__";
+/* 三个归堆维度：考纲条目（细则条目）／考纲要求三档／来源分区。
+   维度只换「怎么归堆」，不动错题集合本身——三个维度摊平后一定是同一批 id。 */
+var MIS_DIMS=[
+  {k:"node", label:"按考纲条目"},
+  {k:"req",  label:"按掌握／理解／知道"},
+  {k:"src",  label:"按来源分区"}
+];
+var MIS_REQ_ORDER=["掌握","理解","知道"];
 function misCatOf(m){ var q=BY_ID[m.id]; return q ? catOf(q) : MIS_GONE; }
-function misGroups(){
-  var g={}, seq=[];
+/* 要求档位就地取题目的 syllabus.要求，不走 reqOf —— 少依赖一层集合判断，
+   缺坐标的题（未挂考纲）统一记为「未列」。 */
+function misReqOf(m){
+  var q=BY_ID[m.id]; if(!q) return "未列";
+  var r=String((q.syllabus||{}).要求||"").trim();
+  return r || "未列";
+}
+/* 考纲条目就取题目 syllabus 的四元组，不依赖考纲树是否已建好；
+   条目名、路径（模块 · 领域 · 单元）都来自这道题自己的坐标。 */
+function misNodeOf(m){
+  var q=BY_ID[m.id]; if(!q) return null;
+  var s=q.syllabus||{}; var it=String(s.知识点||"");
+  if(!it) return null;
+  return {
+    item:it,
+    path:[String(s.模块||""), String(s.知识领域||""), String(s.知识单元||"")].filter(Boolean).join(" · "),
+    key:"N｜"+[s.模块||"", s.知识领域||"", s.知识单元||"", s.知识点||""].join("｜")
+  };
+}
+function misReqChip(r){
+  var v=String(r||"");
+  if(!v || v==="未列") return '<span class="know-chip">考纲未列</span>';
+  var cls = (v==="掌握") ? "ok-chip" : (v==="理解") ? "need-chip" : "know-chip";
+  return '<span class="'+cls+'">'+esc(v)+'</span>';
+}
+function misGroupsBy(dim){
+  var g={}, seq=[], meta={};
   S.mis.forEach(function(m){
-    var k=misCatOf(m);
-    if(!g[k]){ g[k]=[]; seq.push(k); }
+    var k, label, path="";
+    if(dim==="src"){
+      k=misCatOf(m);
+      label=(k===MIS_GONE) ? "题库中已无此题" : catLabel(k);
+    } else if(dim==="req"){
+      k=misReqOf(m);
+      label=(k==="未列") ? "考纲未列" : k;
+      path="同一档位下的全部错题";
+    } else {
+      var nd=misNodeOf(m);
+      if(nd){ k=nd.key; label=nd.item; path=nd.path; }
+      else { k=MIS_GONE; label="未挂到考纲条目"; path="题目没有考纲坐标，或题库已更新"; }
+    }
+    if(!g[k]){ g[k]=[]; seq.push(k); meta[k]={label:label, path:path, req:misReqOf(m)}; }
     g[k].push(m);
   });
-  var order=CAT_DEF.map(function(c){ return c.k; });
+  var rank=function(r){
+    var i=MIS_REQ_ORDER.indexOf(String(r||""));
+    return i<0 ? MIS_REQ_ORDER.length : i;
+  };
   seq.sort(function(a,b){
-    var ia=order.indexOf(a), ib=order.indexOf(b);
-    if(ia<0) ia=order.length; if(ib<0) ib=order.length;
-    return ia-ib;
+    if(dim==="src"){
+      var order=CAT_DEF.map(function(c){ return c.k; });
+      var ia=order.indexOf(a), ib=order.indexOf(b);
+      if(ia<0) ia=order.length; if(ib<0) ib=order.length;
+      return ia-ib;
+    }
+    if(dim==="req") return rank(meta[a].req)-rank(meta[b].req);
+    var d=rank(meta[a].req)-rank(meta[b].req);
+    if(d) return d;
+    return String(meta[a].label).localeCompare(String(meta[b].label), "zh");
   });
-  return seq.map(function(k){ return {k:k, list:g[k]}; });
+  return seq.map(function(k){
+    return {k:k, label:meta[k].label, path:meta[k].path, req:meta[k].req, list:g[k]};
+  });
+}
+/* 旧名保留：来源分区就是 src 维度，"all" 表示不过滤 */
+function misGroups(){
+  var gs=misGroupsBy("src");
+  return (S.misCat==="all") ? gs : gs.filter(function(g){ return g.k===S.misCat; });
+}
+function misDimNow(){
+  var d=S.misDim;
+  return (d==="req"||d==="node"||d==="src") ? d : "src";
+}
+/* 当前维度 + 当前筛选下要显示的分组（也是「重做全部」与分组练习的取题口径） */
+function misVisibleGroups(){
+  var dim=misDimNow(), gs=misGroupsBy(dim);
+  if(dim==="src"){
+    return (S.misCat==="all") ? gs : gs.filter(function(g){ return g.k===S.misCat; });
+  }
+  var r=S.misReq||"all";
+  return (r==="all") ? gs : gs.filter(function(g){ return g.req===r; });
+}
+function misIdxsOf(list){
+  var out=[];
+  list.forEach(function(m){ var i=IDX[m.id]; if(i!==undefined) out.push(i); });
+  return out;
 }
 function misItemHtml(m){
   var q=BY_ID[m.id];
@@ -6575,53 +6667,110 @@ function misItemHtml(m){
 }
 function renderMistakes(){
   var host=$("#mistake-list"); if(!host) return;
+  var dimBar=$("#mis-f-dim");
   var bar=$("#mis-f-cat");
   var redoBtn=$("#mis-redo-all");
   if(!S.mis.length){
+    if(dimBar) dimBar.innerHTML='';
     if(bar) bar.innerHTML='';
     if(redoBtn) redoBtn.textContent="按错题顺序重做全部";
     host.innerHTML='<div class="empty">本机暂无错题记录。答错时会自动记入，也可以在任意题目上点「标记为错题（看答案）」。<div class="row" style="margin-top:10px"><button class="btn sm primary" data-go="#/bank">去题库挑题</button><button class="btn sm" data-go="#/exam">去模拟考场</button></div></div>';
     return;
   }
-  var groups=misGroups();
-  var cntOf={}; groups.forEach(function(g){ cntOf[g.k]=g.list.length; });
-  /* 分类条：与「题库分类」同一套七分区，计数是错题数（不是题量） */
-  if(bar){
-    bar.innerHTML='<span class="flabel">来源分区</span>'+
-      chipBtn("全部 "+S.mis.length, S.misCat==="all", 'data-mfc="all"')+
-      CAT_DEF.map(function(c){
-        /* 分区名沿用「题库分类」页的短名（38A 模拟卷／考纲样题／教材例题…），计数是错题数 */
-        var nm=String(c.short||c.label);
-        return chipBtn(nm+" "+(cntOf[c.k]||0), S.misCat===c.k, 'data-mfc="'+esc(c.k)+'"');
-      }).join("")+
-      (cntOf[MIS_GONE]?chipBtn("题库已无 "+cntOf[MIS_GONE], S.misCat===MIS_GONE, 'data-mfc="'+MIS_GONE+'"'):'');
+  var dim=misDimNow();
+  /* 第一行：换归堆方式。三个维度摊平后是同一批错题，只改分组口径。 */
+  if(dimBar){
+    dimBar.innerHTML='<span class="flabel">分类方式</span>'+
+      MIS_DIMS.map(function(d){
+        return chipBtn(d.label+"（"+S.mis.length+"）", dim===d.k, 'data-mfd="'+esc(d.k)+'"');
+      }).join("");
   }
-  var show=(S.misCat==="all") ? groups : groups.filter(function(g){ return g.k===S.misCat; });
+  if(bar){
+    if(dim==="src"){
+      /* 与「题库分类」同一套七分区，计数是错题数（不是题量） */
+      var cntOf={};
+      misGroupsBy("src").forEach(function(g){ cntOf[g.k]=g.list.length; });
+      bar.innerHTML='<span class="flabel">来源分区</span>'+
+        chipBtn("全部 "+S.mis.length, S.misCat==="all", 'data-mfc="all"')+
+        CAT_DEF.map(function(c){
+          var nm=String(c.short||c.label);
+          return chipBtn(nm+" "+(cntOf[c.k]||0), S.misCat===c.k, 'data-mfc="'+esc(c.k)+'"');
+        }).join("")+
+        (cntOf[MIS_GONE]?chipBtn("题库已无 "+cntOf[MIS_GONE], S.misCat===MIS_GONE, 'data-mfc="'+MIS_GONE+'"'):'');
+    } else {
+      /* 条目维度与档位维度共用档位筛选：先砍档位，再看条目，组数和题数都跟着变 */
+      var byReq={};
+      S.mis.forEach(function(m){ var r=misReqOf(m); byReq[r]=(byReq[r]||0)+1; });
+      var rs=S.misReq||"all";
+      bar.innerHTML='<span class="flabel">考纲要求</span>'+
+        chipBtn("全部 "+S.mis.length, rs==="all", 'data-mfr="all"')+
+        MIS_REQ_ORDER.map(function(r){
+          return chipBtn(r+" "+(byReq[r]||0), rs===r, 'data-mfr="'+esc(r)+'"');
+        }).join("")+
+        (byReq["未列"]?chipBtn("考纲未列 "+byReq["未列"], rs==="未列", 'data-mfr="未列"'):'');
+    }
+  }
+  var show=misVisibleGroups();
   if(!show.length){
-    var lb=(S.misCat===MIS_GONE)?"「题库已无」":("「"+catLabel(S.misCat)+"」");
-    host.innerHTML='<div class="empty">'+esc(lb)+'这一类里没有错题。点上面的「全部」看其他分区。</div>';
+    var tip = (dim==="src")
+      ? ('「'+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+'」这一类里没有错题。')
+      : ('当前档位（'+((S.misReq||"all")==="all"?"全部":S.misReq)+'）下没有错题。');
+    host.innerHTML='<div class="empty">'+esc(tip)+'点上面的「全部」看其他分组。</div>';
     if(redoBtn) redoBtn.textContent="按错题顺序重做全部";
     return;
   }
   host.innerHTML=show.map(function(g){
-    var label=(g.k===MIS_GONE)?"题库中已无此题":catLabel(g.k);
     var pct=Math.round(g.list.length/S.mis.length*100);
-    return '<div class="misgrp"><div class="misgrp-h"><h2>'+esc(label)+'</h2>'+
+    var idxs=misIdxsOf(g.list);
+    return '<div class="misgrp"><div class="misgrp-h"><h2>'+esc(g.label)+'</h2>'+
+      (dim==="node" ? misReqChip(g.req) : '')+
       '<span class="cnt num">'+g.list.length+' 题</span>'+
-      '<span class="pct num">占错题本 '+pct+'%</span></div>'+
+      '<span class="pct num">占错题本 '+pct+'%</span>'+
+      (idxs.length
+        ? '<button class="btn sm primary goal" type="button" data-misgo="'+esc(g.k)+'" title="只练这一组的 '+idxs.length+' 道错题（答案不预先展开）">练这组 '+idxs.length+' 题</button>'
+        : '<span class="tiny muted">这组题目已不在题库中</span>')+
+      (g.path ? '<span class="path">'+esc(g.path)+'</span>' : '')+
+      '</div>'+
       '<div class="grid">'+g.list.map(misItemHtml).join("")+'</div></div>';
   }).join("");
   if(redoBtn){
-    redoBtn.textContent=(S.misCat==="all")
-      ? "按错题顺序重做全部（"+S.mis.length+" 题）"
-      : "重做「"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"」这 "+show[0].list.length+" 题";
+    var flat=misIdxsOf([].concat.apply([], show.map(function(g){ return g.list; })));
+    if(dim==="src"){
+      redoBtn.textContent=(S.misCat==="all")
+        ? "按错题顺序重做全部（"+S.mis.length+" 题）"
+        : "重做「"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"」这 "+show[0].list.length+" 题";
+    } else {
+      var scopeName=(dim==="node") ? ("这 "+show.length+" 个考纲条目") : ((S.misReq||"all")==="all" ? "全部档位" : ("「"+S.misReq+"」档"));
+      redoBtn.textContent="重做当前 "+scopeName+"（"+flat.length+" 题）";
+    }
   }
 }
+$("#mis-f-dim") && $("#mis-f-dim").addEventListener("click", function(e){
+  var b=e.target.closest ? e.target.closest("[data-mfd]") : null; if(!b) return;
+  var d=b.getAttribute("data-mfd");
+  if(d===misDimNow()) return;
+  S.misDim=d;
+  /* 换维度就重置另一维度的筛选：来源分区的键在条目维度里没有意义，反之亦然 */
+  if(d==="src") S.misReq="all"; else S.misCat="all";
+  renderMistakes();
+});
 $("#mis-f-cat") && $("#mis-f-cat").addEventListener("click", function(e){
-  var b=e.target.closest ? e.target.closest("[data-mfc]") : null; if(!b) return;
-  S.misCat=b.getAttribute("data-mfc"); renderMistakes();
+  var c=e.target.closest ? e.target.closest("[data-mfc]") : null;
+  if(c){ S.misCat=c.getAttribute("data-mfc"); renderMistakes(); return; }
+  var r=e.target.closest ? e.target.closest("[data-mfr]") : null;
+  if(r){ S.misReq=r.getAttribute("data-mfr"); renderMistakes(); }
 });
 $("#mistake-list") && $("#mistake-list").addEventListener("click", function(e){
+  var go=e.target.closest ? e.target.closest("[data-misgo]") : null;
+  if(go){
+    var want=go.getAttribute("data-misgo");
+    var grp=misVisibleGroups().filter(function(g){ return g.k===want; })[0];
+    if(!grp){ toast("这一组已经变了，请重新点一次"); renderMistakes(); return; }
+    var ids=misIdxsOf(grp.list);
+    if(!ids.length){ toast("这组题目已不在题库中，无法重做"); return; }
+    startPractice(ids, "错题重做·"+grp.label+"（"+ids.length+" 题）", true);
+    return;
+  }
   var redo=e.target.closest ? e.target.closest("[data-redo]") : null;
   if(redo){ openQuestion(redo.getAttribute("data-redo"), null, "错题本", true); return; }
   var rm=e.target.closest ? e.target.closest("[data-rm]") : null;
@@ -6637,13 +6786,20 @@ $("#mis-clear") && $("#mis-clear").addEventListener("click", function(){
   clearMis(); renderMistakes(); toast("已清空本机错题记录（共 "+n+" 题）");
 });
 $("#mis-redo-all") && $("#mis-redo-all").addEventListener("click", function(){
-  /* 按当前分区取题：选了「教材例题」就只重做那一类，别把整本错题糊上来 */
-  var bag=S.mis.filter(function(m){ return S.misCat==="all" || misCatOf(m)===S.misCat; });
-  if(!bag.length){ toast("当前分区里没有错题"); return; }
-  var idxs=[];
-  bag.forEach(function(m){ if(IDX[m.id]!==undefined) idxs.push(IDX[m.id]); });
+  /* 取题口径跟当前维度与筛选一致：按条目就只重做这些条目，按档位就只重做这一档，
+     按来源就只重做这一类；不把整本错题糊上来。 */
+  var show=misVisibleGroups();
+  var idxs=misIdxsOf([].concat.apply([], show.map(function(g){ return g.list; })));
   if(!idxs.length){ toast("这些错题已不在题库中，无法重做"); return; }
-  var scope=(S.misCat==="all")?"错题重做":("错题重做（"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"）");
+  var dim=misDimNow();
+  var scope;
+  if(dim==="src"){
+    scope=(S.misCat==="all") ? "错题重做" : ("错题重做（"+((S.misCat===MIS_GONE)?"题库已无":catLabel(S.misCat))+"）");
+  } else if(dim==="node"){
+    scope="错题重做·"+(show.length===1 ? show[0].label : (show.length+" 个考纲条目"));
+  } else {
+    scope="错题重做·"+((S.misReq||"all")==="all" ? "全部档位" : (S.misReq+"档"));
+  }
   startPractice(idxs, scope+"（"+idxs.length+" 题）", true);
 });
 /* ---------- 来源与口径 ---------- */
